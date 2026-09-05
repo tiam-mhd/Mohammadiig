@@ -42,6 +42,9 @@ export const Header: React.FC = () => {
             <Link href="/contact" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
               تماس
             </Link>
+            <Link href="/auth" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
+              پنل مشتریان
+            </Link>
           </nav>
 
           {/* Actions */}

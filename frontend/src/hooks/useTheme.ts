@@ -26,7 +26,10 @@ export const useTheme = () => {
     // Utility functions
     getColor: (colorKey: string) => {
       // Example: getColor('primary.500') returns the primary color at 500 weight
-      return colorKey.split('.').reduce((obj: any, key: string) => obj?.[key], themeConfig.colors);
+      return colorKey.split('.').reduce<unknown>((value, key) => {
+        if (typeof value !== 'object' || value === null) return undefined;
+        return (value as Record<string, unknown>)[key];
+      }, themeConfig.colors);
     },
 
     getSpacing: (key: string | number) => {

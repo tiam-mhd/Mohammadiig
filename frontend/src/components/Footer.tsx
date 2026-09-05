@@ -33,7 +33,7 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/products/spare-parts" className="text-neutral-400 hover:text-white transition-colors">
+                <Link href="/spare-parts" className="text-neutral-400 hover:text-white transition-colors">
                   قطعات یدکی
                 </Link>
               </li>

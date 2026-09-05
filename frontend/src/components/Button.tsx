@@ -6,7 +6,6 @@
 'use client';
 
 import React from 'react';
-import { useTheme } from '@/hooks/useTheme';
 
 type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'ghost';
 type ButtonSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl';

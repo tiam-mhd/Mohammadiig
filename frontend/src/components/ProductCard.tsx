@@ -6,6 +6,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { Button } from './Button';
 
 interface ProductCardProps {
@@ -15,15 +16,16 @@ interface ProductCardProps {
   price: number;
   category: string;
   image?: string | null;
+  href?: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
-  id,
   name,
   description,
   price,
   category,
   image,
+  href,
 }) => {
   return (
     <div className="group overflow-hidden border border-neutral-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-primary-500 dark:border-white/10 dark:bg-[#1b1d1b]">
@@ -58,9 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {price.toLocaleString('fa-IR')} <span className="text-[10px]">ریال</span>
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="h-9 w-9 rounded-none p-0 text-xl">
-            ←
-          </Button>
+          {href ? <Link href={href} aria-label={`مشاهده ${name}`} className="flex h-9 w-9 items-center justify-center text-xl text-primary-500 transition hover:bg-primary-500 hover:text-neutral-900">←</Link> : <Button variant="ghost" size="sm" className="h-9 w-9 rounded-none p-0 text-xl">←</Button>}
         </div>
       </div>
     </div>
