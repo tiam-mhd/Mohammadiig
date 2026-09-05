@@ -3,7 +3,7 @@
 **Project:** MIG E-Commerce B2B Platform
 **Client:** Mohammadi Industrial Group (MIG)
 **Date Created:** 2026-09-02
-**Status:** Implementation Ready
+**Status:** Core platform implemented; continuing toward production release
 
 ---
 
@@ -89,11 +89,13 @@ MIG (Main Brand)
 - **Forms:** React Hook Form + Zod validation
 
 ### Backend
-- **Framework:** Nest.js 10+
+- **Framework:** Nest.js 12
 - **Language:** TypeScript
 - **Database:** PostgreSQL (primary) | SQLite (dev)
 - **ORM:** TypeORM
-- **Auth:** JWT + Passport.js
+- **Auth:** JWT with bcrypt password hashing and role guards
+- **Security:** Helmet, rate limiting, CORS and DTO validation
+- **API Docs:** Swagger at `/docs`
 
 ### Infrastructure
 - **Hosting:** cPanel (معمول)
@@ -166,32 +168,34 @@ Attachments
 - [x] Project structure planned
 - [x] Documentation complete
 - [x] Guidelines defined
-- [ ] Database created
-- [ ] Backend scaffolded
-- [ ] Frontend scaffolded
+- [x] Database created (SQLite development database with TypeORM migrations)
+- [x] Backend scaffolded (Nest.js, strict TypeScript, health and products API)
+- [x] Frontend scaffolded (Next.js, RTL, theme provider, API-connected catalog)
 
-### Phase 2: Backend Development
-- [ ] Database migrations
-- [ ] Models & entities
-- [ ] Authentication module
-- [ ] Products module
-- [ ] Orders module
-- [ ] Quotations module
-- [ ] Payments module
-- [ ] Projects module
+### Phase 2: Backend Development ✅
+- [x] Database migrations and TypeORM entities
+- [x] Authentication and customer accounts
+- [x] Products, categories, variants, specifications and spare parts
+- [x] Quotations and customizations
+- [x] Orders and order items
+- [x] Invoices and payment requests
+- [x] Projects, phases and services
+- [x] Attachments metadata and role-based product management
 
-### Phase 3: Frontend Development
-- [ ] Layout & theme setup
-- [ ] Product catalog
-- [ ] Product detail pages
-- [ ] Quotation request form
-- [ ] Login/Registration
-- [ ] Dashboard
-- [ ] Order management
-- [ ] Profile management
+### Phase 3: Frontend Development ✅
+- [x] RTL layout and Dark/Light luxury industrial theme
+- [x] Product catalog, detail, variants and technical specifications
+- [x] Spare parts and services pages
+- [x] Quotation request form
+- [x] Login and registration
+- [x] Customer dashboard with quotations, orders, invoices and payments
+- [x] Project and project-phase views
+- [x] Admin product management view
 
-### Phase 4: Integration & Polish
-- [ ] API integration
+### Phase 4: Integration & Polish 🔄
+- [x] Frontend/backend API integration
+- [x] Workspace build and TypeScript diagnostics
+- [x] Security headers, rate limiting and database health check
 - [ ] E2E testing
 - [ ] Performance optimization
 - [ ] SEO optimization
@@ -233,11 +237,14 @@ d:\Tiam\Projects\Sites\Mohammadiig.ir\
 ├─ backend/                             ← Nest.js API
 │  ├─ src/
 │  │  ├─ config/
-│  │  ├─ modules/
-│  │  ├─ common/
-│  │  └─ database/
+│  │  ├─ auth/ and customers/
+│  │  ├─ products/ and quotations/
+│  │  ├─ orders/ and payments/
+│  │  ├─ projects/ and services/
+│  │  ├─ attachments/
+│  │  └─ database/migrations/
 │  ├─ package.json
-│  └─ ormconfig.json
+│  └─ .env.example
 │
 └─ .git/                                ← Version control
 ```
@@ -254,21 +261,22 @@ d:\Tiam\Projects\Sites\Mohammadiig.ir\
 #    2. IMPLEMENTATION_GUIDELINES.md
 #    3. DATABASE_SCHEMA_DETAILED.md
 
-# 2. Setup environment
+# 2. Install dependencies
 npm install
+cd backend; npm install
+cd ../frontend; npm install
 
-# 3. Start backend
-cd backend
-npm run start:dev
+# 3. Build both applications
+cd ..
+npm run build
 
-# 4. Start frontend
-cd frontend
+# 4. Start both applications together when needed
 npm run dev
 
 # 5. Access
 # Frontend: http://localhost:3000
 # Backend: http://localhost:3001
-# API Docs: http://localhost:3001/api/docs
+# API Docs: http://localhost:3001/docs
 ```
 
 ### 2. For AI Agents
@@ -310,12 +318,11 @@ RULES:
 ### Important Environment Variables
 ```
 # Backend
-DB_TYPE=postgres
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=mig_user
-DB_PASSWORD=***
-DB_NAME=mig_db
+DB_DRIVER=better-sqlite3
+DATABASE_PATH=backend/data/mig.sqlite
+# Production PostgreSQL:
+# DB_DRIVER=postgres
+# DATABASE_URL=postgresql://mig_user:password@localhost:5432/mig_db
 
 # Frontend
 NEXT_PUBLIC_API_URL=http://localhost:3001/api
