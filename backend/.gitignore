@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+coverage/
+data/*.sqlite
+
+# Runtime files
+*.log
+logs/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Local tooling
+.vscode/
+.idea/
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Thumbs.db
