@@ -60,6 +60,15 @@ export interface ProductVariant { id: string; productId: string; skuVariant: str
 export interface ProductSpecification { id: string; productId: string; specificationKey: string; specificationValue: string; unit: string | null; specCategory: string; displayOrder: number; }
 export interface SparePart { id: string; partNumber: string; nameFa: string; description: string; compatibleProducts: string[]; price: number; currency: string; stockQuantity: number; warrantyMonths: number; imageUrl: string | null; }
 export interface ProjectPhaseSummary { id: string; phaseNumber: number; phaseNameFa: string; description: string; startDate: string; endDate: string; status: string; }
+export interface CustomerAdminSummary { id: string; companyName: string; contactPerson: string | null; phone: string | null; country: string | null; isVerified: boolean; paymentTerms: string; createdAt: string; }
+export interface QuotationAdminSummary { id: string; quotationNumber: string; customerId: string; totalAmount: number; status: string; validUntil: string; }
+export interface OrderAdminSummary { id: string; orderNumber: string; customerId: string; totalAmount: number; status: string; paymentStatus: string; createdAt: string; }
+export interface ProjectAdminSummary { id: string; projectCode: string; projectName: string; customerId: string; status: string; budgetTotal: number; startDate: string; expectedCompletionDate: string; }
+export interface InvoiceAdminSummary { id: string; invoiceNumber: string; customerId: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; dueDate: string; }
+export interface PaymentAdminSummary { id: string; invoiceId: string; orderId: string | null; amount: number; paymentMethod: string; paymentStatus: string; transactionId: string | null; }
+export interface ServiceAdminSummary { id: string; nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice: number; unitType: string; isActive: boolean; }
+export interface AttachmentAdminSummary { id: string; ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize: number | null; fileType: string | null; uploadedBy: string; uploadedAt: string; }
+export interface UserAdminSummary { id: string; email: string; firstName: string | null; lastName: string | null; companyName: string | null; role: string; isActive: boolean; lastLoginAt: string | null; createdAt: string; }
 
 export async function fetchProducts(): Promise<ProductListResponse> {
   const response = await fetch(`${API_URL}/products?limit=12`, {
@@ -143,7 +152,7 @@ export async function fetchMyInvoices(accessToken: string): Promise<InvoiceSumma
 }
 
 export async function submitPayment(accessToken: string, invoiceId: string, amount: number): Promise<{ paymentStatus: string }> {
-  const response = await fetch(`${API_URL}/invoices/${invoiceId}/pay`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ amount, paymentMethod: 'bank_transfer' }) });
+  const response = await fetch(`${API_URL}/payments/${invoiceId}/pay`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ amount, paymentMethod: 'bank_transfer' }) });
   if (!response.ok) throw new Error('ثبت پرداخت انجام نشد.');
   return response.json() as Promise<{ paymentStatus: string }>;
 }
@@ -182,6 +191,30 @@ export async function deleteProduct(accessToken: string, productId: string): Pro
   const response = await fetch(`${API_URL}/products/${productId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
   if (!response.ok) throw new Error('حذف محصول انجام نشد.');
 }
+
+async function adminRequest<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
+  const response = await fetch(`${API_URL}${path}`, { ...init, headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', ...(init?.headers ?? {}) }, cache: 'no-store' });
+  if (!response.ok) throw new Error('عملیات پنل مدیریت انجام نشد.');
+  return response.json() as Promise<T>;
+}
+
+export function fetchAdminCustomers(accessToken: string): Promise<CustomerAdminSummary[]> { return adminRequest(accessToken, '/customers/admin/all'); }
+export function fetchAdminQuotations(accessToken: string): Promise<QuotationAdminSummary[]> { return adminRequest(accessToken, '/quotations/admin/all'); }
+export function fetchAdminOrders(accessToken: string): Promise<OrderAdminSummary[]> { return adminRequest(accessToken, '/orders/admin/all'); }
+export function updateQuotationStatus(accessToken: string, id: string, status: string): Promise<QuotationAdminSummary> { return adminRequest(accessToken, `/quotations/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function updateOrderStatus(accessToken: string, id: string, status: string): Promise<OrderAdminSummary> { return adminRequest(accessToken, `/orders/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function fetchAdminProjects(accessToken: string): Promise<ProjectAdminSummary[]> { return adminRequest(accessToken, '/projects/admin/all'); }
+export function updateProjectStatus(accessToken: string, id: string, status: string): Promise<ProjectAdminSummary> { return adminRequest(accessToken, `/projects/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function fetchAdminInvoices(accessToken: string): Promise<InvoiceAdminSummary[]> { return adminRequest(accessToken, '/invoices/admin/all'); }
+export function updateInvoiceStatus(accessToken: string, id: string, status: string): Promise<InvoiceAdminSummary> { return adminRequest(accessToken, `/invoices/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function fetchAdminPayments(accessToken: string): Promise<PaymentAdminSummary[]> { return adminRequest(accessToken, '/payments/admin/all'); }
+export function updatePaymentStatus(accessToken: string, id: string, status: string): Promise<PaymentAdminSummary> { return adminRequest(accessToken, `/payments/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function fetchAdminServices(accessToken: string): Promise<ServiceAdminSummary[]> { return adminRequest(accessToken, '/services/admin/all'); }
+export function createAdminService(accessToken: string, payload: { nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice: number; unitType: string }): Promise<ServiceAdminSummary> { return adminRequest(accessToken, '/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
+export function fetchAdminAttachments(accessToken: string): Promise<AttachmentAdminSummary[]> { return adminRequest(accessToken, '/attachments/admin/all'); }
+export function fetchAdminUsers(accessToken: string): Promise<UserAdminSummary[]> { return adminRequest(accessToken, '/users/admin/all'); }
+export function updateUserRole(accessToken: string, id: string, role: string): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/role`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }); }
+export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }
 
 async function requestAuth(path: string, body: object): Promise<AuthResponse> {
   const response = await fetch(`${API_URL}/auth${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });

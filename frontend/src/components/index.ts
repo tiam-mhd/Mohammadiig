@@ -8,3 +8,5 @@ export { Header } from './Header';
 export { Footer } from './Footer';
 export { ProductCard } from './ProductCard';
 export { ThemeProvider } from './ThemeProvider';
+export { AdminShell } from './admin/AdminShell';
+export { ProductManager } from './admin/ProductManager';

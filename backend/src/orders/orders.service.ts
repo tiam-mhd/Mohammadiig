@@ -56,4 +56,13 @@ export class OrdersService {
     if (!order) throw new NotFoundException('Order not found');
     return order;
   }
+
+  findAll(): Promise<OrderEntity[]> { return this.orders.find({ order: { createdAt: 'DESC' } }); }
+
+  async updateStatus(id: string, status: string): Promise<OrderEntity> {
+    const order = await this.orders.findOne({ where: { id } });
+    if (!order) throw new NotFoundException('Order not found');
+    order.status = status;
+    return this.orders.save(order);
+  }
 }

@@ -13,4 +13,6 @@ export class InvoicesService {
     const customer = await this.customers.findOne({ where: { userId: user.userId } });
     return customer ? this.invoices.find({ where: { customerId: customer.id }, order: { createdAt: 'DESC' } }) : [];
   }
+  findAll(): Promise<InvoiceEntity[]> { return this.invoices.find({ order: { createdAt: 'DESC' } }); }
+  async updateStatus(id: string, paymentStatus: string): Promise<InvoiceEntity> { const invoice = await this.invoices.findOne({ where: { id } }); if (!invoice) throw new Error('Invoice not found'); invoice.paymentStatus = paymentStatus; return this.invoices.save(invoice); }
 }

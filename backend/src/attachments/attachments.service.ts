@@ -11,4 +11,5 @@ export class AttachmentsService {
   constructor(@InjectRepository(AttachmentEntity) private readonly attachments: Repository<AttachmentEntity>) {}
   async create(user: AuthUser, dto: CreateAttachmentDto): Promise<AttachmentEntity> { return this.attachments.save(this.attachments.create({ id: randomUUID(), ownerType: dto.ownerType as AttachmentEntity['ownerType'], ownerId: dto.ownerId, fileName: dto.fileName, fileUrl: dto.fileUrl, fileSize: dto.fileSize ?? null, fileType: dto.fileType ?? null, uploadedBy: user.userId })); }
   findByOwner(ownerType: string, ownerId: string): Promise<AttachmentEntity[]> { return this.attachments.find({ where: { ownerType: ownerType as AttachmentEntity['ownerType'], ownerId } }); }
+  findAll(): Promise<AttachmentEntity[]> { return this.attachments.find({ order: { uploadedAt: 'DESC' } }); }
 }

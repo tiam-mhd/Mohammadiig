@@ -21,4 +21,6 @@ export class PaymentsService {
     const payment = await this.payments.save({ id: randomUUID(), invoiceId, orderId: invoice.orderId, amount: dto.amount, currency: invoice.currency, paymentMethod: dto.paymentMethod, transactionId: dto.transactionId ?? null, paymentStatus: 'pending', notes: dto.notes ?? null, processedBy: null });
     return payment;
   }
+  findAll(): Promise<PaymentEntity[]> { return this.payments.find({ order: { createdAt: 'DESC' } }); }
+  async updateStatus(id: string, paymentStatus: string): Promise<PaymentEntity> { const payment = await this.payments.findOne({ where: { id } }); if (!payment) throw new NotFoundException('Payment not found'); payment.paymentStatus = paymentStatus; return this.payments.save(payment); }
 }

@@ -13,6 +13,7 @@ export interface AuthUser {
 interface AuthStore {
   accessToken: string | null;
   user: AuthUser | null;
+  hasHydrated: boolean;
   setSession: (accessToken: string, user: AuthUser) => void;
   clearSession: () => void;
 }
@@ -20,6 +21,7 @@ interface AuthStore {
 export const useAuthStore = create<AuthStore>()(persist((set) => ({
   accessToken: null,
   user: null,
+  hasHydrated: false,
   setSession: (accessToken, user) => set({ accessToken, user }),
   clearSession: () => set({ accessToken: null, user: null }),
-}), { name: 'mig-auth' }));
+}), { name: 'mig-auth', onRehydrateStorage: () => () => useAuthStore.setState({ hasHydrated: true }) }));

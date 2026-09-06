@@ -6,10 +6,11 @@ import { ProductEntity } from '../products/product.entity';
 import { QuotationEntity } from './quotation.entity';
 import { QuotationsController } from './quotations.controller';
 import { QuotationsService } from './quotations.service';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Module({
   imports: [PassportModule, TypeOrmModule.forFeature([QuotationEntity, CustomerEntity, ProductEntity])],
   controllers: [QuotationsController],
-  providers: [QuotationsService],
+  providers: [QuotationsService, RolesGuard],
 })
 export class QuotationsModule {}

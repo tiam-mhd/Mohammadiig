@@ -33,4 +33,7 @@ export class ProjectsService {
     if (!customer) throw new NotFoundException('Customer profile not found');
     return this.projects.save({ id: randomUUID(), projectCode: `PRJ-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`, projectName, description, customerId: customer.id, assignedTo: null, projectType: 'other', country: null, city: null, startDate: new Date().toISOString().slice(0, 10), expectedCompletionDate: new Date(Date.now() + 90 * 86400000).toISOString().slice(0, 10), budgetTotal: 0, budgetSpent: 0, currency: 'IRR', migInvestmentPercentage: 0, profitSharingPercentage: 0, status: 'planning', documents: [], createdBy: user.userId });
   }
+
+  findAll(): Promise<ProjectEntity[]> { return this.projects.find({ order: { createdAt: 'DESC' } }); }
+  async updateStatus(id: string, status: string): Promise<ProjectEntity> { const project = await this.projects.findOne({ where: { id } }); if (!project) throw new NotFoundException('Project not found'); project.status = status; return this.projects.save(project); }
 }

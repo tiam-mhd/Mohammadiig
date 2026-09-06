@@ -13,6 +13,7 @@ import { PaymentsModule } from './payments/payments.module';
 import { ProjectsModule } from './projects/projects.module';
 import { ServicesModule } from './services/services.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
     ProjectsModule,
     ServicesModule,
     AttachmentsModule,
+    UsersModule,
   ],
   controllers: [HealthController],
 })

@@ -12,4 +12,6 @@ export class CustomersService {
     if (!customer) throw new NotFoundException('Customer profile not found');
     return customer;
   }
+
+  findAll(): Promise<CustomerEntity[]> { return this.customers.find({ order: { createdAt: 'DESC' } }); }
 }

@@ -8,6 +8,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { UserEntity } from './user.entity';
+import { RolesGuard } from './roles.guard';
 
 @Global()
 @Module({
@@ -17,7 +18,7 @@ import { UserEntity } from './user.entity';
     JwtModule.registerAsync({ inject: [ConfigService], useFactory: (config: ConfigService) => ({ secret: config.get<string>('JWT_SECRET', 'mig-development-secret'), signOptions: { expiresIn: '1d' } }) }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
-  exports: [AuthService, JwtStrategy, JwtModule],
+  providers: [AuthService, JwtStrategy, RolesGuard],
+  exports: [AuthService, JwtStrategy, JwtModule, RolesGuard],
 })
 export class AuthModule {}

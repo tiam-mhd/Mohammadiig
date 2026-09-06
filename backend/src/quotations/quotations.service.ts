@@ -51,4 +51,13 @@ export class QuotationsService {
     quotation.status = 'accepted';
     return this.quotations.save(quotation);
   }
+
+  findAll(): Promise<QuotationEntity[]> { return this.quotations.find({ order: { createdAt: 'DESC' } }); }
+
+  async updateStatus(id: string, status: QuotationEntity['status']): Promise<QuotationEntity> {
+    const quotation = await this.quotations.findOne({ where: { id } });
+    if (!quotation) throw new NotFoundException('Quotation not found');
+    quotation.status = status;
+    return this.quotations.save(quotation);
+  }
 }

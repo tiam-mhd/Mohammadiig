@@ -5,6 +5,8 @@ import { AuthUser } from '../auth/jwt.strategy';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CustomerEntity } from './customer.entity';
 import { CustomersService } from './customers.service';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -20,4 +22,10 @@ export class CustomersController {
   me(@Req() request: AuthenticatedRequest): Promise<CustomerEntity> {
     return this.customersService.findByUserId(request.user.userId);
   }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'salesman')
+  @ApiOperation({ summary: 'List all B2B customers for operations staff' })
+  all(): Promise<CustomerEntity[]> { return this.customersService.findAll(); }
 }

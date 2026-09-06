@@ -5,6 +5,8 @@ import { AuthUser } from '../auth/jwt.strategy';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RequestQuotationDto } from './dto/request-quotation.dto';
 import { QuotationsService } from './quotations.service';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -32,4 +34,16 @@ export class QuotationsController {
   accept(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
     return this.quotationsService.accept(request.user, id);
   }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'salesman')
+  @ApiOperation({ summary: 'List quotations for operations staff' })
+  all() { return this.quotationsService.findAll(); }
+
+  @Patch(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles('admin', 'salesman')
+  @ApiOperation({ summary: 'Update quotation status' })
+  updateStatus(@Param('id') id: string, @Body('status') status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired') { return this.quotationsService.updateStatus(id, status); }
 }

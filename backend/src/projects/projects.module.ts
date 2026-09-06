@@ -6,10 +6,11 @@ import { ProjectEntity } from './project.entity';
 import { ProjectPhaseEntity } from './project-phase.entity';
 import { ProjectsController } from './projects.controller';
 import { ProjectsService } from './projects.service';
+import { RolesGuard } from '../auth/roles.guard';
 
 @Module({
   imports: [PassportModule, TypeOrmModule.forFeature([ProjectEntity, ProjectPhaseEntity, CustomerEntity])],
   controllers: [ProjectsController],
-  providers: [ProjectsService],
+  providers: [ProjectsService, RolesGuard],
 })
 export class ProjectsModule {}
