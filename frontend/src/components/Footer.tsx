@@ -1,6 +1,5 @@
 /**
- * Footer Component
- * App footer with links and copyright
+ * Footer — بسته شدن آرام و شکیل صفحه
  */
 
 'use client';
@@ -8,91 +7,122 @@
 import React from 'react';
 import Link from 'next/link';
 
+const explore = [
+  { href: '/products', label: 'محصولات' },
+  { href: '/projects', label: 'پروژه‌ها' },
+  { href: '/services', label: 'خدمات' },
+  { href: '/spare-parts', label: 'قطعات یدکی' },
+];
+
+const company = [
+  { href: '/quote-request', label: 'درخواست قیمت' },
+  { href: '/auth', label: 'پنل مشتریان' },
+  { href: '/quote-request', label: 'مشاوره پروژه' },
+];
+
+const legal = [
+  { href: '/privacy', label: 'حریم خصوصی' },
+  { href: '/terms', label: 'شرایط استفاده' },
+];
+
 export const Footer: React.FC = () => {
-  const currentYear = new Date().getFullYear();
+  const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-neutral-900 dark:bg-neutral-950 text-white mt-20">
-      <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          {/* About */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">درباره MIG</h3>
-            <p className="text-neutral-400 text-sm leading-relaxed">
-              گروه صنعتی محمدی - تولید کننده تجهیزات تفریحی و تخصصی با تجربه بیش از سال.
+    <footer className="site-footer">
+      {/* نوار بالایی — معرفی کوتاه + CTA */}
+      <div className="site-footer__intro">
+        <div className="site-footer__shell site-footer__intro-inner">
+          <div className="site-footer__intro-copy">
+            <p className="caption-up text-white/55">گروه صنعتی محمدی</p>
+            <p className="site-footer__tagline">
+              تجهیزات شهربازی، نصب و پشتیبانی — کنار مجموعه شما.
+            </p>
+          </div>
+          <Link href="/quote-request" className="btn-pill site-footer__cta">
+            درخواست مشاوره
+          </Link>
+        </div>
+      </div>
+
+      {/* بدنه لینک‌ها */}
+      <div className="site-footer__shell site-footer__body">
+        <div className="site-footer__grid">
+          <div className="site-footer__brand-col">
+            <p className="wordmark site-footer__mark" lang="en">
+              MIG
+            </p>
+            <p className="site-footer__brand-text">
+              تولید و تأمین دستگاه‌های تفریحی برای صاحبان شهربازی و مجموعه‌های سرگرمی.
             </p>
           </div>
 
-          {/* Products */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">محصولات</h3>
-            <ul className="space-y-2">
+          <nav className="site-footer__nav-col" aria-label="کاوش">
+            <p className="site-footer__heading">کاوش</p>
+            <ul className="site-footer__list">
+              {explore.map((item) => (
+                <li key={item.href + item.label}>
+                  <Link href={item.href} className="site-footer__link">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <nav className="site-footer__nav-col" aria-label="خدمات">
+            <p className="site-footer__heading">همکاری</p>
+            <ul className="site-footer__list">
+              {company.map((item) => (
+                <li key={item.href + item.label}>
+                  <Link href={item.href} className="site-footer__link">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          <div className="site-footer__nav-col">
+            <p className="site-footer__heading">تماس</p>
+            <ul className="site-footer__list site-footer__contact">
               <li>
-                <Link href="/products/bumper-cars" className="text-neutral-400 hover:text-white transition-colors">
-                  ماشین های تعطیل
-                </Link>
+                <a
+                  href="mailto:info@mohammadiig.ir"
+                  className="site-footer__link site-footer__link--en"
+                  lang="en"
+                >
+                  info@mohammadiig.ir
+                </a>
               </li>
               <li>
-                <Link href="/spare-parts" className="text-neutral-400 hover:text-white transition-colors">
-                  قطعات یدکی
-                </Link>
+                <span className="site-footer__meta">تهران، ایران</span>
               </li>
               <li>
-                <Link href="/products/services" className="text-neutral-400 hover:text-white transition-colors">
-                  خدمات
+                <Link href="/quote-request" className="site-footer__link">
+                  فرم ارتباط
                 </Link>
               </li>
             </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">شرکت</h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href="/about" className="text-neutral-400 hover:text-white transition-colors">
-                  درباره ما
-                </Link>
-              </li>
-              <li>
-                <Link href="/projects" className="text-neutral-400 hover:text-white transition-colors">
-                  پروژه ها
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="text-neutral-400 hover:text-white transition-colors">
-                  تماس
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Contact */}
-          <div>
-            <h3 className="text-lg font-semibold mb-4">تماس</h3>
-            <div className="space-y-2 text-sm text-neutral-400">
-              <p>📧 info@mohammadiig.ir</p>
-              <p>📱 +98 (0) 123 456 7890</p>
-              <p>📍 تهران، ایران</p>
-            </div>
           </div>
         </div>
+      </div>
 
-        {/* Bottom */}
-        <div className="border-t border-neutral-800 pt-8">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-neutral-400 text-sm">
-              © {currentYear} گروه صنعتی محمدی. تمام حقوق محفوظ است.
-            </p>
-            <div className="flex gap-6">
-              <Link href="/privacy" className="text-neutral-400 hover:text-white text-sm transition-colors">
-                حریم خصوصی
-              </Link>
-              <Link href="/terms" className="text-neutral-400 hover:text-white text-sm transition-colors">
-                شرایط استفاده
-              </Link>
-            </div>
-          </div>
+      {/* نوار پایینی */}
+      <div className="site-footer__bottom">
+        <div className="site-footer__shell site-footer__bottom-inner">
+          <p className="site-footer__copy">
+            © {year} گروه صنعتی محمدی. تمام حقوق محفوظ است.
+          </p>
+          <ul className="site-footer__legal">
+            {legal.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href} className="site-footer__legal-link">
+                  {item.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </footer>

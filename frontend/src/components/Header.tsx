@@ -1,70 +1,105 @@
 /**
- * Header Component
- * Navigation header with logo and theme toggle
+ * Header — ناوبری مینیمال + موبایل امن
  */
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useTheme } from '@/hooks/useTheme';
-import { Button } from './Button';
+
+const menuItems = [
+  { href: '/products', label: 'محصولات' },
+  { href: '/projects', label: 'پروژه‌ها' },
+  { href: '/services', label: 'خدمات' },
+  { href: '/quote-request', label: 'استعلام' },
+  // { href: '/auth', label: 'پنل مشتریان' },
+];
 
 export const Header: React.FC = () => {
-  const { isDark, toggleTheme } = useTheme();
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-200/70 bg-[#f3f0ea]/90 backdrop-blur-xl dark:border-white/10 dark:bg-[#101110]/90">
-      <div className="mx-auto max-w-[1400px] px-5 py-4 sm:px-8">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="group flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center border border-primary-500 bg-neutral-900 text-primary-500 transition-transform group-hover:rotate-45 dark:bg-white">
-              <span className="text-lg font-black -rotate-45">M</span>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-lg font-black tracking-[0.22em] text-neutral-900 dark:text-white">MIG</h1>
-              <p className="text-[9px] uppercase tracking-[0.18em] text-neutral-500">Industrial Group</p>
-            </div>
-          </Link>
+    <>
+      <header className="fixed inset-x-0 top-0 z-50 h-14 bg-transparent pt-[env(safe-area-inset-top)] md:h-16">
+        <button
+          type="button"
+          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 start-[max(1.25rem,env(safe-area-inset-right))] sm:start-10 md:start-16 lg:start-24 xl:start-28"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-label={open ? 'بستن منو' : 'باز کردن منو'}
+        >
+          {open ? 'بستن' : 'منو'}
+        </button>
 
-          {/* Navigation */}
-          <nav className="hidden items-center gap-8 md:flex">
-            <Link href="/products" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
-              محصولات
-            </Link>
-            <Link href="/projects" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
-              پروژه ها
-            </Link>
-            <Link href="/about" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
-              درباره
-            </Link>
-            <Link href="/contact" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
-              تماس
-            </Link>
-            <Link href="/auth" className="text-xs font-bold text-neutral-700 transition-colors hover:text-primary-600 dark:text-neutral-300">
-              پنل مشتریان
-            </Link>
-          </nav>
+        <Link
+          href="/"
+          className="brand-logo absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+          onClick={() => setOpen(false)}
+          aria-label="گروه صنعتی محمدی"
+        >
+          <img
+            src="/Logo-DarkMode.png"
+            alt="گروه صنعتی محمدی"
+            className="brand-logo__img"
+            width={120}
+            height={120}
+          />
+        </Link>
 
-          {/* Actions */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              className="h-9 w-9 border border-neutral-300 p-0 dark:border-white/20"
+        <Link
+          href="/quote-request"
+          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 end-[max(1.25rem,env(safe-area-inset-left))] sm:end-10 md:end-16 lg:end-24 xl:end-28"
+        >
+          فروشگاه
+        </Link>
+      </header>
+
+      <div
+        className={`menu-overlay fixed inset-0 z-40 transition-[opacity,visibility] duration-[900ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
+          open ? 'menu-overlay--open visible opacity-100' : 'invisible opacity-0'
+        }`}
+        aria-hidden={!open}
+      >
+        <div className="menu-overlay__aurora" aria-hidden />
+        <div className="menu-overlay__veil" aria-hidden />
+        <nav className="relative z-10 flex h-full flex-col items-center justify-center gap-6 px-8 pt-16 sm:gap-7 md:gap-8">
+          {menuItems.map((item, i) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              onClick={() => setOpen(false)}
+              className="group min-h-11 text-center"
+              style={{
+                transitionDelay: open ? `${140 + i * 70}ms` : '0ms',
+                opacity: open ? 1 : 0,
+                transform: open ? 'translateY(0)' : 'translateY(10px)',
+                transitionProperty: 'opacity, transform',
+                transitionDuration: '900ms',
+                transitionTimingFunction: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+              }}
             >
-              {isDark ? '☼' : '◐'}
-            </Button>
-
-            <Button variant="primary" size="sm" className="hidden rounded-none bg-neutral-900 px-5 text-[11px] font-bold tracking-wide hover:bg-primary-600 sm:inline-flex dark:bg-primary-500 dark:text-neutral-900">
-              دریافت مشاوره
-            </Button>
-          </div>
-        </div>
+              <span className="display-section block transition-opacity duration-500 group-hover:opacity-55">
+                {item.label}
+              </span>
+            </Link>
+          ))}
+        </nav>
       </div>
-    </header>
+    </>
   );
 };

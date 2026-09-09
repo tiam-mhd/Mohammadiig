@@ -2,17 +2,80 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components';
 import { fetchServices, ServiceSummary } from '@/lib/api-client';
 
 const fallbackServices: ServiceSummary[] = [
-  { id: 'installation', nameFa: 'نصب و راه‌اندازی', description: 'نصب تخصصی تجهیزات و آماده‌سازی مجموعه برای بهره‌برداری.', serviceCategory: 'installation', basePrice: 0, unitType: 'fixed' },
-  { id: 'training', nameFa: 'آموزش اپراتور', description: 'آموزش تیم بهره‌برداری برای استفاده ایمن و حرفه‌ای.', serviceCategory: 'training', basePrice: 0, unitType: 'per_day' },
-  { id: 'support', nameFa: 'پشتیبانی MIG Care', description: 'پشتیبانی فنی و تامین قطعات برای عملکرد پایدار پروژه.', serviceCategory: 'support', basePrice: 0, unitType: 'per_visit' },
+  {
+    id: 'installation',
+    nameFa: 'نصب و راه‌اندازی',
+    description: 'نصب تخصصی دستگاه و آماده‌سازی سالن برای بهره‌برداری.',
+    serviceCategory: 'نصب',
+    basePrice: 0,
+    unitType: 'ثابت',
+  },
+  {
+    id: 'training',
+    nameFa: 'آموزش اپراتور',
+    description: 'آموزش تیم شما برای استفاده ایمن و درست از دستگاه‌ها.',
+    serviceCategory: 'آموزش',
+    basePrice: 0,
+    unitType: 'روزانه',
+  },
+  {
+    id: 'support',
+    nameFa: 'پشتیبانی و نگهداری',
+    description: 'پشتیبانی فنی و تأمین قطعه تا دستگاه‌ها خواب نمانند.',
+    serviceCategory: 'پشتیبانی',
+    basePrice: 0,
+    unitType: 'بازدید',
+  },
 ];
 
 export default function ServicesPage() {
   const [services, setServices] = useState(fallbackServices);
-  useEffect(() => { fetchServices().then(setServices).catch(() => undefined); }, []);
-  return <main className="min-h-screen bg-neutral-50 px-5 py-20 dark:bg-neutral-900 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1200px]"><Link href="/" className="text-xs font-bold text-primary-500">← بازگشت به سایت</Link><div className="mt-14 max-w-2xl"><span className="eyebrow">MIG / FULL-SERVICE DELIVERY</span><h1 className="mt-4 text-5xl font-black text-neutral-900 dark:text-white sm:text-7xl">از ساخت تا<br /><span className="text-primary-500">بهره‌برداری.</span></h1><p className="mt-6 leading-8 text-neutral-500">یک تیم، یک مسئولیت یکپارچه؛ خدمات MIG برای اینکه پروژه شما با اطمینان از ایده به اجرا برسد.</p></div><div className="mt-16 grid gap-5 md:grid-cols-3">{services.map((service, index) => <article key={service.id} className="border border-neutral-200 bg-white p-7 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="text-4xl font-black text-primary-500">0{index + 1}</span><h2 className="mt-12 text-2xl font-black dark:text-white">{service.nameFa}</h2><p className="mt-4 min-h-20 text-sm leading-7 text-neutral-500">{service.description}</p><div className="mt-8 border-t border-neutral-200 pt-4 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:border-white/10">{service.serviceCategory} / {service.unitType}</div></article>)}</div><Link href="/quote-request"><Button size="lg" className="mt-12 rounded-none bg-primary-500 text-neutral-900">درخواست خدمات پروژه</Button></Link></div></main>;
+
+  useEffect(() => {
+    fetchServices()
+      .then(setServices)
+      .catch(() => undefined);
+  }, []);
+
+  return (
+    <div className="bg-canvas">
+      <div className="content-shell section-copy pt-24 md:pt-28">
+        <Link href="/" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+          ← بازگشت به صفحه اول
+        </Link>
+
+        <div className="mt-10 max-w-2xl text-start md:mt-12">
+          <p className="caption-up">خدمات</p>
+          <h1 className="display-feature mt-4 text-ink">از ساخت تا بهره‌برداری</h1>
+          <p className="body-lead mt-5 max-w-md">
+            نصب، آموزش و پشتیبانی — تا پروژه شما بدون وقفه راه بیفتد و کار کند.
+          </p>
+        </div>
+
+        <div className="mt-14 grid grid-cols-1 gap-10 border-t border-hairline pt-12 md:mt-16 md:grid-cols-3 md:gap-12 md:pt-16">
+          {services.map((service, index) => (
+            <article key={service.id} className="text-start">
+              <p className="caption-up text-white/50">
+                {(index + 1).toLocaleString('fa-IR').padStart(2, '۰')}
+              </p>
+              <h2 className="display-sm mt-5 text-ink">{service.nameFa}</h2>
+              <p className="body-lead mt-4 text-sm">{service.description}</p>
+              <p className="caption-up mt-8 border-t border-hairline pt-4">
+                {service.serviceCategory} · {service.unitType}
+              </p>
+            </article>
+          ))}
+        </div>
+
+        <div className="mt-14 md:mt-16">
+          <Link href="/quote-request" className="btn-pill inline-flex">
+            درخواست خدمات پروژه
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }

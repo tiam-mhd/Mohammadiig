@@ -1,34 +1,218 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Button } from '@/components';
-import { ProductShowcase } from '@/components/ProductShowcase';
+import { PhotoBand } from '@/components/home/PhotoBand';
+import { ModelBand } from '@/components/home/ModelBand';
+import { Reveal } from '@/components/home/Reveal';
+import { FloatingConsultCard } from '@/components/home/FloatingConsultCard';
 
 export const metadata: Metadata = {
-  title: 'MIG | مهندسی تجربه، ساخت آینده',
-  description: 'MIG؛ طراح و سازنده تجهیزات تفریحی و راهکارهای سرگرمی برای پروژه های متمایز.',
+  title: 'MIG | تجهیزات شهربازی و مجموعه‌های تفریحی',
+  description: 'ساخت، تأمین و پشتیبانی تجهیزات شهربازی؛ از ماشین برخوردی تا قطعات و خدمات.',
 };
+
+/** فاصله تنفس سیاه بین فصل‌های صفحه */
+function SectionGap() {
+  return <div className="h-12 bg-canvas sm:h-16 md:h-24 lg:h-28" aria-hidden />;
+}
+
+const models = [
+  {
+    index: 'محصول ۰۱',
+    name: 'ماشین برخوردی حرفه‌ای',
+    tagline: 'برای سالن‌های شلوغ شهربازی؛ بدنه مقاوم و نگهداری آسان.',
+    href: '/products/bumper-car-signature',
+    image:
+      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    index: 'محصول ۰۲',
+    name: 'ماشین کودک',
+    tagline: 'مناسب فضای خانوادگی؛ ایمن، کم‌صدا و جذاب برای بچه‌ها.',
+    href: '/products/junior-play',
+    image:
+      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=2000&q=85',
+  },
+  {
+    index: 'محصول ۰۳',
+    name: 'قطعات و پشتیبانی',
+    tagline: 'قطعات اصلی و خدمات فنی تا دستگاه‌هایتان خواب نمانند.',
+    href: '/spare-parts',
+    image:
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=2000&q=85',
+  },
+];
 
 export default function Home() {
   return (
-    <main className="overflow-hidden">
-      <section className="relative min-h-[680px] bg-neutral-900 text-white">
-        <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(16,17,16,.98)_15%,rgba(16,17,16,.72)_52%,rgba(16,17,16,.28)),url('https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=2200&q=90')] bg-cover bg-center" />
-        <div className="absolute inset-0 grid-lines opacity-30" />
-        <div className="relative mx-auto flex min-h-[680px] max-w-[1400px] items-end px-5 pb-20 sm:px-8 lg:pb-28">
-          <div className="max-w-3xl text-right">
-            <div className="mb-8 flex items-center gap-4"><span className="h-px w-12 bg-primary-500" /><span className="eyebrow">MIG / MANUFACTURING · OPERATIONS · INVESTMENT</span></div>
-            <h1 className="max-w-full text-[clamp(2.8rem,9vw,5.8rem)] font-black leading-[1.12] tracking-tight">تجربه را<br /><span className="text-primary-500">مهندسی می کنیم.</span></h1>
-            <p className="mt-7 max-w-xl text-base leading-8 text-neutral-300 sm:text-lg">از نخستین ایده تا لحظه بهره برداری؛ MIG فضاهای سرگرمی را با مهندسی دقیق، طراحی متمایز و اجرای یکپارچه خلق می کند.</p>
-            <div className="mt-10 flex flex-wrap items-center gap-4"><Link href="#products"><Button size="lg" className="rounded-none bg-primary-500 px-7 text-neutral-900 hover:bg-primary-400">کشف محصولات <span>←</span></Button></Link><Link href="/quote-request" className="border-b border-white/50 pb-2 text-sm font-bold text-white transition-colors hover:border-primary-500 hover:text-primary-500">درخواست پیش‌فاکتور <span className="mr-2">↙</span></Link></div>
+    <div className="bg-canvas">
+      {/* هیرو — موبایل: متن پایین؛ دسکتاپ: ستون راست دور از ماشین */}
+      <section className="hero">
+        <div className="hero__media">
+          <img
+            src="/Background.png"
+            alt="ماشین برخوردی MIG"
+            className="kenburns"
+            fetchPriority="high"
+          />
+          <div className="hero__scrim" />
+        </div>
+
+        <div className="content-shell hero__content">
+          <div className="hero__copy">
+            <p className="caption-up animate-fade-up text-white/70">
+              تجهیزات شهربازی و مجموعه‌های تفریحی
+            </p>
+            <h1 className="display-monumental animate-fade-up-delay mt-3 md:mt-4">
+              طراحی، تولید، مشاوره
+            </h1>
+            <p className="body-lead animate-fade-up-delay-2 mt-4 max-w-sm md:mt-5">
+              از انتخاب دستگاه تا نصب و پشتیبانی؛ کنار صاحبان شهربازی و مجموعه‌های تفریحی هستیم.
+            </p>
+            <div className="hero__actions animate-fade-up-delay-3">
+              <Link href="/products" className="btn-pill">
+                مشاهده محصولات
+              </Link>
+              <Link
+                href="/quote-request"
+                className="caption-up text-white/85 transition-opacity hover:opacity-60"
+              >
+                درخواست قیمت ←
+              </Link>
+            </div>
           </div>
-          <div className="absolute bottom-8 left-5 hidden border-r border-primary-500/60 pr-4 text-left text-[10px] uppercase tracking-[0.2em] text-neutral-400 lg:block">EST. 1998<br /><span className="text-primary-500">TEHRAN / IRAN</span></div>
         </div>
       </section>
 
-      <section id="story" className="border-b border-neutral-200 bg-neutral-50 dark:border-white/10 dark:bg-neutral-900"><div className="mx-auto grid max-w-[1400px] grid-cols-2 divide-x divide-neutral-200 dark:divide-white/10 sm:grid-cols-4 sm:divide-x">{[['۱۵+', 'سال تجربه'], ['۳', 'محور تخصصی'], ['۲', 'پروژه شاخص'], ['۱۰۰٪', 'تعهد MIG']].map(([value, label]) => <div key={label} className="px-5 py-8 sm:px-8 sm:py-10"><strong className="block text-3xl font-black text-primary-500 sm:text-4xl">{value}</strong><span className="mt-2 block text-xs font-bold text-neutral-500">{label}</span></div>)}</div></section>
-  <section id="products" className="bg-neutral-50 py-24 dark:bg-neutral-900 sm:py-32"><div className="mx-auto max-w-[1400px] px-5 sm:px-8"><div className="mb-14 flex flex-col justify-between gap-5 sm:flex-row sm:items-end"><div><span className="eyebrow">01 / SELECTED SYSTEMS</span><h2 className="mt-4 text-4xl font-black text-neutral-900 dark:text-white sm:text-5xl">محصولات منتخب</h2></div><p className="max-w-sm text-sm leading-7 text-neutral-500">راهکارهایی برای ساخت تجربه ای که مخاطب، برند شما و کسب وکار شما به یاد می سپارند.</p></div><ProductShowcase /></div></section>
-  <section className="relative border-t border-white/10 bg-neutral-900 py-24 text-white sm:py-32"><div className="absolute left-0 top-0 h-full w-1/3 bg-[radial-gradient(circle_at_20%_30%,rgba(185,137,82,.18),transparent_55%)]" /><div className="relative mx-auto flex max-w-[1400px] flex-col justify-between gap-12 px-5 sm:px-8 lg:flex-row lg:items-end"><div><span className="eyebrow">02 / THE MIG METHOD</span><h2 className="mt-5 max-w-2xl text-4xl font-black leading-tight sm:text-6xl">هر پروژه،<br /><span className="text-primary-500">یک امضای تازه.</span></h2></div><div className="max-w-md"><p className="text-base leading-8 text-neutral-300">ما فقط محصول نمی سازیم. از تولید تجهیزات تا بهره برداری مجموعه های تفریحی و سرمایه گذاری در ایده های آینده، کنار شما می ایستیم.</p><Link href="/about" className="mt-8 inline-block border-b border-primary-500 pb-2 text-sm font-bold text-primary-500">بیشتر درباره MIG <span className="mr-2">←</span></Link></div></div></section>
-      <section className="bg-primary-500 px-5 py-16 text-neutral-900 sm:px-8 sm:py-20"><div className="mx-auto flex max-w-[1400px] flex-col justify-between gap-8 sm:flex-row sm:items-center"><div><span className="text-xs font-black uppercase tracking-[0.18em]">LET&apos;S BUILD WHAT&apos;S NEXT</span><h2 className="mt-3 text-3xl font-black sm:text-5xl">پروژه بعدی شما از اینجا شروع می شود.</h2></div><Link href="/quote-request"><Button size="lg" className="w-fit rounded-none bg-neutral-900 px-8 text-white hover:bg-neutral-800">شروع درخواست <span>←</span></Button></Link></div></section>
-    </main>
+      <FloatingConsultCard />
+
+      <SectionGap />
+
+      {/* معرفی — راست‌چین طبیعی RTL */}
+      <PhotoBand
+        image="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=2000&q=80"
+        eyebrow="درباره MIG"
+        title="گروه صنعتی محمدی"
+        body="ما تجهیزات شهربازی تولید و تأمین می‌کنیم و در راه‌اندازی و نگهداری مجموعه‌ها کنار شما هستیم."
+        ctaLabel="پروژه‌های ما"
+        ctaHref="/projects"
+        align="start"
+        overlay="bottom"
+      />
+
+      <SectionGap />
+
+      {/* خدمات — راست‌چین، لیست‌گونه */}
+      <PhotoBand
+        image="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=2000&q=80"
+        eyebrow="چه می‌کنیم"
+        title="سه کار اصلی ما"
+        body="ساخت و فروش دستگاه، راه‌اندازی مجموعه، و پشتیبانی فنی بعد از فروش."
+        ctaLabel="خدمات ما"
+        ctaHref="/services"
+        align="start"
+        overlay="right"
+        objectPosition="center top"
+      />
+
+      <SectionGap />
+
+      {/* سابقه — وسط‌چین برای جمله کوتاه هویتی */}
+      <section className="relative flex min-h-[48svh] items-center overflow-hidden bg-canvas md:min-h-[52svh]">
+        <div className="content-shell section-copy">
+          <Reveal className="mx-auto max-w-lg text-center">
+            <p className="caption-up">سابقه کار</p>
+            <h2 className="display-feature mt-4">بیش از بیست سال در صنعت تفریح</h2>
+            <p className="body-lead mx-auto mt-4 max-w-md">
+              از کارگاه تا سالن شهربازی؛ تجربه واقعی نصب، بهره‌برداری و نگهداری دستگاه‌ها.
+            </p>
+            <div className="mt-8 flex justify-center">
+              <Link href="/projects" className="btn-pill">
+                نمونه‌کارها
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <SectionGap />
+
+      {/* استعلام — وسط‌چین چون دعوت به اقدام است */}
+      <PhotoBand
+        image="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=2000&q=80"
+        eyebrow="سفارش و قیمت"
+        title="دستگاه را مطابق فضای خودتان بگیرید"
+        body="ابعاد سالن، ظرفیت بازدیدکننده و بودجه را بگویید؛ طرح و قیمت مناسب را برایتان آماده می‌کنیم."
+        ctaLabel="درخواست قیمت"
+        ctaHref="/quote-request"
+        align="center"
+        overlay="full"
+        minHeight="min-h-[68svh] md:min-h-[72svh]"
+      />
+
+      <SectionGap />
+
+      {/* پروژه‌ها — راست‌چین */}
+      <PhotoBand
+        image="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=2000&q=80"
+        eyebrow="پروژه‌ها"
+        title="مجموعه‌هایی که با هم راه انداختیم"
+        body="از سالن ماشین برخوردی تا فضاهای خانوادگی؛ نمونه‌هایی از کار با صاحبان مجموعه."
+        ctaLabel="دیدن پروژه‌ها"
+        ctaHref="/projects"
+        align="start"
+        overlay="left"
+      />
+
+      <SectionGap />
+
+      {/* معرفی محصولات — راست‌چین */}
+      <section className="bg-canvas py-12 md:py-24 md:pb-28">
+        <div className="content-shell">
+          <Reveal className="max-w-lg text-start">
+            <p className="caption-up">محصولات</p>
+            <h2 className="display-feature mt-4">چند نمونه از دستگاه‌های ما</h2>
+            <p className="body-lead mt-4 max-w-md">
+              برای سالن شهربازی، فضای کودک و پشتیبانی بعد از فروش، گزینه مناسب دارید.
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      <div className="flex flex-col gap-12 md:gap-24">
+        {models.map((model) => (
+          <ModelBand key={model.href} {...model} />
+        ))}
+      </div>
+
+      <SectionGap />
+
+      {/* CTA پایانی — وسط‌چین */}
+      <section className="relative flex min-h-[52svh] overflow-hidden md:min-h-[56svh]">
+        <div className="absolute inset-0">
+          <img
+            src="/Background.png"
+            alt=""
+            className="h-full w-full object-cover opacity-55"
+            style={{ objectPosition: '60% center' }}
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-black/55" />
+        </div>
+        <div className="content-shell section-copy relative z-10 flex w-full flex-col items-center justify-end text-center">
+          <Reveal className="max-w-md">
+            <p className="caption-up text-white/70">قدم بعدی</p>
+            <h2 className="display-feature mt-4">برای مجموعه خودتان آماده‌اید؟</h2>
+            <p className="body-lead mx-auto mt-4 max-w-sm">
+              مشخصات فضا را بفرستید تا پیشنهاد دستگاه و برآورد قیمت را برایتان بفرستیم.
+            </p>
+            <div className="mt-8 flex justify-center">
+              <Link href="/quote-request" className="btn-pill">
+                درخواست مشاوره رایگان
+              </Link>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+    </div>
   );
 }

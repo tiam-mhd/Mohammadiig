@@ -3,9 +3,15 @@ import { ProductsCatalog } from '@/components/ProductsCatalog';
 
 export const metadata: Metadata = {
   title: 'محصولات | MIG',
-  description: 'کاتالوگ تجهیزات تفریحی، ماشین‌های برقی و قطعات یدکی MIG.',
+  description: 'کاتالوگ تجهیزات شهربازی، ماشین برخوردی و قطعات یدکی گروه صنعتی محمدی.',
 };
 
 export default function ProductsPage() {
-  return <main className="min-h-screen bg-neutral-50 px-5 py-20 dark:bg-neutral-900 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1400px]"><ProductsCatalog /></div></main>;
+  return (
+    <div className="bg-canvas">
+      <div className="content-shell section-copy pt-24 md:pt-28">
+        <ProductsCatalog />
+      </div>
+    </div>
+  );
 }

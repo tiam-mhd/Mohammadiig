@@ -1,13 +1,11 @@
 /**
- * ProductCard Component
- * Displays a product with image, name, and price
+ * ProductCard — model-photo pattern
  */
 
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
-import { Button } from './Button';
 
 interface ProductCardProps {
   id: string;
@@ -17,6 +15,7 @@ interface ProductCardProps {
   category: string;
   image?: string | null;
   href?: string;
+  slug?: string;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -26,43 +25,55 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   category,
   image,
   href,
+  slug,
 }) => {
-  return (
-    <div className="group overflow-hidden border border-neutral-200 bg-white transition-all duration-300 hover:-translate-y-1 hover:border-primary-500 dark:border-white/10 dark:bg-[#1b1d1b]">
-      {/* Image */}
-      <div className="relative aspect-[1.2] overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+  const target = href || (slug ? `/products/${slug}` : undefined);
+
+  const inner = (
+    <article className="group block bg-canvas text-start">
+      <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
         {image ? (
-          <img src={image} alt={name} className="h-full w-full object-cover grayscale transition duration-700 group-hover:scale-105 group-hover:grayscale-0" />
+          <img
+            src={image}
+            alt={name}
+            className="h-full w-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]"
+          />
         ) : (
-          <div className="p-4 text-center text-neutral-400 dark:text-neutral-600">
-            <p className="text-sm">تصویر محصول</p>
+          <div className="flex h-full items-center justify-center">
+            <p className="caption-up">بدون تصویر</p>
           </div>
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-5">
-        <p className="eyebrow mb-3">
-          {category}
-        </p>
-        <h3 className="mb-2 text-lg font-bold text-neutral-900 dark:text-white line-clamp-2">
-          {name}
-        </h3>
-        <p className="mb-6 text-sm leading-6 text-neutral-500 dark:text-neutral-400 line-clamp-2">
-          {description}
-        </p>
-
-        {/* Price and CTA */}
-        <div className="flex items-end justify-between gap-2 border-t border-neutral-200 pt-4 dark:border-white/10">
+      <div className="pt-6">
+        <p className="caption-up">{category}</p>
+        <h3 className="display-sm mt-3 text-ink">{name}</h3>
+        <p className="body-md mt-3 line-clamp-2 text-sm">{description}</p>
+        <div className="mt-6 flex items-end justify-between gap-4 border-t border-hairline pt-5">
           <div>
-            <p className="text-[10px] uppercase tracking-wider text-neutral-500">شروع از</p>
-            <p className="text-lg font-black text-primary-600 dark:text-primary-500">
-              {price.toLocaleString('fa-IR')} <span className="text-[10px]">ریال</span>
+            <p className="caption-up">شروع از</p>
+            <p className="mt-1 font-display text-lg text-ink">
+              {price.toLocaleString('fa-IR')}
+              <span className="caption-up mr-2">ریال</span>
             </p>
           </div>
-          {href ? <Link href={href} aria-label={`مشاهده ${name}`} className="flex h-9 w-9 items-center justify-center text-xl text-primary-500 transition hover:bg-primary-500 hover:text-neutral-900">←</Link> : <Button variant="ghost" size="sm" className="h-9 w-9 rounded-none p-0 text-xl">←</Button>}
+          {target ? (
+            <span className="caption-up text-ink transition-opacity group-hover:opacity-60">
+              جزئیات ←
+            </span>
+          ) : null}
         </div>
       </div>
-    </div>
+    </article>
   );
+
+  if (target) {
+    return (
+      <Link href={target} className="block" aria-label={`مشاهده ${name}`}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return inner;
 };

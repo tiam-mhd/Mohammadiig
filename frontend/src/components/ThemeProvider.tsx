@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useThemeStore } from '@/store/theme.store';
 
+/** Marketing surface is canvas-black only (Bugatti: no light mode). */
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const mode = useThemeStore((state) => state.mode);
-  const setMode = useThemeStore((state) => state.setMode);
-
   useEffect(() => {
-    setMode(mode);
-  }, [mode, setMode]);
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+  }, []);
 
   return children;
 }

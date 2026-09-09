@@ -3,8 +3,14 @@
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Button } from '@/components';
-import { fetchProduct, fetchProductSpecifications, fetchProductVariants, Product, ProductSpecification, ProductVariant } from '@/lib/api-client';
+import {
+  fetchProduct,
+  fetchProductSpecifications,
+  fetchProductVariants,
+  Product,
+  ProductSpecification,
+  ProductVariant,
+} from '@/lib/api-client';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -14,11 +20,128 @@ export default function ProductDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchProduct(params.slug).then((productResponse) => { setProduct(productResponse); return Promise.all([fetchProductVariants(productResponse.id), fetchProductSpecifications(productResponse.id)]); }).then(([variantResponse, specificationResponse]) => { setVariants(variantResponse); setSpecifications(specificationResponse); }).catch(() => setProduct(null)).finally(() => setIsLoading(false));
+    fetchProduct(params.slug)
+      .then((productResponse) => {
+        setProduct(productResponse);
+        return Promise.all([
+          fetchProductVariants(productResponse.id),
+          fetchProductSpecifications(productResponse.id),
+        ]);
+      })
+      .then(([variantResponse, specificationResponse]) => {
+        setVariants(variantResponse);
+        setSpecifications(specificationResponse);
+      })
+      .catch(() => setProduct(null))
+      .finally(() => setIsLoading(false));
   }, [params.slug]);
 
-  if (isLoading) return <main className="min-h-screen bg-neutral-50 px-5 py-32 text-center text-neutral-500 dark:bg-neutral-900">در حال دریافت اطلاعات محصول...</main>;
-  if (!product) return <main className="min-h-screen bg-neutral-50 px-5 py-32 text-center dark:bg-neutral-900"><h1 className="text-3xl font-black dark:text-white">محصول پیدا نشد</h1><Link href="/products" className="mt-6 inline-block text-primary-500">بازگشت به محصولات</Link></main>;
+  if (isLoading) {
+    return (
+      <div className="bg-canvas">
+        <div className="content-shell section-copy pt-28 text-center">
+          <p className="caption-up">در حال دریافت اطلاعات محصول...</p>
+        </div>
+      </div>
+    );
+  }
 
-  return <main className="min-h-screen bg-neutral-50 px-5 py-20 dark:bg-neutral-900 sm:px-8 sm:py-28"><div className="mx-auto max-w-[1200px]"><Link href="/products" className="text-xs font-bold text-primary-500">← بازگشت به کاتالوگ</Link><div className="mt-10 grid gap-10 lg:grid-cols-[1.1fr_.9fr] lg:items-start"><div className="aspect-[1.2] overflow-hidden bg-neutral-100 dark:bg-neutral-800">{product.image && <img src={product.image} alt={product.name} className="h-full w-full object-cover" />}</div><div><span className="eyebrow">{product.category}</span><h1 className="mt-5 text-4xl font-black leading-tight text-neutral-900 dark:text-white sm:text-6xl">{product.name}</h1><p className="mt-6 text-base leading-8 text-neutral-500 dark:text-neutral-400">{product.description}</p><div className="mt-8 border-y border-neutral-200 py-5 dark:border-white/10"><span className="text-xs text-neutral-500">قیمت پایه</span><strong className="mt-2 block text-2xl text-primary-500">{product.price.toLocaleString('fa-IR')} ریال</strong></div><Button size="lg" className="mt-8 rounded-none bg-primary-500 text-neutral-900">درخواست مشاوره برای این محصول</Button></div></div><div className="mt-16 grid gap-10 border-t border-neutral-200 pt-10 dark:border-white/10 md:grid-cols-2"><section><h2 className="text-2xl font-black dark:text-white">مشخصات فنی</h2><div className="mt-5 divide-y divide-neutral-200 dark:divide-white/10">{specifications.map((specification) => <div key={specification.id} className="flex justify-between gap-5 py-4 text-sm"><span className="text-neutral-500">{specification.specCategory} / {specification.specificationKey}</span><strong className="dark:text-white">{specification.specificationValue}{specification.unit ? ` ${specification.unit}` : ''}</strong></div>)}</div></section><section><h2 className="text-2xl font-black dark:text-white">مدل‌های قابل سفارش</h2><div className="mt-5 space-y-3">{variants.map((variant) => <div key={variant.id} className="flex items-center justify-between border border-neutral-200 p-4 dark:border-white/10"><div><strong className="block dark:text-white">{variant.variantNameFa}</strong><span className="mt-1 block text-xs text-neutral-500">{variant.skuVariant} / موجودی {variant.stockQuantity}</span></div><span className="text-sm font-bold text-primary-500">+{variant.priceAdjustment.toLocaleString('fa-IR')}</span></div>)}</div></section></div></div></main>;
+  if (!product) {
+    return (
+      <div className="bg-canvas">
+        <div className="content-shell section-copy pt-28 text-center">
+          <h1 className="display-feature text-ink">محصول پیدا نشد</h1>
+          <Link href="/products" className="btn-pill mt-10 inline-flex">
+            بازگشت به محصولات
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-canvas">
+      <div className="content-shell section-copy pt-24 md:pt-28">
+        <Link href="/products" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+          ← بازگشت به کاتالوگ
+        </Link>
+
+        <div className="mt-10 grid gap-12 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-16">
+          <div className="aspect-[16/11] overflow-hidden bg-surface-soft">
+            {product.image ? (
+              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <p className="caption-up">بدون تصویر</p>
+              </div>
+            )}
+          </div>
+
+          <div className="text-start">
+            <p className="caption-up">{product.category}</p>
+            <h1 className="display-feature mt-4 text-ink">{product.name}</h1>
+            <p className="body-lead mt-5 max-w-md">{product.description}</p>
+
+            <div className="mt-8 border-y border-hairline py-6">
+              <p className="caption-up">قیمت پایه</p>
+              <p className="mt-2 font-display text-2xl text-ink">
+                {product.price.toLocaleString('fa-IR')}
+                <span className="caption-up mr-2">ریال</span>
+              </p>
+            </div>
+
+            <Link href="/quote-request" className="btn-pill mt-8 inline-flex">
+              درخواست مشاوره برای این محصول
+            </Link>
+          </div>
+        </div>
+
+        <div className="mt-16 grid gap-12 border-t border-hairline pt-12 md:mt-20 md:grid-cols-2 md:gap-16 md:pt-16">
+          <section className="text-start">
+            <h2 className="display-sm text-ink">مشخصات فنی</h2>
+            {specifications.length === 0 ? (
+              <p className="body-lead mt-5 text-muted">مشخصات فنی ثبت نشده است.</p>
+            ) : (
+              <div className="mt-6 divide-y divide-white/10">
+                {specifications.map((specification) => (
+                  <div key={specification.id} className="flex justify-between gap-5 py-4">
+                    <span className="font-ui text-sm text-muted">
+                      {specification.specCategory} / {specification.specificationKey}
+                    </span>
+                    <span className="font-ui text-sm text-ink">
+                      {specification.specificationValue}
+                      {specification.unit ? ` ${specification.unit}` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="text-start">
+            <h2 className="display-sm text-ink">مدل‌های قابل سفارش</h2>
+            {variants.length === 0 ? (
+              <p className="body-lead mt-5 text-muted">مدل اضافه‌ای ثبت نشده است.</p>
+            ) : (
+              <div className="mt-6 space-y-0 divide-y divide-white/10 border-t border-white/10">
+                {variants.map((variant) => (
+                  <div key={variant.id} className="flex items-center justify-between gap-4 py-5">
+                    <div>
+                      <p className="font-ui text-base text-ink">{variant.variantNameFa}</p>
+                      <p className="caption-up mt-2">
+                        {variant.skuVariant} · موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
+                      </p>
+                    </div>
+                    <p className="font-ui text-sm text-ink">
+                      +{variant.priceAdjustment.toLocaleString('fa-IR')}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+    </div>
+  );
 }
