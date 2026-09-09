@@ -62,10 +62,10 @@ export const Header: React.FC = () => {
           />
         </Link>
 
-        {/* فروشگاه — چپ، فاصله آینهٔ منو از راست */}
+        {/* فروشگاه — چپ؛ فاصله افقی آینهٔ منو، وسط عمودی هدر */}
         <Link
           href="/quote-request"
-          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 left-[max(1.25rem,env(safe-area-inset-left))] sm:left-10 md:left-16 lg:left-24 xl:left-28"
+          className="nav-link absolute inset-y-0 z-10 inline-flex items-center px-1 left-[max(1.25rem,env(safe-area-inset-left))] sm:left-10 md:left-16 lg:left-24 xl:left-28"
         >
           فروشگاه
         </Link>
