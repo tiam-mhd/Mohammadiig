@@ -9,6 +9,65 @@ export default function AdminDashboardPage() {
   const [productCount, setProductCount] = useState(0);
   const [categoryCount, setCategoryCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => { Promise.all([fetchProducts(), fetchCategories()]).then(([products, categories]) => { setProductCount(products.meta.total); setCategoryCount(categories.length); }).finally(() => setIsLoading(false)); }, []);
-  return <AdminShell eyebrow="MIG / CONTROL ROOM" title="نمای کلی عملیات"><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><div className="border border-neutral-200 bg-white p-6 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="eyebrow">PRODUCTS</span><strong className="mt-5 block text-4xl font-black text-primary-500">{isLoading ? '—' : productCount}</strong><span className="mt-2 block text-sm text-neutral-500">محصول فعال در کاتالوگ</span></div><div className="border border-neutral-200 bg-white p-6 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="eyebrow">CATEGORIES</span><strong className="mt-5 block text-4xl font-black text-primary-500">{isLoading ? '—' : categoryCount}</strong><span className="mt-2 block text-sm text-neutral-500">دسته‌بندی محصول</span></div><div className="border border-neutral-200 bg-white p-6 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="eyebrow">CUSTOMERS</span><strong className="mt-5 block text-4xl font-black text-primary-500">—</strong><span className="mt-2 block text-sm text-neutral-500">در مرحله بعدی</span></div><div className="border border-neutral-200 bg-white p-6 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="eyebrow">SYSTEM</span><strong className="mt-5 block text-4xl font-black text-green-600">OK</strong><span className="mt-2 block text-sm text-neutral-500">API و دیتابیس فعال</span></div></div><section className="mt-10 grid gap-5 lg:grid-cols-2"><Link href="/admin/products" className="group border border-neutral-200 bg-neutral-900 p-7 text-white transition hover:border-primary-500 dark:border-white/10"><span className="eyebrow">01 / CATALOG</span><h2 className="mt-12 text-3xl font-black">مدیریت محصولات</h2><p className="mt-3 text-sm leading-7 text-neutral-400">ایجاد، بررسی و حذف محصولات کاتالوگ MIG.</p><span className="mt-8 inline-block text-primary-500 transition group-hover:translate-x-1">ورود به مدیریت ←</span></Link><Link href="/account" className="group border border-neutral-200 bg-white p-7 transition hover:border-primary-500 dark:border-white/10 dark:bg-[#1b1d1b]"><span className="eyebrow">02 / CUSTOMER FLOW</span><h2 className="mt-12 text-3xl font-black">مرکز مشتریان</h2><p className="mt-3 text-sm leading-7 text-neutral-500">پیش‌فاکتورها، سفارش‌ها و پرداخت‌های مشتریان.</p><span className="mt-8 inline-block text-primary-600 transition group-hover:translate-x-1 dark:text-primary-500">مشاهده جریان مشتری ←</span></Link></section></AdminShell>;
+
+  useEffect(() => {
+    Promise.all([fetchProducts(), fetchCategories()])
+      .then(([products, categories]) => {
+        setProductCount(products.meta.total);
+        setCategoryCount(categories.length);
+      })
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  return (
+    <AdminShell eyebrow="پنل مدیریت" title="نمای کلی عملیات">
+      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4 xl:gap-10">
+        <div className="admin-stat text-start">
+          <p className="caption-up">محصولات</p>
+          <p className="mt-4 font-ui text-3xl text-ink">
+            {isLoading ? '—' : productCount.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-2 font-ui text-sm text-muted">محصول فعال در کاتالوگ</p>
+        </div>
+        <div className="admin-stat text-start">
+          <p className="caption-up">دسته‌بندی</p>
+          <p className="mt-4 font-ui text-3xl text-ink">
+            {isLoading ? '—' : categoryCount.toLocaleString('fa-IR')}
+          </p>
+          <p className="mt-2 font-ui text-sm text-muted">دستهٔ محصول</p>
+        </div>
+        <div className="admin-stat text-start">
+          <p className="caption-up">مشتریان</p>
+          <p className="mt-4 font-ui text-3xl text-ink">—</p>
+          <p className="mt-2 font-ui text-sm text-muted">از بخش مشتریان</p>
+        </div>
+        <div className="admin-stat text-start">
+          <p className="caption-up">سیستم</p>
+          <p className="mt-4 font-ui text-3xl text-ink">OK</p>
+          <p className="mt-2 font-ui text-sm text-muted">API و دیتابیس فعال</p>
+        </div>
+      </div>
+
+      <section className="mt-12 grid gap-0 border-t border-hairline lg:grid-cols-2">
+        <Link
+          href="/admin/products"
+          className="border-b border-hairline py-8 text-start transition-opacity hover:opacity-80 lg:border-e lg:pe-10"
+        >
+          <p className="caption-up">۰۱ · کاتالوگ</p>
+          <h2 className="display-sm mt-6 text-ink">مدیریت محصولات</h2>
+          <p className="body-lead mt-3 text-sm">ایجاد، بررسی و حذف محصولات کاتالوگ.</p>
+          <span className="caption-up mt-8 inline-block text-white/55">ورود به مدیریت ←</span>
+        </Link>
+        <Link
+          href="/admin/customers"
+          className="border-b border-hairline py-8 text-start transition-opacity hover:opacity-80 lg:ps-10"
+        >
+          <p className="caption-up">۰۲ · مشتریان</p>
+          <h2 className="display-sm mt-6 text-ink">فهرست مشتریان</h2>
+          <p className="body-lead mt-3 text-sm">حساب‌های سازمانی و وضعیت تأیید.</p>
+          <span className="caption-up mt-8 inline-block text-white/55">مشاهده مشتریان ←</span>
+        </Link>
+      </section>
+    </AdminShell>
+  );
 }

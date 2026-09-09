@@ -13,13 +13,20 @@ export default function AuthPage() {
   const router = useRouter();
   const { accessToken, user, setSession } = useAuthStore();
   const [mode, setMode] = useState<AuthMode>('login');
-  const [form, setForm] = useState({ email: '', password: '', firstName: '', lastName: '', companyName: '', phone: '' });
+  const [form, setForm] = useState({
+    email: '',
+    password: '',
+    firstName: '',
+    lastName: '',
+    companyName: '',
+    phone: '',
+  });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (!accessToken || !user) return;
-    const target = ['admin', 'salesman'].includes(user.role) ? '/admin' : '/account';
+    const target = user.role === 'admin' ? '/admin' : '/account';
     router.replace(target);
   }, [accessToken, user, router]);
 
@@ -30,7 +37,7 @@ export default function AuthPage() {
     try {
       const response = mode === 'login' ? await login(form.email, form.password) : await register(form);
       setSession(response.accessToken, response.user);
-      const nextRoute = ['admin', 'salesman'].includes(response.user.role) ? '/admin' : '/account';
+      const nextRoute = response.user.role === 'admin' ? '/admin' : '/account';
       router.replace(nextRoute);
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'خطایی رخ داد.');
@@ -40,147 +47,155 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f4efe9] text-neutral-900 dark:bg-neutral-950 dark:text-white">
-      <div className="mx-auto grid min-h-screen max-w-7xl lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="relative hidden overflow-hidden bg-neutral-950 lg:flex lg:flex-col lg:justify-between">
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(10,11,11,0.96),rgba(15,20,18,0.68)),url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1400&q=85')] bg-cover bg-center" />
-          <div className="relative z-10 flex items-center justify-between p-10">
-            <div className="text-3xl font-black tracking-[0.28em] text-primary-500">MIG</div>
-            <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[10px] font-semibold tracking-[0.24em] text-neutral-200">B2B PORTAL</span>
+    <div className="bg-canvas min-h-svh">
+      <div className="content-shell section-copy grid min-h-svh items-center py-16 md:py-20 lg:grid-cols-[1fr_0.95fr] lg:gap-16 xl:gap-24">
+        <section className="hidden text-start lg:block">
+          <p className="caption-up">حساب کاربری</p>
+          <h1 className="display-feature mt-5 max-w-md text-ink">ورود به پنل مشتریان</h1>
+          <p className="body-lead mt-6 max-w-md">
+            درخواست قیمت، پیگیری پروژه و دسترسی به حساب سازمانی از اینجا انجام می‌شود.
+          </p>
+          <p className="caption-up mt-14 border-t border-hairline pt-6 text-white/45">
+            MIG · گروه صنعتی محمدی
+          </p>
+        </section>
+
+        <section className="mx-auto w-full max-w-md text-start lg:mx-0 lg:max-w-lg">
+          <Link
+            href="/"
+            className="caption-up text-white/70 transition-opacity hover:opacity-100 lg:hidden"
+          >
+            ← بازگشت به سایت
+          </Link>
+
+          <div className="auth-mode mt-8 lg:mt-0" role="tablist" aria-label="ورود یا ثبت‌نام">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'login'}
+              onClick={() => setMode('login')}
+              className={`auth-mode__btn ${mode === 'login' ? 'is-active' : ''}`}
+            >
+              ورود
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={mode === 'register'}
+              onClick={() => setMode('register')}
+              className={`auth-mode__btn ${mode === 'register' ? 'is-active' : ''}`}
+            >
+              ثبت‌نام
+            </button>
           </div>
 
-          <div className="relative z-10 px-10 pb-12">
-            <span className="eyebrow">MIG / INDUSTRIAL GROUP</span>
-            <h1 className="mt-5 max-w-md text-5xl font-black leading-tight text-white">
-              ساختن آینده
-              <span className="mt-3 block text-primary-500">با هم.</span>
-            </h1>
-            <p className="mt-6 max-w-md text-base leading-8 text-neutral-300">
-              برای دریافت پیشنهاد اختصاصی پیگیری پروه و دسترسی به امکانات مدیریتی MIG داخل حساب خود وارد شوید.
+          <div className="mt-10">
+            <p className="caption-up lg:hidden">حساب کاربری</p>
+            <h2 className="display-sm mt-3 text-ink sm:mt-4">
+              {mode === 'login' ? 'ورود به حساب' : 'ایجاد حساب سازمانی'}
+            </h2>
+            <p className="body-lead mt-3 text-sm">
+              {mode === 'login'
+                ? 'ایمیل و رمز عبور خود را وارد کنید.'
+                : 'اطلاعات شرکت را برای همکاری با MIG ثبت کنید.'}
             </p>
           </div>
 
-          <div className="relative z-10 border-t border-white/10 px-10 py-6 text-xs tracking-[0.2em] text-neutral-400">
-            MANUFACTURING · OPERATIONS · INVESTMENT
-          </div>
-        </section>
-
-        <section className="flex items-center justify-center px-5 py-12 sm:px-8 lg:px-12">
-          <div className="w-full max-w-md">
-            <div className="mb-8 flex items-center justify-between">
-              <Link href="/" className="inline-flex items-center gap-2 text-sm font-bold text-primary-600 transition hover:text-primary-500 dark:text-primary-400">
-                <span aria-hidden="true">←</span>
-                بازگشت به سایت
-              </Link>
-            </div>
-
-            <div className="rounded-[28px] border border-neutral-200 bg-white/80 p-6 shadow-[0_30px_80px_rgba(0,0,0,0.08)] backdrop-blur-sm dark:border-white/10 dark:bg-[#171a18]/80 sm:p-8">
-              <div className="mb-7 flex gap-2 rounded-full border border-neutral-200 bg-neutral-100 p-1 dark:border-white/10 dark:bg-neutral-900">
-                <button
-                  type="button"
-                  onClick={() => setMode('login')}
-                  className={`flex-1 rounded-full px-4 py-2.5 text-sm font-bold transition ${mode === 'login' ? 'bg-neutral-900 text-white shadow-sm dark:bg-primary-500 dark:text-neutral-950' : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-300'}`}
-                >
-                  ورود
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMode('register')}
-                  className={`flex-1 rounded-full px-4 py-2.5 text-sm font-bold transition ${mode === 'register' ? 'bg-neutral-900 text-white shadow-sm dark:bg-primary-500 dark:text-neutral-950' : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-300'}`}
-                >
-                  ثبتنام
-                </button>
-              </div>
-
-              <div className="mb-6">
-                <span className="eyebrow">{mode === 'login' ? 'WELCOME BACK' : 'JOIN MIG NETWORK'}</span>
-                <h2 className="mt-3 text-3xl font-black text-neutral-900 dark:text-white sm:text-4xl">
-                  {mode === 'login' ? 'ورود به حساب' : 'ایجاد حساب سازمانی'}
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-neutral-500 dark:text-neutral-400">
-                  {mode === 'login' ? 'برای ادامه اطلاعات حساب خود را وارد کنید.' : 'حساب خود را برای همکاری حرفهای با MIG بسازید.'}
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                {mode === 'register' && (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <input
-                      required
-                      minLength={2}
-                      placeholder="نام"
-                      value={form.firstName}
-                      onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-                      className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
-                    />
-                    <input
-                      required
-                      minLength={2}
-                      placeholder="نام خانوادگی"
-                      value={form.lastName}
-                      onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-                      className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
-                    />
-                  </div>
-                )}
-
-                {mode === 'register' && (
+          <form onSubmit={handleSubmit} className="mt-10 space-y-6">
+            {mode === 'register' ? (
+              <div className="grid gap-6 sm:grid-cols-2">
+                <label className="block">
+                  <span className="caption-up">نام</span>
                   <input
                     required
-                    placeholder="نام شرکت"
-                    value={form.companyName}
-                    onChange={(event) => setForm({ ...form, companyName: event.target.value })}
-                    className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
+                    minLength={2}
+                    autoComplete="given-name"
+                    value={form.firstName}
+                    onChange={(event) => setForm({ ...form, firstName: event.target.value })}
+                    className="field-input mt-2"
                   />
-                )}
-
-                <input
-                  required
-                  type="email"
-                  placeholder="ایمیل"
-                  value={form.email}
-                  onChange={(event) => setForm({ ...form, email: event.target.value })}
-                  className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
-                />
-
-                {mode === 'register' && (
+                </label>
+                <label className="block">
+                  <span className="caption-up">نام خانوادگی</span>
                   <input
-                    placeholder="تلفن"
-                    value={form.phone}
-                    onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                    className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
+                    required
+                    minLength={2}
+                    autoComplete="family-name"
+                    value={form.lastName}
+                    onChange={(event) => setForm({ ...form, lastName: event.target.value })}
+                    className="field-input mt-2"
                   />
-                )}
+                </label>
+              </div>
+            ) : null}
 
+            {mode === 'register' ? (
+              <label className="block">
+                <span className="caption-up">نام شرکت</span>
                 <input
                   required
-                  type="password"
-                  placeholder="رمز عبور"
-                  value={form.password}
-                  onChange={(event) => setForm({ ...form, password: event.target.value })}
-                  className="w-full border border-neutral-300 bg-transparent px-4 py-3 text-sm outline-none transition focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 dark:border-white/15 dark:text-white"
+                  autoComplete="organization"
+                  value={form.companyName}
+                  onChange={(event) => setForm({ ...form, companyName: event.target.value })}
+                  className="field-input mt-2"
                 />
+              </label>
+            ) : null}
 
-                {error && (
-                  <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                    {error}
-                  </div>
-                )}
+            <label className="block">
+              <span className="caption-up">ایمیل</span>
+              <input
+                required
+                type="email"
+                autoComplete="email"
+                dir="ltr"
+                value={form.email}
+                onChange={(event) => setForm({ ...form, email: event.target.value })}
+                className="field-input mt-2 text-start"
+              />
+            </label>
 
-                <Button
-                  type="submit"
-                  size="lg"
-                  variant="primary"
-                  isLoading={isSubmitting}
-                  className="mt-2 w-full rounded-xl bg-gradient-to-r from-primary-500 via-primary-600 to-amber-400 px-4 py-3 text-base font-black text-neutral-950 shadow-lg shadow-primary-500/25 transition hover:scale-[1.01]"
-                >
-                  {mode === 'login' ? 'ورود به حساب' : 'ثبتنام و ادامه'}
-                </Button>
-              </form>
-            </div>
-          </div>
+            {mode === 'register' ? (
+              <label className="block">
+                <span className="caption-up">تلفن</span>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  dir="ltr"
+                  value={form.phone}
+                  onChange={(event) => setForm({ ...form, phone: event.target.value })}
+                  className="field-input mt-2 text-start"
+                />
+              </label>
+            ) : null}
+
+            <label className="block">
+              <span className="caption-up">رمز عبور</span>
+              <input
+                required
+                type="password"
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                dir="ltr"
+                value={form.password}
+                onChange={(event) => setForm({ ...form, password: event.target.value })}
+                className="field-input mt-2 text-start"
+              />
+            </label>
+
+            {error ? <p className="field-message field-message--error">{error}</p> : null}
+
+            <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full sm:w-auto">
+              {mode === 'login' ? 'ورود به حساب' : 'ثبت‌نام و ادامه'}
+            </Button>
+          </form>
+
+          <p className="mt-10 hidden lg:block">
+            <Link href="/" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+              ← بازگشت به سایت
+            </Link>
+          </p>
         </section>
       </div>
-    </main>
+    </div>
   );
 }

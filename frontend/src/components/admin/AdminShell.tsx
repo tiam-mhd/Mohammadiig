@@ -6,20 +6,28 @@ import { ReactNode, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 
 const navigation = [
-  { href: '/admin', label: 'نمای کلی', icon: '▦' },
-  { href: '/admin/products', label: 'محصولات', icon: '◈' },
-  { href: '/admin/customers', label: 'مشتریان', icon: '◎' },
-  { href: '/admin/quotations', label: 'پیش‌فاکتورها', icon: '◇' },
-  { href: '/admin/orders', label: 'سفارش‌ها', icon: '▤' },
-  { href: '/admin/projects', label: 'پروژه‌ها', icon: '◆' },
-  { href: '/admin/invoices', label: 'فاکتورها', icon: '▧' },
-  { href: '/admin/payments', label: 'پرداخت‌ها', icon: '₽' },
-  { href: '/admin/services', label: 'خدمات', icon: '＋' },
-  { href: '/admin/attachments', label: 'فایل‌ها', icon: '▧' },
-  { href: '/admin/users', label: 'کاربران', icon: '◎' },
+  { href: '/admin', label: 'نمای کلی' },
+  { href: '/admin/products', label: 'محصولات' },
+  { href: '/admin/customers', label: 'مشتریان' },
+  { href: '/admin/quotations', label: 'پیش‌فاکتورها' },
+  { href: '/admin/orders', label: 'سفارش‌ها' },
+  { href: '/admin/projects', label: 'پروژه‌ها' },
+  { href: '/admin/invoices', label: 'فاکتورها' },
+  { href: '/admin/payments', label: 'پرداخت‌ها' },
+  { href: '/admin/services', label: 'خدمات' },
+  { href: '/admin/attachments', label: 'فایل‌ها' },
+  { href: '/admin/users', label: 'کاربران' },
 ];
 
-export function AdminShell({ children, title, eyebrow }: { children: ReactNode; title: string; eyebrow: string }) {
+export function AdminShell({
+  children,
+  title,
+  eyebrow,
+}: {
+  children: ReactNode;
+  title: string;
+  eyebrow: string;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const { accessToken, user, clearSession } = useAuthStore();
@@ -29,12 +37,107 @@ export function AdminShell({ children, title, eyebrow }: { children: ReactNode; 
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return <main className="flex min-h-screen items-center justify-center bg-[#111210] text-white"><div className="text-center"><span className="eyebrow">MIG / CONTROL ROOM</span><h1 className="mt-4 text-2xl font-black">در حال آماده‌سازی پنل...</h1></div></main>;
+  function isActive(href: string) {
+    if (href === '/admin') return pathname === '/admin';
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
-  if (!accessToken || !['admin', 'salesman'].includes(user?.role ?? '')) return <main className="flex min-h-screen items-center justify-center bg-neutral-950 px-5 text-center"><div><span className="eyebrow">MIG CONTROL ROOM</span><h1 className="mt-5 text-4xl font-black text-white">دسترسی محدود است</h1><p className="mt-4 text-neutral-400">برای ورود به پنل مدیریت با حساب مجاز وارد شوید.</p><Link href="/auth" className="mt-8 inline-block bg-primary-500 px-7 py-4 font-bold text-neutral-950">ورود به حساب</Link></div></main>;
 
-  function logout() { clearSession(); router.push('/auth'); }
+  if (!mounted) {
+    return (
+      <div className="admin-shell flex min-h-svh items-center justify-center px-5">
+        <div className="text-center">
+          <p className="caption-up">پنل مدیریت</p>
+          <h1 className="display-sm mt-4 text-ink">در حال آماده‌سازی…</h1>
+        </div>
+      </div>
+    );
+  }
 
-  return <div className="min-h-screen bg-[#f0eee8] text-neutral-900 dark:bg-[#111210] dark:text-white lg:flex" dir="rtl"><aside className="hidden w-72 shrink-0 border-l border-neutral-200 bg-[#191a18] text-white lg:flex lg:flex-col dark:border-white/10"><div className="border-b border-white/10 px-7 py-7"><Link href="/" className="text-xl font-black tracking-[0.24em] text-primary-500">MIG<span className="mr-2 text-[9px] font-normal tracking-[0.16em] text-neutral-500">CONTROL ROOM</span></Link></div><nav className="flex-1 space-y-1 p-4">{navigation.map((item) => <Link key={item.href} href={item.href} className={`flex items-center gap-4 px-4 py-3 text-sm transition ${pathname === item.href ? 'bg-primary-500 font-bold text-neutral-950' : 'text-neutral-400 hover:bg-white/5 hover:text-white'}`}><span className="text-lg">{item.icon}</span>{item.label}</Link>)}</nav><div className="border-t border-white/10 p-5"><div className="mb-4 text-xs text-neutral-400"><strong className="block text-white">{user?.companyName ?? user?.email}</strong><span className="mt-1 block uppercase tracking-wider">{user?.role}</span></div><button type="button" onClick={logout} className="w-full border border-white/15 px-4 py-3 text-xs font-bold text-neutral-300 transition hover:border-primary-500 hover:text-primary-500">خروج از پنل</button></div></aside><main className="min-w-0 flex-1"><header className="flex items-center justify-between border-b border-neutral-200 bg-[#f0eee8]/90 px-5 py-5 backdrop-blur lg:px-10 dark:border-white/10 dark:bg-[#111210]/90"><div><span className="eyebrow">{eyebrow}</span><h1 className="mt-2 text-2xl font-black sm:text-3xl">{title}</h1></div><Link href="/" className="text-xs font-bold text-primary-600 dark:text-primary-500">مشاهده سایت ↗</Link></header><div className="border-b border-neutral-200 bg-[#191a18] px-5 py-3 lg:hidden dark:border-white/10"><div className="flex gap-2 overflow-x-auto">{navigation.map((item) => <Link key={item.href} href={item.href} className={`shrink-0 px-3 py-2 text-xs ${pathname === item.href ? 'bg-primary-500 text-neutral-950' : 'text-neutral-400'}`}>{item.label}</Link>)}</div></div><div className="p-5 sm:p-8 lg:p-10">{children}</div></main></div>;
+  if (!accessToken || user?.role !== 'admin') {
+    return (
+      <div className="admin-shell flex min-h-svh items-center justify-center px-5 text-center">
+        <div className="max-w-md">
+          <p className="caption-up">پنل مدیریت</p>
+          <h1 className="display-feature mt-4 text-ink">دسترسی محدود است</h1>
+          <p className="body-lead mt-4">
+            فقط حساب‌های Admin به این پنل دسترسی دارند.
+          </p>
+          <Link href="/auth" className="btn-pill mt-10 inline-flex">
+            ورود به حساب
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  function logout() {
+    clearSession();
+    router.push('/auth');
+  }
+
+  return (
+    <div className="admin-shell min-h-svh lg:flex" dir="rtl">
+      <aside className="admin-sidebar hidden w-64 shrink-0 lg:flex lg:flex-col xl:w-72">
+        <div className="border-b border-hairline px-6 py-6">
+          <Link href="/admin" className="block">
+            <span className="en text-lg tracking-[0.2em] text-ink">MIG</span>
+            <span className="mt-1 block font-ui text-[10px] tracking-[0.14em] text-muted">
+              پنل مدیریت
+            </span>
+          </Link>
+        </div>
+
+        <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="منوی پنل">
+          {navigation.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`admin-nav-link ${isActive(item.href) ? 'is-active' : ''}`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="border-t border-hairline p-5">
+          <p className="font-ui text-sm text-ink">{user?.companyName ?? user?.email}</p>
+          <p className="caption-up mt-2 text-white/40">{user?.role}</p>
+          <button type="button" onClick={logout} className="btn-pill mt-5 w-full text-xs">
+            خروج از پنل
+          </button>
+        </div>
+      </aside>
+
+      <div className="min-w-0 flex-1">
+        <header className="flex items-end justify-between gap-4 border-b border-hairline px-5 py-5 sm:px-8 lg:px-10">
+          <div className="text-start">
+            <p className="caption-up">{eyebrow}</p>
+            <h1 className="display-sm mt-2 text-ink sm:mt-3">{title}</h1>
+          </div>
+          <Link
+            href="/"
+            className="caption-up shrink-0 text-white/70 transition-opacity hover:opacity-100"
+          >
+            مشاهده سایت ←
+          </Link>
+        </header>
+
+        <div className="border-b border-hairline px-5 py-3 lg:hidden">
+          <div className="flex gap-2 overflow-x-auto pb-1" aria-label="منوی موبایل پنل">
+            {navigation.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`admin-chip ${isActive(item.href) ? 'is-active' : ''}`}
+              >
+                {item.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="px-5 py-6 sm:px-8 sm:py-8 lg:px-10 lg:py-9">{children}</div>
+      </div>
+    </div>
+  );
 }

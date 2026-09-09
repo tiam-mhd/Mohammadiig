@@ -1,10 +1,108 @@
 'use client';
 
 import { FormEvent, useEffect, useState } from 'react';
+import { Button } from '@/components';
 import { AdminShell } from '@/components/admin/AdminShell';
-import { DataTable } from '@/components/admin/DataTable';
+import { DataRow, DataTable } from '@/components/admin/DataTable';
 import { createAdminService, fetchAdminServices, ServiceAdminSummary } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
-const initialForm = { nameFa: '', nameEn: '', description: '', serviceCategory: 'support', basePrice: 0, unitType: 'fixed' };
-export default function AdminServicesPage() { const token = useAuthStore((state) => state.accessToken); const [services, setServices] = useState<ServiceAdminSummary[]>([]); const [form, setForm] = useState(initialForm); const [open, setOpen] = useState(false); useEffect(() => { if (token) fetchAdminServices(token).then(setServices).catch(() => undefined); }, [token]); async function submit(event: FormEvent) { event.preventDefault(); if (!token) return; const service = await createAdminService(token, form); setServices((items) => [...items, service]); setForm(initialForm); setOpen(false); } return <AdminShell eyebrow="MIG / SERVICE DELIVERY" title="خدمات"><div className="flex justify-end"><button type="button" onClick={() => setOpen((value) => !value)} className="bg-primary-500 px-5 py-3 text-sm font-bold text-neutral-950">{open ? 'بستن فرم' : '＋ خدمت جدید'}</button></div>{open && <form onSubmit={submit} className="mt-6 grid gap-3 border border-neutral-200 bg-white p-5 sm:grid-cols-2 dark:border-white/10 dark:bg-[#1b1d1b]"><h2 className="sm:col-span-2 text-xl font-black">خدمت جدید</h2>{[['nameFa', 'نام فارسی'], ['nameEn', 'نام انگلیسی'], ['description', 'توضیحات']].map(([key, label]) => <input key={key} required placeholder={label} value={form[key as keyof typeof form] as string} onChange={(event) => setForm({ ...form, [key]: event.target.value })} className="border border-neutral-300 bg-transparent px-3 py-3 text-sm dark:border-white/20" />)}<input required type="number" min="0" placeholder="قیمت پایه" value={form.basePrice} onChange={(event) => setForm({ ...form, basePrice: Number(event.target.value) })} className="border border-neutral-300 bg-transparent px-3 py-3 text-sm dark:border-white/20" /><button className="bg-neutral-900 px-4 py-3 text-sm font-bold text-white">ذخیره خدمت</button></form>}<div className="mt-8"><DataTable headers={['خدمت', 'دسته‌بندی', 'قیمت پایه', 'واحد', 'وضعیت']}><div>{services.map((service) => <div key={service.id} className="grid gap-3 border-b border-neutral-200 p-5 last:border-0 sm:grid-cols-5 sm:items-center dark:border-white/10"><strong>{service.nameFa}</strong><span className="text-xs text-neutral-500">{service.serviceCategory}</span><span className="text-sm text-primary-600 dark:text-primary-500">{service.basePrice.toLocaleString('fa-IR')} ریال</span><span className="text-xs text-neutral-500">{service.unitType}</span><span className={service.isActive ? 'text-xs text-green-600' : 'text-xs text-red-600'}>{service.isActive ? 'فعال' : 'غیرفعال'}</span></div>)}</div></DataTable></div></AdminShell>; }
+const initialForm = {
+  nameFa: '',
+  nameEn: '',
+  description: '',
+  serviceCategory: 'support',
+  basePrice: 0,
+  unitType: 'fixed',
+};
+
+export default function AdminServicesPage() {
+  const token = useAuthStore((state) => state.accessToken);
+  const [services, setServices] = useState<ServiceAdminSummary[]>([]);
+  const [form, setForm] = useState(initialForm);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (token) fetchAdminServices(token).then(setServices).catch(() => undefined);
+  }, [token]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (!token) return;
+    const service = await createAdminService(token, form);
+    setServices((items) => [...items, service]);
+    setForm(initialForm);
+    setOpen(false);
+  }
+
+  return (
+    <AdminShell eyebrow="خدمات" title="خدمات">
+      <div className="flex justify-end">
+        <Button onClick={() => setOpen((value) => !value)} className="w-fit">
+          {open ? 'بستن فرم' : 'خدمت جدید'}
+        </Button>
+      </div>
+
+      {open ? (
+        <form
+          onSubmit={submit}
+          className="mt-8 grid gap-5 border-y border-hairline py-8 sm:grid-cols-2"
+        >
+          <h2 className="display-sm sm:col-span-2 text-ink">خدمت جدید</h2>
+          {(
+            [
+              ['nameFa', 'نام فارسی'],
+              ['nameEn', 'نام انگلیسی'],
+              ['description', 'توضیحات'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="block text-start">
+              <span className="caption-up">{label}</span>
+              <input
+                required
+                value={form[key]}
+                onChange={(event) => setForm({ ...form, [key]: event.target.value })}
+                className="field-input mt-2"
+                dir={key === 'nameEn' ? 'ltr' : 'rtl'}
+              />
+            </label>
+          ))}
+          <label className="block text-start">
+            <span className="caption-up">قیمت پایه</span>
+            <input
+              required
+              type="number"
+              min={0}
+              value={form.basePrice}
+              onChange={(event) => setForm({ ...form, basePrice: Number(event.target.value) })}
+              className="field-input mt-2"
+              dir="ltr"
+            />
+          </label>
+          <div className="flex items-end sm:col-span-2">
+            <Button type="submit">ذخیره خدمت</Button>
+          </div>
+        </form>
+      ) : null}
+
+      <div className="mt-8">
+        <DataTable headers={['خدمت', 'دسته‌بندی', 'قیمت پایه', 'واحد', 'وضعیت']}>
+          {services.map((service) => (
+            <DataRow key={service.id} className="text-start">
+              <strong className="font-normal text-ink">{service.nameFa}</strong>
+              <span className="text-xs text-muted">{service.serviceCategory}</span>
+              <span className="text-ink">{service.basePrice.toLocaleString('fa-IR')} ریال</span>
+              <span className="text-xs text-muted">{service.unitType}</span>
+              <span className={`admin-badge w-fit ${service.isActive ? 'admin-badge--ok' : ''}`}>
+                {service.isActive ? 'فعال' : 'غیرفعال'}
+              </span>
+            </DataRow>
+          ))}
+          {services.length === 0 ? (
+            <p className="py-14 text-center font-ui text-sm text-muted">خدمتی ثبت نشده است.</p>
+          ) : null}
+        </DataTable>
+      </div>
+    </AdminShell>
+  );
+}
