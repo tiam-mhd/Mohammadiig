@@ -11,7 +11,7 @@ type AuthMode = 'login' | 'register';
 
 export default function AuthPage() {
   const router = useRouter();
-  const { accessToken, user, setSession } = useAuthStore();
+  const { accessToken, user, setSession, clearSession } = useAuthStore();
   const [mode, setMode] = useState<AuthMode>('login');
   const [form, setForm] = useState({
     email: '',
@@ -26,8 +26,11 @@ export default function AuthPage() {
 
   useEffect(() => {
     if (!accessToken || !user) return;
-    const target = user.role === 'admin' ? '/admin' : '/account';
-    router.replace(target);
+    if (user.role === 'admin') {
+      router.replace('/admin');
+      return;
+    }
+    router.replace('/account');
   }, [accessToken, user, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -36,9 +39,15 @@ export default function AuthPage() {
     setIsSubmitting(true);
     try {
       const response = mode === 'login' ? await login(form.email, form.password) : await register(form);
+
+      if (response.user.role === 'admin') {
+        clearSession();
+        setError('حساب مدیریت از این صفحه وارد نمی‌شود. لطفاً از ورود ادمین استفاده کنید.');
+        return;
+      }
+
       setSession(response.accessToken, response.user);
-      const nextRoute = response.user.role === 'admin' ? '/admin' : '/account';
-      router.replace(nextRoute);
+      router.replace('/account');
     } catch (submissionError) {
       setError(submissionError instanceof Error ? submissionError.message : 'خطایی رخ داد.');
     } finally {
@@ -53,7 +62,7 @@ export default function AuthPage() {
           <p className="caption-up">حساب کاربری</p>
           <h1 className="display-feature mt-5 max-w-md text-ink">ورود به پنل مشتریان</h1>
           <p className="body-lead mt-6 max-w-md">
-            درخواست قیمت، پیگیری پروژه و دسترسی به حساب سازمانی از اینجا انجام می‌شود.
+            درخواست قیمت و دسترسی به حساب سازمانی از اینجا انجام می‌شود.
           </p>
           <p className="caption-up mt-14 border-t border-hairline pt-6 text-white/45">
             MIG · گروه صنعتی محمدی
@@ -182,7 +191,16 @@ export default function AuthPage() {
               />
             </label>
 
-            {error ? <p className="field-message field-message--error">{error}</p> : null}
+            {error ? (
+              <div className="space-y-3">
+                <p className="field-message field-message--error">{error}</p>
+                {error.includes('مدیریت') ? (
+                  <Link href="/admin/login" className="caption-up inline-block text-[#c3d9f3]">
+                    رفتن به ورود ادمین ←
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
 
             <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full sm:w-auto">
               {mode === 'login' ? 'ورود به حساب' : 'ثبت‌نام و ادامه'}

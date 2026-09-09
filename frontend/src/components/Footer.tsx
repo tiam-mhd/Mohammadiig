@@ -9,7 +9,8 @@ import Link from 'next/link';
 
 const explore = [
   { href: '/products', label: 'محصولات' },
-  { href: '/projects', label: 'پروژه‌ها' },
+  { href: '/portfolio', label: 'نمونه‌کارها' },
+  { href: '/projects', label: 'بهره‌برداری' },
   { href: '/services', label: 'خدمات' },
   { href: '/spare-parts', label: 'قطعات یدکی' },
 ];
@@ -17,7 +18,7 @@ const explore = [
 const company = [
   { href: '/quote-request', label: 'درخواست قیمت' },
   { href: '/auth', label: 'پنل مشتریان' },
-  { href: '/quote-request', label: 'مشاوره پروژه' },
+  { href: '/quote-request', label: 'مشاوره همکاری' },
 ];
 
 const legal = [

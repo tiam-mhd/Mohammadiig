@@ -1,54 +1,58 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { DataRow, DataTable } from '@/components/admin/DataTable';
+import { useCallback } from 'react';
+import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
+import { formatMoney, labelOf, PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/admin-labels';
 import { fetchAdminPayments, PaymentAdminSummary, updatePaymentStatus } from '@/lib/api-client';
-import { useAuthStore } from '@/store/auth.store';
 
-const statuses = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
+const statusOptions = Object.entries(PAYMENT_STATUS)
+  .filter(([value]) => ['pending', 'processing', 'completed', 'failed', 'cancelled'].includes(value))
+  .map(([value, label]) => ({ value, label }));
 
 export default function AdminPaymentsPage() {
-  const token = useAuthStore((state) => state.accessToken);
-  const [payments, setPayments] = useState<PaymentAdminSummary[]>([]);
-
-  useEffect(() => {
-    if (token) fetchAdminPayments(token).then(setPayments).catch(() => undefined);
-  }, [token]);
-
-  async function change(id: string, status: string) {
-    if (!token) return;
-    const updated = await updatePaymentStatus(token, id, status);
-    setPayments((items) => items.map((item) => (item.id === id ? updated : item)));
-  }
+  const searchText = useCallback(
+    (item: PaymentAdminSummary) =>
+      `${item.invoiceId} ${item.paymentMethod} ${item.paymentStatus} ${item.transactionId ?? ''} ${PAYMENT_STATUS[item.paymentStatus] ?? ''}`,
+    [],
+  );
 
   return (
-    <AdminShell eyebrow="مالی" title="پرداخت‌ها">
-      <DataTable headers={['فاکتور', 'مبلغ', 'روش پرداخت', 'تراکنش', 'وضعیت']}>
-        {payments.map((payment) => (
-          <DataRow key={payment.id} className="text-start">
-            <strong className="font-normal text-ink">{payment.invoiceId.slice(0, 8)}…</strong>
-            <span className="text-ink">{payment.amount.toLocaleString('fa-IR')} ریال</span>
-            <span className="text-xs text-muted">{payment.paymentMethod}</span>
-            <span className="text-xs text-muted">{payment.transactionId ?? 'بدون شناسه'}</span>
-            <select
-              value={payment.paymentStatus}
-              onChange={(event) => change(payment.id, event.target.value)}
-              className="admin-select"
-              aria-label={`وضعیت پرداخت ${payment.id.slice(0, 8)}`}
-            >
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </DataRow>
-        ))}
-        {payments.length === 0 ? (
-          <p className="py-14 text-center font-ui text-sm text-muted">پرداختی ثبت نشده است.</p>
-        ) : null}
-      </DataTable>
-    </AdminShell>
+    <AdminStatusResourcePage
+      eyebrow="مالی"
+      title="پرداخت‌ها"
+      resourceLabel="پرداخت"
+      headers={['فاکتور', 'مبلغ', 'روش پرداخت', 'پیگیری']}
+      columns={[
+        {
+          header: 'فاکتور',
+          cell: (item) => (
+            <span className="text-xs" dir="ltr">
+              {item.invoiceId.slice(0, 10)}…
+            </span>
+          ),
+        },
+        { header: 'مبلغ', cell: (item) => formatMoney(item.amount) },
+        {
+          header: 'روش',
+          cell: (item) => labelOf(PAYMENT_METHOD, item.paymentMethod, item.paymentMethod),
+        },
+        {
+          header: 'پیگیری',
+          cell: (item) => (
+            <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
+              {item.transactionId ?? '—'}
+            </span>
+          ),
+        },
+      ]}
+      statusMap={PAYMENT_STATUS}
+      statusOptions={statusOptions}
+      getStatus={(item) => item.paymentStatus}
+      searchText={searchText}
+      fetchItems={fetchAdminPayments}
+      updateStatus={updatePaymentStatus}
+      cancelStatus="cancelled"
+      addHint="پرداخت از پنل مشتری روی فاکتور ثبت می‌شود. تأیید یا رد پرداخت را از این فهرست انجام دهید."
+    />
   );
 }

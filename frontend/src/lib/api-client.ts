@@ -54,19 +54,113 @@ export interface QuotationSummary {
 
 export interface OrderSummary { id: string; orderNumber: string; totalAmount: number; status: string; paymentStatus: string; }
 export interface InvoiceSummary { id: string; invoiceNumber: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; currency: string; }
-export interface ServiceSummary { id: string; nameFa: string; description: string; serviceCategory: string; basePrice: number; unitType: string; }
-export interface ProjectSummary { id: string; projectCode: string; projectName: string; description: string; status: string; city: string | null; startDate: string; expectedCompletionDate: string; budgetTotal: number; }
+export interface ServiceSummary {
+  id: string;
+  nameFa: string;
+  description: string;
+  serviceCategory: string;
+  basePrice: number | null;
+  unitType: string;
+}
+
+export interface OpsProject {
+  id: string;
+  projectCode: string;
+  projectName: string;
+  nameEn: string | null;
+  slug: string | null;
+  description: string;
+  summaryFa: string | null;
+  clientDisplayName: string | null;
+  projectType: string;
+  country: string | null;
+  province: string | null;
+  city: string | null;
+  locationDetail: string | null;
+  startDate: string | null;
+  expectedCompletionDate: string | null;
+  completionDate: string | null;
+  budgetTotal: number;
+  migInvestmentPercentage: number;
+  profitSharingPercentage: number;
+  status: string;
+  coverImageUrl: string | null;
+  gallery: string[];
+  highlights: string[];
+  isPublished: boolean;
+}
+
+export interface PortfolioWork {
+  id: string;
+  slug: string;
+  titleFa: string;
+  titleEn: string;
+  summaryFa: string;
+  descriptionFa: string;
+  clientName: string | null;
+  workCategory: string;
+  country: string | null;
+  province: string | null;
+  city: string | null;
+  locationDetail: string | null;
+  startDate: string | null;
+  endDate: string | null;
+  coverImageUrl: string | null;
+  gallery: string[];
+  highlights: string[];
+  areaOrCapacity: string | null;
+  isPublished: boolean;
+  isFeatured: boolean;
+  displayOrder: number;
+}
+
+/** @deprecated use OpsProject — kept temporarily for type migrations */
+export type ProjectSummary = OpsProject;
+export type ProjectAdminSummary = OpsProject;
 export interface ProductVariant { id: string; productId: string; skuVariant: string; variantNameFa: string; variantCode: string | null; priceBase: number | null; priceAdjustment: number; currency: string; stockQuantity: number; }
 export interface ProductSpecification { id: string; productId: string; specificationKey: string; specificationValue: string; unit: string | null; specCategory: string; displayOrder: number; }
-export interface SparePart { id: string; partNumber: string; nameFa: string; description: string; compatibleProducts: string[]; price: number; currency: string; stockQuantity: number; warrantyMonths: number; imageUrl: string | null; }
+export interface SparePart {
+  id: string;
+  partNumber: string;
+  nameFa: string;
+  nameEn?: string;
+  description: string;
+  category: string;
+  compatibleProducts: string[];
+  price: number;
+  currency: string;
+  stockQuantity: number;
+  reorderLevel?: number;
+  warrantyMonths: number;
+  imageUrl: string | null;
+  isActive?: boolean;
+}
+
+export interface SparePartCategory {
+  id: string;
+  nameEn: string;
+  nameFa: string;
+  slug: string;
+  descriptionFa: string;
+  displayOrder: number;
+  isActive: boolean;
+}
 export interface ProjectPhaseSummary { id: string; phaseNumber: number; phaseNameFa: string; description: string; startDate: string; endDate: string; status: string; }
 export interface CustomerAdminSummary { id: string; companyName: string; contactPerson: string | null; phone: string | null; country: string | null; isVerified: boolean; paymentTerms: string; createdAt: string; }
 export interface QuotationAdminSummary { id: string; quotationNumber: string; customerId: string; totalAmount: number; status: string; validUntil: string; }
 export interface OrderAdminSummary { id: string; orderNumber: string; customerId: string; totalAmount: number; status: string; paymentStatus: string; createdAt: string; }
-export interface ProjectAdminSummary { id: string; projectCode: string; projectName: string; customerId: string; status: string; budgetTotal: number; startDate: string; expectedCompletionDate: string; }
 export interface InvoiceAdminSummary { id: string; invoiceNumber: string; customerId: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; dueDate: string; }
 export interface PaymentAdminSummary { id: string; invoiceId: string; orderId: string | null; amount: number; paymentMethod: string; paymentStatus: string; transactionId: string | null; }
-export interface ServiceAdminSummary { id: string; nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice: number; unitType: string; isActive: boolean; }
+export interface ServiceAdminSummary {
+  id: string;
+  nameFa: string;
+  nameEn: string;
+  description: string;
+  serviceCategory: string;
+  basePrice: number | null;
+  unitType: string;
+  isActive: boolean;
+}
 export interface AttachmentAdminSummary { id: string; ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize: number | null; fileType: string | null; uploadedBy: string; uploadedAt: string; }
 export interface UserAdminSummary { id: string; email: string; firstName: string | null; lastName: string | null; companyName: string | null; role: string; isActive: boolean; lastLoginAt: string | null; createdAt: string; }
 
@@ -105,6 +199,102 @@ export async function fetchCategories(): Promise<ProductCategory[]> {
   const response = await fetch(`${API_URL}/categories`, { cache: 'no-store' });
   if (!response.ok) throw new Error(`Categories request failed with status ${response.status}`);
   return response.json() as Promise<ProductCategory[]>;
+}
+
+export function fetchAdminCategories(accessToken: string): Promise<ProductCategory[]> {
+  return adminRequest(accessToken, '/categories/admin/all');
+}
+
+export function createAdminCategory(
+  accessToken: string,
+  payload: {
+    nameFa: string;
+    nameEn: string;
+    slug: string;
+    descriptionFa: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  },
+): Promise<ProductCategory> {
+  return adminRequest(accessToken, '/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminCategory(
+  accessToken: string,
+  id: string,
+  payload: {
+    nameFa: string;
+    nameEn: string;
+    slug: string;
+    descriptionFa: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  },
+): Promise<ProductCategory> {
+  return adminRequest(accessToken, `/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminCategory(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/categories/${id}`, { method: 'DELETE' });
+}
+
+export async function fetchSparePartCategories(): Promise<SparePartCategory[]> {
+  const response = await fetch(`${API_URL}/spare-part-categories`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت دسته‌بندی قطعات انجام نشد.');
+  return response.json() as Promise<SparePartCategory[]>;
+}
+
+export function fetchAdminSparePartCategories(accessToken: string): Promise<SparePartCategory[]> {
+  return adminRequest(accessToken, '/spare-part-categories/admin/all');
+}
+
+export function createAdminSparePartCategory(
+  accessToken: string,
+  payload: {
+    nameFa: string;
+    nameEn: string;
+    slug: string;
+    descriptionFa: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  },
+): Promise<SparePartCategory> {
+  return adminRequest(accessToken, '/spare-part-categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminSparePartCategory(
+  accessToken: string,
+  id: string,
+  payload: {
+    nameFa: string;
+    nameEn: string;
+    slug: string;
+    descriptionFa: string;
+    displayOrder?: number;
+    isActive?: boolean;
+  },
+): Promise<SparePartCategory> {
+  return adminRequest(accessToken, `/spare-part-categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminSparePartCategory(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/spare-part-categories/${id}`, { method: 'DELETE' });
 }
 
 export async function login(email: string, password: string): Promise<AuthResponse> {
@@ -169,16 +359,85 @@ export async function fetchSpareParts(): Promise<SparePart[]> {
   return response.json() as Promise<SparePart[]>;
 }
 
-export async function fetchMyProjects(accessToken: string): Promise<ProjectSummary[]> {
-  const response = await fetch(`${API_URL}/projects/mine`, { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }, cache: 'no-store' });
-  if (!response.ok) throw new Error('دریافت پروژه‌ها انجام نشد.');
-  return response.json() as Promise<ProjectSummary[]>;
+export function fetchAdminSpareParts(accessToken: string): Promise<SparePart[]> {
+  return adminRequest(accessToken, '/spare-parts/admin/all');
 }
 
-export async function fetchProjectPhases(accessToken: string, projectId: string): Promise<ProjectPhaseSummary[]> {
-  const response = await fetch(`${API_URL}/projects/${projectId}/phases`, { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }, cache: 'no-store' });
-  if (!response.ok) throw new Error('دریافت مراحل پروژه انجام نشد.');
-  return response.json() as Promise<ProjectPhaseSummary[]>;
+export function createAdminSparePart(
+  accessToken: string,
+  payload: {
+    partNumber: string;
+    nameFa: string;
+    nameEn: string;
+    description: string;
+    category: string;
+    compatibleProducts?: string[];
+    price: number;
+    stockQuantity?: number;
+    reorderLevel?: number;
+    imageUrl?: string;
+    warrantyMonths?: number;
+    isActive?: boolean;
+  },
+): Promise<SparePart> {
+  return adminRequest(accessToken, '/spare-parts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminSparePart(
+  accessToken: string,
+  id: string,
+  payload: {
+    partNumber: string;
+    nameFa: string;
+    nameEn: string;
+    description: string;
+    category: string;
+    compatibleProducts?: string[];
+    price: number;
+    stockQuantity?: number;
+    reorderLevel?: number;
+    imageUrl?: string;
+    warrantyMonths?: number;
+    isActive?: boolean;
+  },
+): Promise<SparePart> {
+  return adminRequest(accessToken, `/spare-parts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminSparePart(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/spare-parts/${id}`, { method: 'DELETE' });
+}
+
+export async function fetchPublishedProjects(): Promise<OpsProject[]> {
+  const response = await fetch(`${API_URL}/projects`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت پروژه‌ها انجام نشد.');
+  return response.json() as Promise<OpsProject[]>;
+}
+
+export async function fetchPublishedProject(slug: string): Promise<OpsProject> {
+  const response = await fetch(`${API_URL}/projects/${slug}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت پروژه انجام نشد.');
+  return response.json() as Promise<OpsProject>;
+}
+
+export async function fetchPortfolioWorks(): Promise<PortfolioWork[]> {
+  const response = await fetch(`${API_URL}/portfolio`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت نمونه‌کارها انجام نشد.');
+  return response.json() as Promise<PortfolioWork[]>;
+}
+
+export async function fetchPortfolioWork(slug: string): Promise<PortfolioWork> {
+  const response = await fetch(`${API_URL}/portfolio/${slug}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت نمونه‌کار انجام نشد.');
+  return response.json() as Promise<PortfolioWork>;
 }
 
 export async function createProduct(accessToken: string, payload: { nameFa: string; nameEn: string; slug: string; descriptionShortFa: string; sku: string; category: string; priceBase: number; thumbnailImageUrl?: string }): Promise<Product> {
@@ -187,31 +446,122 @@ export async function createProduct(accessToken: string, payload: { nameFa: stri
   return response.json() as Promise<Product>;
 }
 
+export async function updateProduct(accessToken: string, productId: string, payload: { nameFa: string; nameEn: string; slug: string; descriptionShortFa: string; sku: string; category: string; priceBase: number; thumbnailImageUrl?: string }): Promise<Product> {
+  const response = await fetch(`${API_URL}/products/${productId}`, { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
+  if (!response.ok) throw new Error('ویرایش محصول انجام نشد.');
+  return response.json() as Promise<Product>;
+}
+
 export async function deleteProduct(accessToken: string, productId: string): Promise<void> {
   const response = await fetch(`${API_URL}/products/${productId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
   if (!response.ok) throw new Error('حذف محصول انجام نشد.');
 }
 
+export async function fetchAdminProducts(): Promise<ProductListResponse> {
+  const response = await fetch(`${API_URL}/products?limit=50`, {
+    headers: { Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('دریافت محصولات انجام نشد.');
+  return response.json() as Promise<ProductListResponse>;
+}
+
 async function adminRequest<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_URL}${path}`, { ...init, headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', ...(init?.headers ?? {}) }, cache: 'no-store' });
   if (!response.ok) throw new Error('عملیات پنل مدیریت انجام نشد.');
-  return response.json() as Promise<T>;
+  if (response.status === 204) return undefined as T;
+  const text = await response.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export function fetchAdminCustomers(accessToken: string): Promise<CustomerAdminSummary[]> { return adminRequest(accessToken, '/customers/admin/all'); }
+export function updateCustomerVerified(accessToken: string, id: string, isVerified: boolean): Promise<CustomerAdminSummary> { return adminRequest(accessToken, `/customers/admin/${id}/verify`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isVerified }) }); }
+export async function deleteAdminCustomer(accessToken: string, id: string): Promise<void> { await adminRequest(accessToken, `/customers/admin/${id}`, { method: 'DELETE' }); }
 export function fetchAdminQuotations(accessToken: string): Promise<QuotationAdminSummary[]> { return adminRequest(accessToken, '/quotations/admin/all'); }
 export function fetchAdminOrders(accessToken: string): Promise<OrderAdminSummary[]> { return adminRequest(accessToken, '/orders/admin/all'); }
 export function updateQuotationStatus(accessToken: string, id: string, status: string): Promise<QuotationAdminSummary> { return adminRequest(accessToken, `/quotations/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function updateOrderStatus(accessToken: string, id: string, status: string): Promise<OrderAdminSummary> { return adminRequest(accessToken, `/orders/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
-export function fetchAdminProjects(accessToken: string): Promise<ProjectAdminSummary[]> { return adminRequest(accessToken, '/projects/admin/all'); }
-export function updateProjectStatus(accessToken: string, id: string, status: string): Promise<ProjectAdminSummary> { return adminRequest(accessToken, `/projects/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
+export function fetchAdminProjects(accessToken: string): Promise<OpsProject[]> {
+  return adminRequest(accessToken, '/projects/admin/all');
+}
+
+export function createAdminProject(
+  accessToken: string,
+  payload: Record<string, unknown>,
+): Promise<OpsProject> {
+  return adminRequest(accessToken, '/projects', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminProject(
+  accessToken: string,
+  id: string,
+  payload: Record<string, unknown>,
+): Promise<OpsProject> {
+  return adminRequest(accessToken, `/projects/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminProject(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/projects/${id}`, { method: 'DELETE' });
+}
+
+export function updateProjectStatus(accessToken: string, id: string, status: string): Promise<OpsProject> {
+  return adminRequest(accessToken, `/projects/${id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status }),
+  });
+}
+
+export function fetchAdminPortfolio(accessToken: string): Promise<PortfolioWork[]> {
+  return adminRequest(accessToken, '/portfolio/admin/all');
+}
+
+export function createAdminPortfolio(
+  accessToken: string,
+  payload: Record<string, unknown>,
+): Promise<PortfolioWork> {
+  return adminRequest(accessToken, '/portfolio', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateAdminPortfolio(
+  accessToken: string,
+  id: string,
+  payload: Record<string, unknown>,
+): Promise<PortfolioWork> {
+  return adminRequest(accessToken, `/portfolio/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteAdminPortfolio(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/portfolio/${id}`, { method: 'DELETE' });
+}
+
 export function fetchAdminInvoices(accessToken: string): Promise<InvoiceAdminSummary[]> { return adminRequest(accessToken, '/invoices/admin/all'); }
 export function updateInvoiceStatus(accessToken: string, id: string, status: string): Promise<InvoiceAdminSummary> { return adminRequest(accessToken, `/invoices/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminPayments(accessToken: string): Promise<PaymentAdminSummary[]> { return adminRequest(accessToken, '/payments/admin/all'); }
 export function updatePaymentStatus(accessToken: string, id: string, status: string): Promise<PaymentAdminSummary> { return adminRequest(accessToken, `/payments/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminServices(accessToken: string): Promise<ServiceAdminSummary[]> { return adminRequest(accessToken, '/services/admin/all'); }
-export function createAdminService(accessToken: string, payload: { nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice: number; unitType: string }): Promise<ServiceAdminSummary> { return adminRequest(accessToken, '/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
+export function createAdminService(accessToken: string, payload: { nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice?: number | null; unitType: string; isActive?: boolean }): Promise<ServiceAdminSummary> { return adminRequest(accessToken, '/services', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
+export function updateAdminService(accessToken: string, id: string, payload: Partial<{ nameFa: string; nameEn: string; description: string; serviceCategory: string; basePrice: number | null; unitType: string; isActive: boolean }>): Promise<ServiceAdminSummary> { return adminRequest(accessToken, `/services/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
 export function fetchAdminAttachments(accessToken: string): Promise<AttachmentAdminSummary[]> { return adminRequest(accessToken, '/attachments/admin/all'); }
+export function createAdminAttachment(accessToken: string, payload: { ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize?: number; fileType?: string }): Promise<AttachmentAdminSummary> { return adminRequest(accessToken, '/attachments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
+export async function deleteAdminAttachment(accessToken: string, id: string): Promise<void> { await adminRequest(accessToken, `/attachments/admin/${id}`, { method: 'DELETE' }); }
 export function fetchAdminUsers(accessToken: string): Promise<UserAdminSummary[]> { return adminRequest(accessToken, '/users/admin/all'); }
 export function updateUserRole(accessToken: string, id: string, role: string): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/role`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }); }
 export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }

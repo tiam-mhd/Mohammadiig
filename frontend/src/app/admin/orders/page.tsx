@@ -1,54 +1,52 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { DataRow, DataTable } from '@/components/admin/DataTable';
+import { useCallback } from 'react';
+import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
+import { formatMoney, ORDER_STATUS, PAYMENT_STATUS, labelOf } from '@/lib/admin-labels';
 import { fetchAdminOrders, OrderAdminSummary, updateOrderStatus } from '@/lib/api-client';
-import { useAuthStore } from '@/store/auth.store';
 
-const statuses = ['pending', 'processing', 'manufactured', 'shipped', 'delivered', 'cancelled'];
+const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({ value, label }));
 
 export default function AdminOrdersPage() {
-  const token = useAuthStore((state) => state.accessToken);
-  const [orders, setOrders] = useState<OrderAdminSummary[]>([]);
-
-  useEffect(() => {
-    if (token) fetchAdminOrders(token).then(setOrders).catch(() => undefined);
-  }, [token]);
-
-  async function changeStatus(id: string, status: string) {
-    if (!token) return;
-    const updated = await updateOrderStatus(token, id, status);
-    setOrders((current) => current.map((item) => (item.id === id ? updated : item)));
-  }
+  const searchText = useCallback(
+    (item: OrderAdminSummary) =>
+      `${item.orderNumber} ${item.customerId} ${item.status} ${item.paymentStatus} ${ORDER_STATUS[item.status] ?? ''}`,
+    [],
+  );
 
   return (
-    <AdminShell eyebrow="عملیات" title="سفارش‌ها">
-      <DataTable headers={['شماره سفارش', 'مشتری', 'مبلغ', 'پرداخت', 'وضعیت']}>
-        {orders.map((order) => (
-          <DataRow key={order.id} className="text-start">
-            <strong className="font-normal text-ink">{order.orderNumber}</strong>
-            <span className="text-xs text-muted">{order.customerId.slice(0, 8)}…</span>
-            <span className="text-ink">{order.totalAmount.toLocaleString('fa-IR')} ریال</span>
-            <span className="text-xs text-muted">{order.paymentStatus}</span>
-            <select
-              value={order.status}
-              onChange={(event) => changeStatus(order.id, event.target.value)}
-              className="admin-select"
-              aria-label={`وضعیت ${order.orderNumber}`}
-            >
-              {statuses.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </DataRow>
-        ))}
-        {orders.length === 0 ? (
-          <p className="py-14 text-center font-ui text-sm text-muted">سفارشی ثبت نشده است.</p>
-        ) : null}
-      </DataTable>
-    </AdminShell>
+    <AdminStatusResourcePage
+      eyebrow="عملیات"
+      title="سفارش‌ها"
+      resourceLabel="سفارش"
+      headers={['شماره سفارش', 'شناسه مشتری', 'مبلغ', 'وضعیت پرداخت']}
+      columns={[
+        {
+          header: 'شماره',
+          cell: (item) => <strong className="font-medium text-[var(--ops-ink)]">{item.orderNumber}</strong>,
+        },
+        {
+          header: 'مشتری',
+          cell: (item) => (
+            <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
+              {item.customerId.slice(0, 10)}…
+            </span>
+          ),
+        },
+        { header: 'مبلغ', cell: (item) => formatMoney(item.totalAmount) },
+        {
+          header: 'پرداخت',
+          cell: (item) => labelOf(PAYMENT_STATUS, item.paymentStatus),
+        },
+      ]}
+      statusMap={ORDER_STATUS}
+      statusOptions={statusOptions}
+      getStatus={(item) => item.status}
+      searchText={searchText}
+      fetchItems={fetchAdminOrders}
+      updateStatus={updateOrderStatus}
+      cancelStatus="cancelled"
+      addHint="سفارش جدید معمولاً با تأیید پیش‌فاکتور توسط مشتری ساخته می‌شود. وضعیت تولید و ارسال را از همین صفحه به‌روز کنید."
+    />
   );
 }

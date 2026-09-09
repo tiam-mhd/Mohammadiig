@@ -11,6 +11,7 @@ import { OrdersModule } from './orders/orders.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ProjectsModule } from './projects/projects.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
 import { ServicesModule } from './services/services.module';
 import { AttachmentsModule } from './attachments/attachments.module';
 import { UsersModule } from './users/users.module';
@@ -27,6 +28,7 @@ import { UsersModule } from './users/users.module';
     InvoicesModule,
     PaymentsModule,
     ProjectsModule,
+    PortfolioModule,
     ServicesModule,
     AttachmentsModule,
     UsersModule,

@@ -60,7 +60,12 @@ export function ProductsCatalog() {
   }, []);
 
   const visibleProducts = selectedCategory
-    ? products.filter((product) => product.category.toLowerCase() === selectedCategory)
+    ? products.filter((product) => {
+        const selected = categories.find((category) => category.id === selectedCategory);
+        if (!selected) return product.category.toLowerCase() === selectedCategory;
+        const needles = [selected.id, selected.slug, selected.nameEn, selected.nameEn.toUpperCase()];
+        return needles.some((needle) => needle.toLowerCase() === product.category.toLowerCase());
+      })
     : products;
 
   return (
@@ -85,7 +90,7 @@ export function ProductsCatalog() {
               همه محصولات
             </option>
             {categories.map((category) => (
-              <option key={category.id} value={category.nameEn.toLowerCase()} className="bg-canvas text-ink">
+              <option key={category.id} value={category.id} className="bg-canvas text-ink">
                 {category.nameFa}
               </option>
             ))}

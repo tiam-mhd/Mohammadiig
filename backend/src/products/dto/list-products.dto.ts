@@ -10,12 +10,12 @@ export class ListProductsDto {
   @Min(1)
   page = 1;
 
-  @ApiPropertyOptional({ minimum: 1, maximum: 50, default: 12 })
+  @ApiPropertyOptional({ minimum: 1, maximum: 100, default: 12 })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(100)
   limit = 12;
 
   @ApiPropertyOptional()

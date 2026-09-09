@@ -10,7 +10,7 @@ const fallbackServices: ServiceSummary[] = [
     nameFa: 'نصب و راه‌اندازی',
     description: 'نصب تخصصی دستگاه و آماده‌سازی سالن برای بهره‌برداری.',
     serviceCategory: 'نصب',
-    basePrice: 0,
+    basePrice: null,
     unitType: 'ثابت',
   },
   {
@@ -18,7 +18,7 @@ const fallbackServices: ServiceSummary[] = [
     nameFa: 'آموزش اپراتور',
     description: 'آموزش تیم شما برای استفاده ایمن و درست از دستگاه‌ها.',
     serviceCategory: 'آموزش',
-    basePrice: 0,
+    basePrice: null,
     unitType: 'روزانه',
   },
   {
@@ -26,7 +26,7 @@ const fallbackServices: ServiceSummary[] = [
     nameFa: 'پشتیبانی و نگهداری',
     description: 'پشتیبانی فنی و تأمین قطعه تا دستگاه‌ها خواب نمانند.',
     serviceCategory: 'پشتیبانی',
-    basePrice: 0,
+    basePrice: null,
     unitType: 'بازدید',
   },
 ];
@@ -65,6 +65,9 @@ export default function ServicesPage() {
               <p className="body-lead mt-4 text-sm">{service.description}</p>
               <p className="caption-up mt-8 border-t border-hairline pt-4">
                 {service.serviceCategory} · {service.unitType}
+                {service.basePrice != null && service.basePrice > 0
+                  ? ` · از ${service.basePrice.toLocaleString('fa-IR')} ریال`
+                  : ''}
               </p>
             </article>
           ))}

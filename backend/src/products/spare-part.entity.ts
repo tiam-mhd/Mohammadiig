@@ -6,6 +6,7 @@ export class SparePartEntity {
   @Column({ name: 'part_number', type: 'varchar', length: 50, unique: true }) partNumber!: string;
   @Column({ name: 'name_en', type: 'varchar', length: 150 }) nameEn!: string;
   @Column({ name: 'name_fa', type: 'varchar', length: 150 }) nameFa!: string;
+  @Column({ type: 'varchar', length: 100, default: '' }) category!: string;
   @Column({ type: 'text' }) description!: string;
   @Column({ name: 'compatible_products', type: 'simple-json', default: '[]' }) compatibleProducts!: string[];
   @Column({ type: 'integer' }) price!: number;

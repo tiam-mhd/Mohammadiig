@@ -1,26 +1,76 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Length } from 'class-validator';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ProjectsService } from './projects.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { ManageOpsProjectDto } from './dto/manage-ops-project.dto';
+import { ProjectEntity } from './project.entity';
+import { ProjectsService } from './projects.service';
 
-class CreateProjectDto { @IsString() @IsNotEmpty() @Length(2, 200) projectName!: string; @IsString() @IsNotEmpty() @Length(10, 2000) description!: string; }
 type AuthenticatedRequest = Request & { user: AuthUser };
 
 @ApiTags('projects')
-@ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
 @Controller('projects')
 export class ProjectsController {
   constructor(private readonly projectsService: ProjectsService) {}
-  @Get('mine') @ApiOperation({ summary: 'List current customer projects' }) mine(@Req() request: AuthenticatedRequest) { return this.projectsService.findMine(request.user); }
-  @Post() @ApiOperation({ summary: 'Request a new customer project' }) create(@Req() request: AuthenticatedRequest, @Body() dto: CreateProjectDto) { return this.projectsService.createForCustomer(request.user, dto.projectName, dto.description); }
-  @Get(':id/phases') @ApiOperation({ summary: 'List project phases' }) phases(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.projectsService.findPhases(request.user, id); }
-  @Get(':id') @ApiOperation({ summary: 'Get a customer project' }) findOne(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.projectsService.findOneMine(request.user, id); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List projects for operations staff' }) all() { return this.projectsService.findAll(); }
-  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update project status' }) updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.projectsService.updateStatus(id, status); }
+
+  @Get()
+  @ApiOperation({ summary: 'List published ops projects' })
+  findPublished(): Promise<ProjectEntity[]> {
+    return this.projectsService.findPublished();
+  }
+
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'List all ops projects for admin' })
+  adminAll(): Promise<ProjectEntity[]> {
+    return this.projectsService.findAllForAdmin();
+  }
+
+  @Get(':slug')
+  @ApiOperation({ summary: 'Get published ops project by slug' })
+  findBySlug(@Param('slug') slug: string): Promise<ProjectEntity> {
+    return this.projectsService.findPublishedBySlug(slug);
+  }
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Create ops project (admin only)' })
+  create(@Req() request: AuthenticatedRequest, @Body() dto: ManageOpsProjectDto): Promise<ProjectEntity> {
+    return this.projectsService.create(dto, request.user);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update ops project' })
+  update(@Param('id') id: string, @Body() dto: ManageOpsProjectDto): Promise<ProjectEntity> {
+    return this.projectsService.update(id, dto);
+  }
+
+  @Patch(':id/status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update ops project status' })
+  updateStatus(@Param('id') id: string, @Body('status') status: string): Promise<ProjectEntity> {
+    return this.projectsService.updateStatus(id, status);
+  }
+
+  @Delete(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Soft-delete ops project' })
+  async remove(@Param('id') id: string): Promise<{ ok: true }> {
+    await this.projectsService.remove(id);
+    return { ok: true };
+  }
 }

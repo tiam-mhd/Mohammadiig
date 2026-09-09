@@ -7,7 +7,7 @@ export class ServiceEntity {
   @Column({ name: 'name_fa', type: 'varchar', length: 150 }) nameFa!: string;
   @Column({ type: 'text' }) description!: string;
   @Column({ name: 'service_category', type: 'varchar', length: 50 }) serviceCategory!: string;
-  @Column({ name: 'base_price', type: 'integer' }) basePrice!: number;
+  @Column({ name: 'base_price', type: 'integer', nullable: true }) basePrice!: number | null;
   @Column({ type: 'varchar', length: 3, default: 'IRR' }) currency!: string;
   @Column({ name: 'unit_type', type: 'varchar', length: 50, default: 'fixed' }) unitType!: string;
   @Column({ name: 'is_active', type: 'boolean', default: true }) isActive!: boolean;

@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdminShell } from '@/components/admin/AdminShell';
-import { fetchCategories, fetchProducts } from '@/lib/api-client';
+import { fetchCategories, fetchAdminProducts } from '@/lib/api-client';
 
 export default function AdminDashboardPage() {
   const [productCount, setProductCount] = useState(0);
@@ -11,61 +11,93 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories()])
+    Promise.all([fetchAdminProducts(), fetchCategories()])
       .then(([products, categories]) => {
         setProductCount(products.meta.total);
         setCategoryCount(categories.length);
+      })
+      .catch(() => {
+        setProductCount(0);
+        setCategoryCount(0);
       })
       .finally(() => setIsLoading(false));
   }, []);
 
   return (
-    <AdminShell eyebrow="پنل مدیریت" title="نمای کلی عملیات">
-      <div className="grid gap-8 sm:grid-cols-2 xl:grid-cols-4 xl:gap-10">
+    <AdminShell eyebrow="داشبورد" title="نمای کلی">
+      <div className="admin-stat-grid">
         <div className="admin-stat text-start">
           <p className="caption-up">محصولات</p>
-          <p className="mt-4 font-ui text-3xl text-ink">
+          <p className="admin-stat__value">
             {isLoading ? '—' : productCount.toLocaleString('fa-IR')}
           </p>
-          <p className="mt-2 font-ui text-sm text-muted">محصول فعال در کاتالوگ</p>
+          <p className="admin-stat__hint">محصول فعال در کاتالوگ</p>
         </div>
         <div className="admin-stat text-start">
           <p className="caption-up">دسته‌بندی</p>
-          <p className="mt-4 font-ui text-3xl text-ink">
+          <p className="admin-stat__value">
             {isLoading ? '—' : categoryCount.toLocaleString('fa-IR')}
           </p>
-          <p className="mt-2 font-ui text-sm text-muted">دستهٔ محصول</p>
+          <p className="admin-stat__hint">دستهٔ محصول</p>
         </div>
         <div className="admin-stat text-start">
           <p className="caption-up">مشتریان</p>
-          <p className="mt-4 font-ui text-3xl text-ink">—</p>
-          <p className="mt-2 font-ui text-sm text-muted">از بخش مشتریان</p>
+          <p className="admin-stat__value">—</p>
+          <p className="admin-stat__hint">از بخش مشتریان</p>
         </div>
         <div className="admin-stat text-start">
-          <p className="caption-up">سیستم</p>
-          <p className="mt-4 font-ui text-3xl text-ink">OK</p>
-          <p className="mt-2 font-ui text-sm text-muted">API و دیتابیس فعال</p>
+          <p className="caption-up">وضعیت سامانه</p>
+          <p className="admin-stat__value" style={{ color: 'var(--ops-ok)' }}>
+            آماده
+          </p>
+          <p className="admin-stat__hint">ارتباط با سرور برقرار است</p>
         </div>
       </div>
 
-      <section className="mt-12 grid gap-0 border-t border-hairline lg:grid-cols-2">
-        <Link
-          href="/admin/products"
-          className="border-b border-hairline py-8 text-start transition-opacity hover:opacity-80 lg:border-e lg:pe-10"
-        >
+      <section className="admin-card-grid mt-5">
+        <Link href="/admin/products" className="admin-panel-card text-start">
           <p className="caption-up">۰۱ · کاتالوگ</p>
-          <h2 className="display-sm mt-6 text-ink">مدیریت محصولات</h2>
-          <p className="body-lead mt-3 text-sm">ایجاد، بررسی و حذف محصولات کاتالوگ.</p>
-          <span className="caption-up mt-8 inline-block text-white/55">ورود به مدیریت ←</span>
+          <h2 className="display-sm mt-3">مدیریت محصولات</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ops-muted)]">
+            افزودن، ویرایش و حذف محصولات کاتالوگ.
+          </p>
+          <span className="admin-panel-card__cta">
+            ورود به مدیریت
+            <span aria-hidden>←</span>
+          </span>
         </Link>
-        <Link
-          href="/admin/customers"
-          className="border-b border-hairline py-8 text-start transition-opacity hover:opacity-80 lg:ps-10"
-        >
-          <p className="caption-up">۰۲ · مشتریان</p>
-          <h2 className="display-sm mt-6 text-ink">فهرست مشتریان</h2>
-          <p className="body-lead mt-3 text-sm">حساب‌های سازمانی و وضعیت تأیید.</p>
-          <span className="caption-up mt-8 inline-block text-white/55">مشاهده مشتریان ←</span>
+        <Link href="/admin/categories" className="admin-panel-card text-start">
+          <p className="caption-up">۰۲ · دسته‌بندی</p>
+          <h2 className="display-sm mt-3">مدیریت دسته‌ها</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ops-muted)]">
+            ساخت و ویرایش دسته‌بندی محصولات.
+          </p>
+          <span className="admin-panel-card__cta">
+            ورود به دسته‌ها
+            <span aria-hidden>←</span>
+          </span>
+        </Link>
+        <Link href="/admin/spare-parts" className="admin-panel-card text-start">
+          <p className="caption-up">۰۳ · پس از فروش</p>
+          <h2 className="display-sm mt-3">مدیریت قطعات یدکی</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ops-muted)]">
+            ثبت، موجودی و ویرایش قطعات یدکی.
+          </p>
+          <span className="admin-panel-card__cta">
+            ورود به قطعات
+            <span aria-hidden>←</span>
+          </span>
+        </Link>
+        <Link href="/admin/spare-part-categories" className="admin-panel-card text-start">
+          <p className="caption-up">۰۴ · دسته قطعات</p>
+          <h2 className="display-sm mt-3">دسته‌بندی قطعات</h2>
+          <p className="mt-2 text-sm leading-relaxed text-[var(--ops-muted)]">
+            تعریف دسته‌های جدا برای قطعات یدکی.
+          </p>
+          <span className="admin-panel-card__cta">
+            ورود به دسته‌ها
+            <span aria-hidden>←</span>
+          </span>
         </Link>
       </section>
     </AdminShell>

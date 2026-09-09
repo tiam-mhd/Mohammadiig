@@ -93,7 +93,7 @@ export default function Home() {
         eyebrow="درباره MIG"
         title="گروه صنعتی محمدی"
         body="ما تجهیزات شهربازی تولید و تأمین می‌کنیم و در راه‌اندازی و نگهداری مجموعه‌ها کنار شما هستیم."
-        ctaLabel="پروژه‌های ما"
+        ctaLabel="بهره‌برداری‌های ما"
         ctaHref="/projects"
         align="start"
         overlay="bottom"
@@ -126,7 +126,7 @@ export default function Home() {
               از کارگاه تا سالن شهربازی؛ تجربه واقعی نصب، بهره‌برداری و نگهداری دستگاه‌ها.
             </p>
             <div className="mt-8 flex justify-center">
-              <Link href="/projects" className="btn-pill">
+              <Link href="/portfolio" className="btn-pill">
                 نمونه‌کارها
               </Link>
             </div>
@@ -151,14 +151,14 @@ export default function Home() {
 
       <SectionGap />
 
-      {/* پروژه‌ها — راست‌چین */}
+      {/* نمونه‌کارها — راست‌چین */}
       <PhotoBand
         image="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=2000&q=80"
-        eyebrow="پروژه‌ها"
+        eyebrow="نمونه‌کارها"
         title="مجموعه‌هایی که با هم راه انداختیم"
         body="از سالن ماشین برخوردی تا فضاهای خانوادگی؛ نمونه‌هایی از کار با صاحبان مجموعه."
-        ctaLabel="دیدن پروژه‌ها"
-        ctaHref="/projects"
+        ctaLabel="دیدن نمونه‌کارها"
+        ctaHref="/portfolio"
         align="start"
         overlay="left"
       />

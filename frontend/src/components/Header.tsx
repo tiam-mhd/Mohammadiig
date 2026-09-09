@@ -9,10 +9,10 @@ import Link from 'next/link';
 
 const menuItems = [
   { href: '/products', label: 'محصولات' },
-  { href: '/projects', label: 'پروژه‌ها' },
+  { href: '/portfolio', label: 'نمونه‌کارها' },
+  { href: '/projects', label: 'بهره‌برداری' },
   { href: '/services', label: 'خدمات' },
   { href: '/quote-request', label: 'استعلام' },
-  // { href: '/auth', label: 'پنل مشتریان' },
 ];
 
 export const Header: React.FC = () => {

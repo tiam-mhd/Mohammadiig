@@ -14,4 +14,17 @@ export class CustomersService {
   }
 
   findAll(): Promise<CustomerEntity[]> { return this.customers.find({ order: { createdAt: 'DESC' } }); }
+
+  async setVerified(id: string, isVerified: boolean): Promise<CustomerEntity> {
+    const customer = await this.customers.findOne({ where: { id } });
+    if (!customer) throw new NotFoundException('مشتری پیدا نشد');
+    customer.isVerified = isVerified;
+    return this.customers.save(customer);
+  }
+
+  async softRemove(id: string): Promise<void> {
+    const customer = await this.customers.findOne({ where: { id } });
+    if (!customer) throw new NotFoundException('مشتری پیدا نشد');
+    await this.customers.softRemove(customer);
+  }
 }
