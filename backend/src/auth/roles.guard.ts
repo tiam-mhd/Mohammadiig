@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthUser } from './jwt.strategy';
 
-export const ADMIN_ROLES = ['admin', 'salesman'] as const;
+export const ADMIN_ROLES = ['admin'] as const;
 
 @Injectable()
 export class RolesGuard implements CanActivate {

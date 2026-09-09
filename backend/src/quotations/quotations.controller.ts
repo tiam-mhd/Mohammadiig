@@ -37,13 +37,13 @@ export class QuotationsController {
 
   @Get('admin/all')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   @ApiOperation({ summary: 'List quotations for operations staff' })
   all() { return this.quotationsService.findAll(); }
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   @ApiOperation({ summary: 'Update quotation status' })
   updateStatus(@Param('id') id: string, @Body('status') status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired') { return this.quotationsService.updateStatus(id, status); }
 }

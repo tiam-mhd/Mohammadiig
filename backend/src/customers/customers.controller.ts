@@ -25,7 +25,7 @@ export class CustomersController {
 
   @Get('admin/all')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   @ApiOperation({ summary: 'List all B2B customers for operations staff' })
   all(): Promise<CustomerEntity[]> { return this.customersService.findAll(); }
 }

@@ -36,13 +36,13 @@ export class OrdersController {
 
   @Get('admin/all')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   @ApiOperation({ summary: 'List orders for operations staff' })
   all() { return this.ordersService.findAll(); }
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   @ApiOperation({ summary: 'Update order status' })
   updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.ordersService.updateStatus(id, status); }
 }

@@ -21,6 +21,6 @@ export class ProjectsController {
   @Post() @ApiOperation({ summary: 'Request a new customer project' }) create(@Req() request: AuthenticatedRequest, @Body() dto: CreateProjectDto) { return this.projectsService.createForCustomer(request.user, dto.projectName, dto.description); }
   @Get(':id/phases') @ApiOperation({ summary: 'List project phases' }) phases(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.projectsService.findPhases(request.user, id); }
   @Get(':id') @ApiOperation({ summary: 'Get a customer project' }) findOne(@Req() request: AuthenticatedRequest, @Param('id') id: string) { return this.projectsService.findOneMine(request.user, id); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin', 'salesman') @ApiOperation({ summary: 'List projects for operations staff' }) all() { return this.projectsService.findAll(); }
-  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin', 'salesman') @ApiOperation({ summary: 'Update project status' }) updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.projectsService.updateStatus(id, status); }
+  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List projects for operations staff' }) all() { return this.projectsService.findAll(); }
+  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update project status' }) updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.projectsService.updateStatus(id, status); }
 }

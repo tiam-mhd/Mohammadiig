@@ -16,12 +16,12 @@ export class ProductsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   create(@Body() dto: ManageProductDto): Promise<Product> { return this.productsService.create(dto); }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('admin', 'salesman')
+  @Roles('admin')
   update(@Param('id') id: string, @Body() dto: ManageProductDto): Promise<Product> { return this.productsService.update(id, dto); }
 
   @Delete(':id')

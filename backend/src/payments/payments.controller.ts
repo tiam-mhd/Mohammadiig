@@ -20,6 +20,6 @@ export class PaymentsController {
   @Post(':invoiceId/pay')
   @ApiOperation({ summary: 'Submit a payment for an invoice' })
   create(@Req() request: AuthenticatedRequest, @Param('invoiceId') invoiceId: string, @Body() dto: CreatePaymentDto) { return this.paymentsService.create(request.user, invoiceId, dto); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin', 'accountant') @ApiOperation({ summary: 'List payments for operations staff' }) all() { return this.paymentsService.findAll(); }
-  @Patch('admin/:id/status') @UseGuards(RolesGuard) @Roles('admin', 'accountant') @ApiOperation({ summary: 'Update payment status' }) updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.paymentsService.updateStatus(id, status); }
+  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List payments for operations staff' }) all() { return this.paymentsService.findAll(); }
+  @Patch('admin/:id/status') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update payment status' }) updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.paymentsService.updateStatus(id, status); }
 }

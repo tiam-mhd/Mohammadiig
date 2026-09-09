@@ -20,6 +20,6 @@ export class InvoicesController {
   @Get('mine')
   @ApiOperation({ summary: 'List current customer invoices' })
   mine(@Req() request: AuthenticatedRequest): Promise<InvoiceEntity[]> { return this.invoicesService.findMine(request.user); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin', 'salesman') @ApiOperation({ summary: 'List invoices for operations staff' }) all(): Promise<InvoiceEntity[]> { return this.invoicesService.findAll(); }
-  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin', 'accountant') @ApiOperation({ summary: 'Update invoice payment status' }) updateStatus(@Param('id') id: string, @Body('status') status: string): Promise<InvoiceEntity> { return this.invoicesService.updateStatus(id, status); }
+  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List invoices for operations staff' }) all(): Promise<InvoiceEntity[]> { return this.invoicesService.findAll(); }
+  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update invoice payment status' }) updateStatus(@Param('id') id: string, @Body('status') status: string): Promise<InvoiceEntity> { return this.invoicesService.updateStatus(id, status); }
 }
