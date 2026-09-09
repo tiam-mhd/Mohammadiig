@@ -12,6 +12,11 @@ coverage/
 !.env.example
 *.log
 
+# Local databases
+*.sqlite
+*.sqlite-journal
+backend/backend/
+
 # Editor and OS files
 .vscode/
 .idea/
