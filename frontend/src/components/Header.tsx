@@ -36,37 +36,36 @@ export const Header: React.FC = () => {
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 h-14 bg-transparent pt-[env(safe-area-inset-top)] md:h-16">
-        <button
-          type="button"
-          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 start-[max(1.25rem,env(safe-area-inset-right))] sm:start-10 md:start-16 lg:start-24 xl:start-28"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={open ? 'بستن منو' : 'باز کردن منو'}
-        >
-          {open ? 'بستن' : 'منو'}
-        </button>
+        <div className="relative flex h-full items-center justify-between px-[max(1.25rem,env(safe-area-inset-left),env(safe-area-inset-right))] sm:px-10 md:px-16 lg:px-24 xl:px-28">
+          <button
+            type="button"
+            className="nav-link relative z-10 min-h-11 px-1"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-label={open ? 'بستن منو' : 'باز کردن منو'}
+          >
+            {open ? 'بستن' : 'منو'}
+          </button>
 
-        <Link
-          href="/"
-          className="brand-logo absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-          onClick={() => setOpen(false)}
-          aria-label="گروه صنعتی محمدی"
-        >
-          <img
-            src="/Logo-DarkMode.png"
-            alt="گروه صنعتی محمدی"
-            className="brand-logo__img"
-            width={120}
-            height={120}
-          />
-        </Link>
+          <Link
+            href="/"
+            className="brand-logo absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+            onClick={() => setOpen(false)}
+            aria-label="گروه صنعتی محمدی"
+          >
+            <img
+              src="/Logo-DarkMode.png"
+              alt="گروه صنعتی محمدی"
+              className="brand-logo__img"
+              width={120}
+              height={120}
+            />
+          </Link>
 
-        <Link
-          href="/quote-request"
-          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 end-[max(1.25rem,env(safe-area-inset-left))] sm:end-10 md:end-16 lg:end-24 xl:end-28"
-        >
-          فروشگاه
-        </Link>
+          <Link href="/quote-request" className="nav-link relative z-10 min-h-11 px-1">
+            فروشگاه
+          </Link>
+        </div>
       </header>
 
       <div
