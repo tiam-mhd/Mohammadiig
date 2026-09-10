@@ -158,16 +158,242 @@ img {
   }
 }
 
-/* Hide header mark while intro splash owns the logo */
+/* —— Header glass bubbles (clean, opaque-enough, mouse-tracked rim) —— */
+.site-header {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  inset-inline: 0;
+  padding-top: max(0.55rem, env(safe-area-inset-top, 0px));
+  padding-inline: max(0.65rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  pointer-events: none;
+}
+
+.site-header__row {
+  display: flex;
+  align-items: center;
+  gap: clamp(0.45rem, 1.6vw, 0.75rem);
+  width: 100%;
+  pointer-events: none;
+}
+
+.mig-glass {
+  --glow-angle: -40deg;
+  --glow-intensity: 0.55;
+  position: relative;
+  pointer-events: auto;
+  border-radius: 9999px;
+  overflow: hidden;
+  isolation: isolate;
+  transform: translateZ(0);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
+
+.site-header__orb {
+  flex: 0 0 auto;
+  width: clamp(2.85rem, 9vw, 3.5rem);
+  height: clamp(2.85rem, 9vw, 3.5rem);
+}
+
+.site-header__pill {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: clamp(2.85rem, 9vw, 3.5rem);
+  transform-origin: center center;
+}
+
+.mig-glass__fill {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  /* کمی شفاف‌تر + بلور قوی‌تر پشت شیشه */
+  background: rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(28px) saturate(1.45);
+  -webkit-backdrop-filter: blur(28px) saturate(1.45);
+}
+
+.mig-glass__rim {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: linear-gradient(
+    var(--glow-angle),
+    rgba(255, 255, 255, calc(0.35 + var(--glow-intensity) * 0.55)) 0%,
+    rgba(255, 255, 255, 0.14) 38%,
+    rgba(255, 255, 255, 0.06) 62%,
+    rgba(255, 255, 255, calc(0.18 + var(--glow-intensity) * 0.2)) 100%
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 1;
+  transition: background 80ms linear;
+}
+
+.mig-glass__body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: #fff;
+}
+
+.site-header__icon {
+  width: clamp(1.1rem, 3.2vw, 1.28rem);
+  height: clamp(1.1rem, 3.2vw, 1.28rem);
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.45));
+}
+
+.site-header__logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.site-header__logo .brand-logo__img {
+  display: block;
+  height: clamp(1.55rem, 4.8vw, 2.35rem);
+  width: auto;
+  max-width: min(42vw, 7.5rem);
+  object-fit: contain;
+}
+
+button.mig-glass {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 768px) {
+  .site-header {
+    padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
+    padding-inline: max(1rem, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+  }
+
+  .site-header__orb {
+    width: 3.55rem;
+    height: 3.55rem;
+  }
+
+  .site-header__pill {
+    height: 3.55rem;
+  }
+
+  .site-header__logo .brand-logo__img {
+    height: 2.45rem;
+    max-width: 8.5rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .site-header__row {
+    gap: 0.35rem;
+  }
+
+  .site-header__orb {
+    width: 2.7rem;
+    height: 2.7rem;
+  }
+
+  .site-header__pill {
+    height: 2.7rem;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .mig-glass__fill {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(18, 18, 22, 0.92);
+  }
+}
+
+/* —— Splash ↔ header handoff choreography —— */
 html[data-splash='pending'] .brand-logo__img,
-html[data-splash='active'] .brand-logo__img {
+html[data-splash='active'] .brand-logo__img,
+html[data-splash='dock'] .brand-logo__img {
   opacity: 0;
   pointer-events: none;
 }
 
-/* Instant black gate before React hydrates — site stays invisible */
+html[data-splash='expand'] .brand-logo__img,
+html[data-splash='reveal'] .brand-logo__img {
+  opacity: 1;
+  transition: opacity 0.45s var(--ease-soft) 0.2s;
+}
+
+/* Orbs: hidden until logo starts flying up */
+html[data-splash='pending'] .site-header__orb,
+html[data-splash='active'] .site-header__orb {
+  opacity: 0;
+  transform: scale(0.72);
+  pointer-events: none;
+}
+
+html[data-splash='dock'] .site-header__orb,
+html[data-splash='expand'] .site-header__orb,
+html[data-splash='reveal'] .site-header__orb {
+  opacity: 1;
+  transform: scale(1);
+  transition:
+    opacity 0.75s var(--ease-soft),
+    transform 0.75s var(--ease-soft);
+}
+
+/* Pill: collapsed at center, then opens sideways */
+html[data-splash='pending'] .site-header__pill,
+html[data-splash='active'] .site-header__pill,
+html[data-splash='dock'] .site-header__pill {
+  opacity: 0;
+  transform: scaleX(0.06);
+  pointer-events: none;
+}
+
+html[data-splash='expand'] .site-header__pill,
+html[data-splash='reveal'] .site-header__pill {
+  opacity: 1;
+  transform: scaleX(1);
+  transition:
+    transform 0.9s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.35s var(--ease-soft);
+}
+
+/* Keep header above black gate while chrome assembles */
+html[data-splash='dock'] .site-header,
+html[data-splash='expand'] .site-header,
+html[data-splash='reveal'] .site-header {
+  z-index: 95;
+}
+
+html[data-splash='dock'] .site-header .mig-glass,
+html[data-splash='expand'] .site-header .mig-glass {
+  pointer-events: none;
+}
+
+/* Instant black gate before / during splash */
 html[data-splash='pending'] body::before,
-html[data-splash='active'] body::before {
+html[data-splash='active'] body::before,
+html[data-splash='dock'] body::before,
+html[data-splash='expand'] body::before,
+html[data-splash='reveal'] body::before {
   content: '';
   position: fixed;
   inset: 0;
@@ -176,16 +402,49 @@ html[data-splash='active'] body::before {
   pointer-events: all;
 }
 
+html[data-splash='reveal'] body::before {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.05s var(--ease-soft);
+}
+
 html[data-splash='pending'] body,
-html[data-splash='active'] body {
+html[data-splash='active'] body,
+html[data-splash='dock'] body,
+html[data-splash='expand'] body,
+html[data-splash='reveal'] body {
   overflow: hidden !important;
 }
 
 html[data-splash='pending'] main,
 html[data-splash='pending'] footer,
 html[data-splash='active'] main,
-html[data-splash='active'] footer {
+html[data-splash='active'] footer,
+html[data-splash='dock'] main,
+html[data-splash='dock'] footer,
+html[data-splash='expand'] main,
+html[data-splash='expand'] footer {
+  opacity: 0;
   visibility: hidden;
+  pointer-events: none;
+}
+
+html[data-splash='reveal'] main,
+html[data-splash='reveal'] footer {
+  visibility: visible;
+  pointer-events: auto;
+  animation: splash-site-reveal 1.05s var(--ease-soft) both;
+}
+
+@keyframes splash-site-reveal {
+  from {
+    opacity: 0;
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0% 0);
+  }
 }
 
 /* Intro splash — logo assembly */
@@ -200,13 +459,25 @@ html[data-splash='active'] footer {
   background: #000;
 }
 
+.splash-loader--chrome {
+  background: transparent;
+  pointer-events: none;
+}
+
 .splash-loader__stage {
   position: relative;
   z-index: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: min(72vw, 17.5rem);
+  width: min(52vw, 17.5rem);
+}
+
+@media (max-width: 640px) {
+  .splash-loader__stage {
+    width: min(38vw, 9.25rem);
+  }
 }
 
 .splash-loader__logo {
@@ -227,11 +498,29 @@ html[data-splash='active'] footer {
   pointer-events: none;
 }
 
+.splash-loader__captions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.35rem;
+  pointer-events: none;
+  text-align: center;
+}
+
+.splash-loader__brand {
+  margin: 0;
+  max-width: min(92vw, 22rem);
+  font-family: var(--font-bugatti-display), "Saira Condensed", sans-serif;
+  font-size: clamp(0.95rem, 2.8vw, 1.2rem);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: none;
+  color: rgba(245, 230, 180, 0.95);
+}
+
 .splash-loader__label {
-  position: absolute;
-  top: calc(100% + 1.5rem);
-  left: 50%;
-  translate: -50% 0;
   margin: 0;
   white-space: nowrap;
   font-family: var(--font-bugatti-mono), ui-monospace, monospace;
@@ -241,7 +530,25 @@ html[data-splash='active'] footer {
   text-indent: 0.42em;
   text-transform: uppercase;
   color: rgba(212, 175, 55, 0.88);
-  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .splash-loader__captions {
+    margin-top: 1rem;
+    gap: 0.4rem;
+  }
+
+  .splash-loader__brand {
+    font-size: 0.88rem;
+    letter-spacing: 0.05em;
+    max-width: 16rem;
+  }
+
+  .splash-loader__label {
+    font-size: 0.62rem;
+    letter-spacing: 0.36em;
+    text-indent: 0.36em;
+  }
 }
 
 .brand-title {

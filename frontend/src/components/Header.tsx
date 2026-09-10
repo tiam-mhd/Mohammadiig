@@ -1,11 +1,19 @@
 /**
- * Header — ناوبری مینیمال + موبایل امن
+ * Header — سه حباب شیشه‌ای (دایره · کپسول · دایره)
+ * نور لبه موس را در کل صفحه دنبال می‌کند؛ بدون تغییر سایز
  */
 
 'use client';
 
-import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import React, {
+  ElementType,
+  ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 
 const menuItems = [
   { href: '/products', label: 'محصولات' },
@@ -15,7 +23,102 @@ const menuItems = [
   { href: '/quote-request', label: 'استعلام' },
 ];
 
+function IconMenu({ open }: { open: boolean }) {
+  return (
+    <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+      {open ? (
+        <path
+          d="M7 7l10 10M17 7L7 17"
+          stroke="currentColor"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+        />
+      ) : (
+        <>
+          <path d="M6 8h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M6 12h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path d="M6 16h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function IconShop() {
+  return (
+    <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M8 9V8a4 4 0 0 1 8 0v1"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+      <path
+        d="M7.2 9h9.6a1.5 1.5 0 0 1 1.49 1.66l-.55 5.2A2.2 2.2 0 0 1 15.56 18H8.44a2.2 2.2 0 0 1-2.18-2.14l-.55-5.2A1.5 1.5 0 0 1 7.2 9Z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+type GlassBubbleProps = {
+  className?: string;
+  onClick?: () => void;
+  children: ReactNode;
+  as?: ElementType;
+  'aria-label'?: string;
+  'aria-expanded'?: boolean;
+};
+
+function GlassBubble({
+  className = '',
+  onClick,
+  children,
+  as: Tag = 'div',
+  ...aria
+}: GlassBubbleProps) {
+  const ref = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const track = (e: PointerEvent) => {
+      const r = el.getBoundingClientRect();
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const angle = (Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI;
+      el.style.setProperty('--glow-angle', `${angle}deg`);
+      // فاصله نرمال‌شده برای شدت نور (حتی خارج از المان)
+      const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
+      const reach = Math.max(r.width, r.height) * 2.8;
+      const intensity = Math.max(0.35, 1 - dist / reach);
+      el.style.setProperty('--glow-intensity', intensity.toFixed(3));
+    };
+
+    window.addEventListener('pointermove', track, { passive: true });
+    return () => window.removeEventListener('pointermove', track);
+  }, []);
+
+  return (
+    <Tag
+      ref={ref as never}
+      className={`mig-glass ${className}`.trim()}
+      onClick={onClick}
+      type={Tag === 'button' ? 'button' : undefined}
+      {...aria}
+    >
+      <span className="mig-glass__fill" aria-hidden />
+      <span className="mig-glass__rim" aria-hidden />
+      <span className="mig-glass__body">{children}</span>
+    </Tag>
+  );
+}
+
 export const Header: React.FC = () => {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -35,40 +138,44 @@ export const Header: React.FC = () => {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 h-14 bg-transparent pt-[env(safe-area-inset-top)] md:h-16">
-        {/* منو — راست (جای قبلی، دست‌نخورده) */}
-        <button
-          type="button"
-          className="nav-link absolute top-1/2 z-10 min-h-11 -translate-y-1/2 px-1 start-[max(1.25rem,env(safe-area-inset-right))] sm:start-10 md:start-16 lg:start-24 xl:start-28"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-label={open ? 'بستن منو' : 'باز کردن منو'}
-        >
-          {open ? 'بستن' : 'منو'}
-        </button>
+      <header className="site-header">
+        <div className="site-header__row">
+          <GlassBubble
+            as="button"
+            className="site-header__orb"
+            aria-label={open ? 'بستن منو' : 'باز کردن منو'}
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <IconMenu open={open} />
+          </GlassBubble>
 
-        <Link
-          href="/"
-          className="brand-logo absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
-          onClick={() => setOpen(false)}
-          aria-label="گروه صنعتی محمدی"
-        >
-          <img
-            src="/Logo-Gold.webp"
-            alt="گروه صنعتی محمدی"
-            className="brand-logo__img"
-            width={120}
-            height={120}
-          />
-        </Link>
+          <GlassBubble className="site-header__pill">
+            <Link
+              href="/"
+              className="brand-logo site-header__logo"
+              onClick={() => setOpen(false)}
+              aria-label="گروه صنعتی محمدی"
+            >
+              <img
+                src="/Logo-Gold.webp"
+                alt="گروه صنعتی محمدی"
+                className="brand-logo__img"
+                width={120}
+                height={120}
+              />
+            </Link>
+          </GlassBubble>
 
-        {/* فروشگاه — چپ؛ فاصله افقی آینهٔ منو، وسط عمودی هدر */}
-        <Link
-          href="/quote-request"
-          className="nav-link absolute inset-y-0 z-10 inline-flex items-center px-1 left-[max(1.25rem,env(safe-area-inset-left))] sm:left-10 md:left-16 lg:left-24 xl:left-28"
-        >
-          فروشگاه
-        </Link>
+          <GlassBubble
+            as="button"
+            className="site-header__orb"
+            aria-label="فروشگاه"
+            onClick={() => router.push('/quote-request')}
+          >
+            <IconShop />
+          </GlassBubble>
+        </div>
       </header>
 
       <div
@@ -79,7 +186,7 @@ export const Header: React.FC = () => {
       >
         <div className="menu-overlay__aurora" aria-hidden />
         <div className="menu-overlay__veil" aria-hidden />
-        <nav className="relative z-10 flex h-full flex-col items-center justify-center gap-6 px-8 pt-16 sm:gap-7 md:gap-8">
+        <nav className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 pt-[max(5rem,12vh)] sm:gap-7 md:gap-8">
           {menuItems.map((item, i) => (
             <Link
               key={item.href}

@@ -36,13 +36,14 @@ const PIECES = [
   },
 ] as const;
 
-type Phase = 'assemble' | 'hold' | 'prefly' | 'fly' | 'exit' | 'done';
+type Phase = 'assemble' | 'hold' | 'prefly' | 'fly' | 'expand' | 'reveal' | 'done';
 
 const ASSEMBLE_MS = 1400;
-const HOLD_MS = 3000;
-const PREFLY_MS = 500;
+const HOLD_MS = 2800;
+const PREFLY_MS = 450;
 const FLY_MS = 1100;
-const EXIT_MS = 420;
+const EXPAND_MS = 900;
+const REVEAL_MS = 1100;
 
 function shouldSkipSplash() {
   if (typeof window === 'undefined') return true;
@@ -58,6 +59,39 @@ function setSplashAttr(value: string) {
   document.documentElement.setAttribute('data-splash', value);
 }
 
+function measureFlyTarget(source: HTMLElement) {
+  const pill = document.querySelector<HTMLElement>('.site-header__pill');
+  const logoImg = document.querySelector<HTMLElement>('.brand-logo__img');
+  const s = source.getBoundingClientRect();
+  const sourceCx = s.left + s.width / 2;
+  const sourceCy = s.top + s.height / 2;
+
+  if (pill) {
+    const p = pill.getBoundingClientRect();
+    const targetCx = p.left + p.width / 2;
+    const targetCy = p.top + p.height / 2;
+    const targetH = logoImg
+      ? parseFloat(getComputedStyle(logoImg).height) || p.height * 0.62
+      : p.height * 0.62;
+    return {
+      x: targetCx - sourceCx,
+      y: targetCy - sourceCy,
+      scale: Math.min(1, targetH / s.height),
+    };
+  }
+
+  if (logoImg) {
+    const t = logoImg.getBoundingClientRect();
+    return {
+      x: t.left + t.width / 2 - sourceCx,
+      y: t.top + t.height / 2 - sourceCy,
+      scale: Math.min(t.width / s.width, t.height / s.height),
+    };
+  }
+
+  return { x: 0, y: 0, scale: 1 };
+}
+
 export function SplashLoader() {
   const [enabled, setEnabled] = useState(false);
   const [phase, setPhase] = useState<Phase>('assemble');
@@ -67,6 +101,7 @@ export function SplashLoader() {
 
   const finish = useCallback(() => {
     document.body.style.overflow = '';
+    clearSplashAttr();
     setPhase('done');
     setEnabled(false);
   }, []);
@@ -85,54 +120,47 @@ export function SplashLoader() {
     const holdEnd = assembleEnd + HOLD_MS;
     const preflyEnd = holdEnd + PREFLY_MS;
     const flyEnd = preflyEnd + FLY_MS;
+    const expandEnd = flyEnd + EXPAND_MS;
+    const revealEnd = expandEnd + REVEAL_MS;
 
     const t1 = window.setTimeout(() => setPhase('hold'), assembleEnd);
     const t2 = window.setTimeout(() => setPhase('prefly'), holdEnd);
     const t3 = window.setTimeout(() => {
-      const source = logoRef.current;
-      const target = document.querySelector<HTMLElement>('.brand-logo__img');
-      if (source && target) {
-        const s = source.getBoundingClientRect();
-        const t = target.getBoundingClientRect();
-        const sourceCx = s.left + s.width / 2;
-        const sourceCy = s.top + s.height / 2;
-        const targetCx = t.left + t.width / 2;
-        const targetCy = t.top + t.height / 2;
-        const scale = Math.min(t.width / s.width, t.height / s.height);
-        setFly({
-          x: targetCx - sourceCx,
-          y: targetCy - sourceCy,
-          scale,
-        });
-      }
+      if (logoRef.current) setFly(measureFlyTarget(logoRef.current));
+      setSplashAttr('dock');
       setPhase('fly');
     }, preflyEnd);
     const t4 = window.setTimeout(() => {
-      /* Reveal site only after logo has docked in the header */
-      clearSplashAttr();
-      setPhase('exit');
+      setSplashAttr('expand');
+      setPhase('expand');
     }, flyEnd);
-    const t5 = window.setTimeout(finish, flyEnd + EXIT_MS);
+    const t5 = window.setTimeout(() => {
+      setSplashAttr('reveal');
+      setPhase('reveal');
+    }, expandEnd);
+    const t6 = window.setTimeout(finish, revealEnd);
 
-    timers.current = [t1, t2, t3, t4, t5];
+    timers.current = [t1, t2, t3, t4, t5, t6];
 
     return () => {
-      timers.current.forEach((id: number) => window.clearTimeout(id));
+      timers.current.forEach((id) => window.clearTimeout(id));
       document.body.style.overflow = '';
     };
   }, [finish]);
 
   const showLabel = phase === 'hold';
+  const chromeOpen = phase === 'fly' || phase === 'expand' || phase === 'reveal';
+  const logoHandedOff = phase === 'expand' || phase === 'reveal';
 
   return (
     <AnimatePresence>
       {enabled && phase !== 'done' ? (
         <motion.div
-          className="splash-loader"
+          className={`splash-loader${chromeOpen ? ' splash-loader--chrome' : ''}`}
           initial={{ opacity: 1 }}
-          animate={{ opacity: phase === 'exit' ? 0 : 1 }}
+          animate={{ opacity: phase === 'reveal' ? 0 : 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: EXIT_MS / 1000, ease: [0.22, 0.61, 0.36, 1] }}
+          transition={{ duration: REVEAL_MS / 1000, ease: [0.22, 0.61, 0.36, 1] }}
           aria-busy="true"
           aria-live="polite"
           aria-label="در حال بارگذاری"
@@ -142,13 +170,19 @@ export function SplashLoader() {
               ref={logoRef}
               className="splash-loader__logo"
               animate={
-                phase === 'fly' || phase === 'exit'
-                  ? { x: fly.x, y: fly.y, scale: fly.scale }
-                  : { x: 0, y: 0, scale: 1 }
+                phase === 'fly' || logoHandedOff
+                  ? {
+                      x: fly.x,
+                      y: fly.y,
+                      scale: fly.scale,
+                      opacity: logoHandedOff ? 0 : 1,
+                    }
+                  : { x: 0, y: 0, scale: 1, opacity: 1 }
               }
               transition={{
                 duration: FLY_MS / 1000,
                 ease: [0.22, 0.61, 0.36, 1],
+                opacity: { duration: 0.35, ease: 'easeOut' },
               }}
             >
               {PIECES.map((piece, index) => (
@@ -181,18 +215,36 @@ export function SplashLoader() {
               ))}
             </motion.div>
 
-            <motion.p
-              className="splash-loader__label"
-              initial={{ opacity: 0, y: 14 }}
-              animate={
-                showLabel
-                  ? { opacity: 1, y: 0 }
-                  : { opacity: 0, y: phase === 'assemble' ? 14 : -8 }
-              }
-              transition={{ duration: 0.5, ease: [0.22, 0.61, 0.36, 1] }}
-            >
-              Loading
-            </motion.p>
+            <div className="splash-loader__captions">
+              <motion.p
+                className="splash-loader__brand"
+                initial={{ opacity: 0, y: 12 }}
+                animate={
+                  showLabel
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: phase === 'assemble' ? 12 : -6 }
+                }
+                transition={{ duration: 0.55, ease: [0.22, 0.61, 0.36, 1] }}
+              >
+                Mohammadi Industrial Group
+              </motion.p>
+              <motion.p
+                className="splash-loader__label"
+                initial={{ opacity: 0, y: 10 }}
+                animate={
+                  showLabel
+                    ? { opacity: 1, y: 0 }
+                    : { opacity: 0, y: phase === 'assemble' ? 10 : -6 }
+                }
+                transition={{
+                  duration: 0.5,
+                  delay: showLabel ? 0.14 : 0,
+                  ease: [0.22, 0.61, 0.36, 1],
+                }}
+              >
+                Loading
+              </motion.p>
+            </div>
           </div>
         </motion.div>
       ) : null}
