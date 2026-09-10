@@ -70,8 +70,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="fa"
       dir="rtl"
       data-scroll-behavior="smooth"
+      suppressHydrationWarning
       className={`${bugattiDisplay.variable} ${bugattiText.variable} ${bugattiMono.variable} ${displayFa.variable} ${ui.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=location.pathname;if(p==="/auth"||p.indexOf("/auth/")===0||p==="/admin"||p.indexOf("/admin/")===0)return;if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;document.documentElement.setAttribute("data-splash","pending");}catch(e){}})();`,
+          }}
+        />
+        <link rel="preload" as="image" href="/logo-pieces/piece-left.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/logo-pieces/piece-right.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/logo-pieces/piece-top-left.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/logo-pieces/piece-top-right.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/logo-pieces/piece-bottom-left.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/logo-pieces/piece-bottom-right.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/Logo-Gold.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/Background.webp" type="image/webp" />
+      </head>
       <body className="flex min-h-full flex-col bg-canvas text-ink">
         <ThemeProvider>
           <SiteChrome>{children}</SiteChrome>

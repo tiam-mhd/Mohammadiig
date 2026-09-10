@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
           aria-label="گروه صنعتی محمدی"
         >
           <img
-            src="/Logo-DarkMode.png"
+            src="/Logo-Gold.webp"
             alt="گروه صنعتی محمدی"
             className="brand-logo__img"
             width={120}

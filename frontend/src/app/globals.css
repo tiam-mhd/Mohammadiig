@@ -148,8 +148,7 @@ img {
   width: auto;
   max-width: min(42vw, 7.5rem);
   object-fit: contain;
-  /* پس‌زمینه مشکی فایل لوگو روی هدر شفاف حذف می‌شود */
-  mix-blend-mode: screen;
+  transition: opacity 0.35s var(--ease-soft);
 }
 
 @media (min-width: 768px) {
@@ -157,6 +156,92 @@ img {
     height: 2.5rem;
     max-width: 8.5rem;
   }
+}
+
+/* Hide header mark while intro splash owns the logo */
+html[data-splash='pending'] .brand-logo__img,
+html[data-splash='active'] .brand-logo__img {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Instant black gate before React hydrates — site stays invisible */
+html[data-splash='pending'] body::before,
+html[data-splash='active'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: #000;
+  pointer-events: all;
+}
+
+html[data-splash='pending'] body,
+html[data-splash='active'] body {
+  overflow: hidden !important;
+}
+
+html[data-splash='pending'] main,
+html[data-splash='pending'] footer,
+html[data-splash='active'] main,
+html[data-splash='active'] footer {
+  visibility: hidden;
+}
+
+/* Intro splash — logo assembly */
+.splash-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+  background: #000;
+}
+
+.splash-loader__stage {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(72vw, 17.5rem);
+}
+
+.splash-loader__logo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 420 / 443;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.splash-loader__piece {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+}
+
+.splash-loader__label {
+  position: absolute;
+  top: calc(100% + 1.5rem);
+  left: 50%;
+  translate: -50% 0;
+  margin: 0;
+  white-space: nowrap;
+  font-family: var(--font-bugatti-mono), ui-monospace, monospace;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  text-transform: uppercase;
+  color: rgba(212, 175, 55, 0.88);
+  pointer-events: none;
 }
 
 .brand-title {

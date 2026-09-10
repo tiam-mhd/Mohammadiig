@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { ReactNode } from 'react';
 import { Footer } from './Footer';
 import { Header } from './Header';
+import { SplashLoader } from './SplashLoader';
 
 function hideSiteChrome(pathname: string | null) {
   if (!pathname) return false;
@@ -16,6 +17,7 @@ export function SiteChrome({ children }: { children: ReactNode }) {
 
   return (
     <>
+      {bare ? null : <SplashLoader />}
       {bare ? null : <Header />}
       <main className="flex-1">{children}</main>
       {bare ? null : <Footer />}
