@@ -14,6 +14,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { GlassButton } from '@/components/GlassButton';
 import { SmoothScroll } from '@/components/SmoothScroll';
 import { GlassPanel } from '@/components/home/GlassPanel';
+import { ProductRailCard } from '@/components/home/ProductRailCard';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -481,30 +482,7 @@ export function HomePage() {
           <div className="home-rail__viewport">
             <div ref={trackRef} className="home-rail__track">
               {products.map((product) => (
-                <article key={product.href} className="home-rail__card">
-                  <div className="home-rail__media">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                  <div className="home-rail__glow" aria-hidden />
-                  <GlassPanel
-                    mode="frost"
-                    frostSrc={product.image}
-                    className="home-rail__copy"
-                    bodyClassName="home-rail__copy-inner"
-                  >
-                    <span className="home-rail__badge" lang="en">
-                      {product.index}
-                    </span>
-                    <h3 className="home-rail__title">{product.name}</h3>
-                    <p className="home-rail__body">{product.tagline}</p>
-                    <GlassButton href={product.href}>جزئیات محصول</GlassButton>
-                  </GlassPanel>
-                </article>
+                <ProductRailCard key={product.href} {...product} />
               ))}
               <GlassPanel
                 mode="frost"
