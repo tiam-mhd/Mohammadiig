@@ -14,7 +14,7 @@ const fallbackProducts: Product[] = [
     currency: 'IRR',
     category: 'تجهیزات',
     image:
-      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=1200&q=85',
+      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1000&q=75',
     isFeatured: true,
   },
   {
@@ -26,7 +26,7 @@ const fallbackProducts: Product[] = [
     currency: 'IRR',
     category: 'خانواده',
     image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=85',
+      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fm=webp&fit=crop&w=800&q=75',
     isFeatured: true,
   },
   {
@@ -38,7 +38,7 @@ const fallbackProducts: Product[] = [
     currency: 'IRR',
     category: 'پس از فروش',
     image:
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=85',
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fm=webp&fit=crop&w=800&q=75',
     isFeatured: true,
   },
 ];

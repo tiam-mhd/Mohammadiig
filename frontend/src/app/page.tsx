@@ -22,7 +22,7 @@ const models = [
     tagline: 'برای سالن‌های شلوغ شهربازی؛ بدنه مقاوم و نگهداری آسان.',
     href: '/products/bumper-car-signature',
     image:
-      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=2000&q=85',
+      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1400&q=75',
   },
   {
     index: 'محصول ۰۲',
@@ -30,7 +30,7 @@ const models = [
     tagline: 'مناسب فضای خانوادگی؛ ایمن، کم‌صدا و جذاب برای بچه‌ها.',
     href: '/products/junior-play',
     image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=2000&q=85',
+      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fm=webp&fit=crop&w=1400&q=75',
   },
   {
     index: 'محصول ۰۳',
@@ -38,7 +38,7 @@ const models = [
     tagline: 'قطعات اصلی و خدمات فنی تا دستگاه‌هایتان خواب نمانند.',
     href: '/spare-parts',
     image:
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=2000&q=85',
+      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fm=webp&fit=crop&w=1400&q=75',
   },
 ];
 
@@ -49,10 +49,11 @@ export default function Home() {
       <section className="hero">
         <div className="hero__media">
           <img
-            src="/Background.png"
+            src="/Background.webp"
             alt="ماشین برخوردی MIG"
             className="kenburns"
             fetchPriority="high"
+            decoding="async"
           />
           <div className="hero__scrim" />
         </div>
@@ -89,7 +90,7 @@ export default function Home() {
 
       {/* معرفی — راست‌چین طبیعی RTL */}
       <PhotoBand
-        image="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fit=crop&w=2000&q=80"
+        image="https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?auto=format&fm=webp&fit=crop&w=1400&q=72"
         eyebrow="درباره MIG"
         title="گروه صنعتی محمدی"
         body="ما تجهیزات شهربازی تولید و تأمین می‌کنیم و در راه‌اندازی و نگهداری مجموعه‌ها کنار شما هستیم."
@@ -103,7 +104,7 @@ export default function Home() {
 
       {/* خدمات — راست‌چین، لیست‌گونه */}
       <PhotoBand
-        image="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=2000&q=80"
+        image="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fm=webp&fit=crop&w=1400&q=72"
         eyebrow="چه می‌کنیم"
         title="سه کار اصلی ما"
         body="ساخت و فروش دستگاه، راه‌اندازی مجموعه، و پشتیبانی فنی بعد از فروش."
@@ -138,7 +139,7 @@ export default function Home() {
 
       {/* استعلام — وسط‌چین چون دعوت به اقدام است */}
       <PhotoBand
-        image="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=2000&q=80"
+        image="https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fm=webp&fit=crop&w=1400&q=72"
         eyebrow="سفارش و قیمت"
         title="دستگاه را مطابق فضای خودتان بگیرید"
         body="ابعاد سالن، ظرفیت بازدیدکننده و بودجه را بگویید؛ طرح و قیمت مناسب را برایتان آماده می‌کنیم."
@@ -153,7 +154,7 @@ export default function Home() {
 
       {/* نمونه‌کارها — راست‌چین */}
       <PhotoBand
-        image="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=2000&q=80"
+        image="https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fm=webp&fit=crop&w=1400&q=72"
         eyebrow="نمونه‌کارها"
         title="مجموعه‌هایی که با هم راه انداختیم"
         body="از سالن ماشین برخوردی تا فضاهای خانوادگی؛ نمونه‌هایی از کار با صاحبان مجموعه."
@@ -190,11 +191,12 @@ export default function Home() {
       <section className="relative flex min-h-[52svh] overflow-hidden md:min-h-[56svh]">
         <div className="absolute inset-0">
           <img
-            src="/Background.png"
+            src="/Background-cta.webp"
             alt=""
             className="h-full w-full object-cover opacity-55"
             style={{ objectPosition: '60% center' }}
             loading="lazy"
+            decoding="async"
           />
           <div className="absolute inset-0 bg-black/55" />
         </div>
