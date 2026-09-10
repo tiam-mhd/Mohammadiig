@@ -14,4 +14,8 @@ export const environmentValidationSchema = Joi.object({
     then: Joi.required(),
     otherwise: Joi.optional(),
   }),
+  ADMIN_EMAIL: Joi.string().email().default('admin@mohammadiig.ir'),
+  ADMIN_PASSWORD: Joi.string().min(8).max(128).default('MigAdmin2026!'),
+  ADMIN_FIRST_NAME: Joi.string().min(1).max(100).default('MIG'),
+  ADMIN_LAST_NAME: Joi.string().min(1).max(100).default('Admin'),
 });
