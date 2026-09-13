@@ -133,23 +133,27 @@ export class ProductsService implements OnModuleInit {
   }
 
   async create(dto: ManageProductDto): Promise<Product> {
-    await this.assertUniqueIdentifiers(dto.slug, dto.sku);
+    const slug = dto.slug.trim();
+    const nameFa = dto.nameFa.trim();
+    const sku = await this.resolveUniqueSku(dto.sku, slug);
+    await this.assertUniqueIdentifiers(slug, sku);
+
     const images = this.normalizeImages(dto.images, dto.thumbnailImageUrl);
     const entity = await this.repository.save({
       id: randomUUID(),
-      sku: dto.sku.trim(),
-      nameEn: dto.nameEn.trim(),
-      nameFa: dto.nameFa.trim(),
-      slug: dto.slug.trim(),
-      descriptionShortFa: dto.descriptionShortFa.trim(),
+      sku,
+      nameEn: (dto.nameEn?.trim() || nameFa).slice(0, 200),
+      nameFa,
+      slug,
+      descriptionShortFa: (dto.descriptionShortFa ?? '').trim().slice(0, 500),
       descriptionLongFa: dto.descriptionLongFa?.trim() || null,
       specifications: {},
-      priceBase: dto.priceBase,
+      priceBase: dto.priceBase ?? 0,
       currency: 'IRR',
-      category: dto.category,
+      category: (dto.category?.trim() || 'uncategorized').slice(0, 40),
       gallery: images,
       thumbnailImageUrl: images[0] ?? null,
-      isActive: dto.isActive ?? true,
+      isActive: dto.isActive ?? false,
       isFeatured: dto.isFeatured ?? false,
     });
     return this.toProduct(entity);
@@ -160,16 +164,23 @@ export class ProductsService implements OnModuleInit {
     if (!entity) throw new NotFoundException('Product not found');
 
     const nextSlug = (dto.slug ?? entity.slug).trim();
-    const nextSku = (dto.sku ?? entity.sku).trim();
+    const nextSku =
+      dto.sku !== undefined
+        ? await this.resolveUniqueSku(dto.sku, nextSlug, id)
+        : entity.sku;
     await this.assertUniqueIdentifiers(nextSlug, nextSku, id);
 
     if (dto.nameFa !== undefined) entity.nameFa = dto.nameFa.trim();
-    if (dto.nameEn !== undefined) entity.nameEn = dto.nameEn.trim();
+    if (dto.nameEn !== undefined) entity.nameEn = (dto.nameEn.trim() || entity.nameFa).slice(0, 200);
     if (dto.slug !== undefined) entity.slug = nextSlug;
     if (dto.sku !== undefined) entity.sku = nextSku;
-    if (dto.descriptionShortFa !== undefined) entity.descriptionShortFa = dto.descriptionShortFa.trim();
+    if (dto.descriptionShortFa !== undefined) {
+      entity.descriptionShortFa = dto.descriptionShortFa.trim().slice(0, 500);
+    }
     if (dto.descriptionLongFa !== undefined) entity.descriptionLongFa = dto.descriptionLongFa.trim() || null;
-    if (dto.category !== undefined) entity.category = dto.category;
+    if (dto.category !== undefined) {
+      entity.category = (dto.category.trim() || 'uncategorized').slice(0, 40);
+    }
     if (dto.priceBase !== undefined) entity.priceBase = dto.priceBase;
     if (dto.images !== undefined) {
       const images = this.normalizeImages(dto.images);
@@ -245,6 +256,27 @@ export class ProductsService implements OnModuleInit {
     if (skuOwner && (!excludeId || skuOwner.id !== excludeId)) {
       throw new ConflictException('این کد کالا از قبل برای محصول دیگری ثبت شده است.');
     }
+  }
+
+  private async resolveUniqueSku(requested: string | undefined, slug: string, excludeId?: string): Promise<string> {
+    const raw = (requested?.trim() || slug || 'product')
+      .toUpperCase()
+      .replace(/[^A-Z0-9-_]/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 40);
+    let candidate = raw || 'PRODUCT';
+    let attempt = 0;
+    while (attempt < 20) {
+      const owner = await this.repository.findOne({
+        where: excludeId ? { sku: candidate, id: Not(excludeId) } : { sku: candidate },
+        withDeleted: true,
+      });
+      if (!owner || (excludeId && owner.id === excludeId)) return candidate;
+      attempt += 1;
+      candidate = `${raw.slice(0, 32)}-${attempt}`;
+    }
+    return `${raw.slice(0, 24)}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50);
   }
 
   private normalizeImages(images?: string[] | null, fallbackThumbnail?: string | null): string[] {
