@@ -8,7 +8,7 @@ type ProductRailCardProps = {
   name: string;
   tagline: string;
   href: string;
-  image: string;
+  image?: string;
 };
 
 /** Product card — GPU-friendly hover (transform + opacity only). */
@@ -22,7 +22,13 @@ export function ProductRailCard({
   return (
     <article className="home-rail__card">
       <div className="home-rail__media">
-        <img src={image} alt={name} loading="lazy" decoding="async" />
+        {image ? (
+          <img src={image} alt={name} loading="lazy" decoding="async" />
+        ) : (
+          <div className="home-rail__placeholder" aria-hidden>
+            <span>بدون تصویر</span>
+          </div>
+        )}
       </div>
 
       <div className="home-rail__glow" aria-hidden />
@@ -30,7 +36,7 @@ export function ProductRailCard({
       <div className="home-rail__rim" aria-hidden />
 
       <GlassPanel
-        mode="frost"
+        mode={image ? 'frost' : 'backdrop'}
         frostSrc={image}
         className="home-rail__copy"
         bodyClassName="home-rail__copy-inner"

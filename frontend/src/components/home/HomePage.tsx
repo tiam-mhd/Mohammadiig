@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   motion,
   useReducedMotion,
@@ -15,56 +15,24 @@ import { GlassButton } from '@/components/GlassButton';
 import { SmoothScroll } from '@/components/SmoothScroll';
 import { GlassPanel } from '@/components/home/GlassPanel';
 import { ProductRailCard } from '@/components/home/ProductRailCard';
+import {
+  fetchPortfolioWorks,
+  fetchProducts,
+  fetchServices,
+  type PortfolioWork,
+  type Product,
+  type ServiceSummary,
+} from '@/lib/api-client';
+import { resolveMediaUrl } from '@/lib/media';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const PILLARS_SCENE =
-  'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1600&q=70';
+const FALLBACK_SCENE = '/Background.webp';
 
-const PROOF_SCENE =
-  'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fm=webp&fit=crop&w=1600&q=72';
-
-const pillars = [
-  {
-    title: 'ساخت و تأمین',
-    body: 'دستگاه‌هایی برای سالن واقعی؛ مقاوم، قابل نگهداری و آماده کار مداوم.',
-  },
-  {
-    title: 'راه‌اندازی مجموعه',
-    body: 'از چیدمان فضا تا نصب و بهره‌برداری؛ تا مجموعه به درآمد برسد.',
-  },
-  {
-    title: 'پشتیبانی فنی',
-    body: 'قطعات اصلی و خدمات بعد از فروش تا دستگاه‌ها خواب نمانند.',
-  },
-];
-
-const products = [
-  {
-    index: '01',
-    name: 'ماشین برخوردی حرفه‌ای',
-    tagline: 'برای سالن‌های پرتردد؛ بدنه مقاوم و نگهداری آسان.',
-    href: '/products/bumper-car-signature',
-    image:
-      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1600&q=75',
-  },
-  {
-    index: '02',
-    name: 'ماشین کودک',
-    tagline: 'ایمن، کم‌صدا و جذاب برای فضاهای خانوادگی.',
-    href: '/products/junior-play',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fm=webp&fit=crop&w=1200&q=75',
-  },
-  {
-    index: '03',
-    name: 'قطعات و پشتیبانی',
-    tagline: 'قطعات اصلی و خدمات فنی برای تداوم کار مجموعه.',
-    href: '/spare-parts',
-    image:
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fm=webp&fit=crop&w=1200&q=75',
-  },
-];
+function productImage(product: Product | undefined): string {
+  if (!product) return '';
+  return resolveMediaUrl(product.image || product.images?.[0]);
+}
 
 function useAfterSplash(ready: boolean) {
   const [go, setGo] = useState(false);
@@ -212,6 +180,62 @@ export function HomePage() {
   const trackRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
 
+  const [products, setProducts] = useState<Product[]>([]);
+  const [services, setServices] = useState<ServiceSummary[]>([]);
+  const [portfolio, setPortfolio] = useState<PortfolioWork[]>([]);
+  const [dataReady, setDataReady] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+
+    Promise.all([
+      fetchProducts({ limit: 12 })
+        .then((res) => res.data ?? [])
+        .catch(() => [] as Product[]),
+      fetchServices().catch(() => [] as ServiceSummary[]),
+      fetchPortfolioWorks().catch(() => [] as PortfolioWork[]),
+    ]).then(([nextProducts, nextServices, nextPortfolio]) => {
+      if (!mounted) return;
+      setProducts(nextProducts);
+      setServices(nextServices);
+      setPortfolio(nextPortfolio);
+      setDataReady(true);
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const featuredProduct = useMemo(() => {
+    if (!products.length) return null;
+    return products.find((p) => p.isFeatured) ?? products[0];
+  }, [products]);
+
+  const railProducts = useMemo(
+    () =>
+      products.map((product, i) => ({
+        id: product.id,
+        index: String(i + 1).padStart(2, '0'),
+        name: product.name,
+        tagline: product.description || product.category,
+        href: `/products/${product.slug}`,
+        image: productImage(product),
+      })),
+    [products]
+  );
+
+  const featuredImage = productImage(featuredProduct ?? undefined);
+  const proofWork =
+    portfolio.find((w) => w.isFeatured) ?? portfolio[0] ?? null;
+  const proofImage =
+    resolveMediaUrl(proofWork?.coverImageUrl || proofWork?.gallery?.[0]) ||
+    FALLBACK_SCENE;
+  const pillarsScene =
+    featuredImage ||
+    resolveMediaUrl(proofWork?.coverImageUrl) ||
+    FALLBACK_SCENE;
+
   useGSAP(
     () => {
       if (reduce) return;
@@ -253,21 +277,24 @@ export function HomePage() {
         });
       });
 
-      gsap.fromTo(
-        root.querySelectorAll('.home-glass-card'),
-        { autoAlpha: 0 },
-        {
-          autoAlpha: 1,
-          duration: 0.95,
-          stagger: 0.14,
-          ease: 'power2.out',
-          clearProps: 'transform',
-          scrollTrigger: {
-            trigger: root.querySelector('.home-pillars__grid'),
-            start: 'top 80%',
-          },
-        }
-      );
+      const pillarsGrid = root.querySelector('.home-pillars__grid');
+      if (pillarsGrid) {
+        gsap.fromTo(
+          root.querySelectorAll('.home-glass-card'),
+          { autoAlpha: 0 },
+          {
+            autoAlpha: 1,
+            duration: 0.95,
+            stagger: 0.14,
+            ease: 'power2.out',
+            clearProps: 'transform',
+            scrollTrigger: {
+              trigger: pillarsGrid,
+              start: 'top 80%',
+            },
+          }
+        );
+      }
 
       const statNum = root.querySelector('.home-legacy__stat-num');
       if (statNum) {
@@ -364,7 +391,16 @@ export function HomePage() {
         });
       }
     },
-    { scope: rootRef, dependencies: [reduce] }
+    {
+      scope: rootRef,
+      dependencies: [
+        reduce,
+        dataReady,
+        products.length,
+        services.length,
+        portfolio.length,
+      ],
+    }
   );
 
   return (
@@ -394,139 +430,154 @@ export function HomePage() {
           </div>
         </section>
 
-        {/* Pillars — glass bento */}
-        <section className="home-pillars">
-          <div className="home-pillars__scene" aria-hidden>
-            <img src={PILLARS_SCENE} alt="" loading="lazy" decoding="async" />
-          </div>
-          <div className="content-shell">
-            <div className="home-pillars__head" data-reveal>
-              <div>
-                <p className="home-kicker">فعالیت ما</p>
-                <h2 className="home-section-title">سه تعهد اصلی گروه صنعتی محمدی</h2>
+        {/* Pillars — from services */}
+        {services.length > 0 ? (
+          <section className="home-pillars">
+            <div className="home-pillars__scene" aria-hidden>
+              <img src={pillarsScene} alt="" loading="lazy" decoding="async" />
+            </div>
+            <div className="content-shell">
+              <div className="home-pillars__head" data-reveal>
+                <div>
+                  <p className="home-kicker">فعالیت ما</p>
+                  <h2 className="home-section-title">خدمات گروه صنعتی محمدی</h2>
+                </div>
+                <p className="home-section-lede home-pillars__lede">
+                  از ساخت و نصب تا آموزش و پشتیبانی — یک مسیر کامل برای صاحبان شهربازی.
+                </p>
               </div>
-              <p className="home-section-lede home-pillars__lede">
-                ساخت دستگاه، راه‌اندازی مجموعه، و پشتیبانی بعد از فروش — یک مسیر کامل برای صاحبان
-                شهربازی.
+
+              <div className="home-pillars__grid">
+                {services.map((item, i) => (
+                  <GlassPanel
+                    key={item.id}
+                    as="article"
+                    mode="backdrop"
+                    className={`home-glass-card home-glass-card--${(i % 3) + 1}`}
+                  >
+                    <span className="home-glass-card__index" lang="en">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <h3 className="home-glass-card__title">{item.nameFa}</h3>
+                    <p className="home-glass-card__body">{item.description}</p>
+                  </GlassPanel>
+                ))}
+              </div>
+
+              <div className="home-pillars__cta" data-reveal>
+                <GlassButton href="/services">خدمات ما</GlassButton>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {/* Featured product */}
+        {featuredProduct ? (
+          <section className="home-feature">
+            <div className="home-feature__layout content-shell">
+              <div className="home-feature__frame">
+                <div className="home-feature__media">
+                  {featuredImage ? (
+                    <img
+                      src={featuredImage}
+                      alt={featuredProduct.name}
+                      data-parallax="14"
+                      loading="lazy"
+                      decoding="async"
+                    />
+                  ) : (
+                    <div className="home-rail__placeholder" aria-hidden>
+                      <span>بدون تصویر</span>
+                    </div>
+                  )}
+                </div>
+                <div className="home-feature__scrim" />
+              </div>
+              <GlassPanel
+                as="aside"
+                mode="backdrop"
+                className="home-feature__aside"
+              >
+                <div data-reveal>
+                  <p className="home-kicker home-kicker--gold">محصول شاخص</p>
+                  <h2 className="home-feature__title">{featuredProduct.name}</h2>
+                  <p className="home-feature__body">
+                    {featuredProduct.description || featuredProduct.category}
+                  </p>
+                  <GlassButton href={`/products/${featuredProduct.slug}`}>
+                    جزئیات محصول
+                  </GlassButton>
+                </div>
+              </GlassPanel>
+            </div>
+          </section>
+        ) : null}
+
+        {/* Horizontal product rail */}
+        {railProducts.length > 0 ? (
+          <section className="home-rail">
+            <div className="content-shell home-rail__intro" data-reveal>
+              <p className="home-kicker">محصولات</p>
+              <h2 className="home-section-title">برای هر فضا، دستگاه مناسب</h2>
+              <p className="home-section-lede">
+                سالن حرفه‌ای، فضای کودک، یا پشتیبانی قطعات — مسیر را با نیاز مجموعه شما شروع می‌کنیم.
               </p>
             </div>
 
-            <div className="home-pillars__grid">
-              {pillars.map((item, i) => (
+            <div className="home-rail__viewport">
+              <div ref={trackRef} className="home-rail__track">
+                {railProducts.map((product) => (
+                  <ProductRailCard key={product.id} {...product} />
+                ))}
                 <GlassPanel
-                  key={item.title}
-                  as="article"
-                  mode="backdrop"
-                  className={`home-glass-card home-glass-card--${i + 1}`}
+                  mode={featuredImage ? 'frost' : 'backdrop'}
+                  frostSrc={featuredImage || undefined}
+                  className="home-rail__end"
+                  bodyClassName="home-rail__end-inner"
                 >
-                  <span className="home-glass-card__index" lang="en">
-                    {String(i + 1).padStart(2, '0')}
-                  </span>
-                  <h3 className="home-glass-card__title">{item.title}</h3>
-                  <p className="home-glass-card__body">{item.body}</p>
+                  <p className="home-rail__end-label">کاتالوگ کامل</p>
+                  <GlassButton href="/products">همه محصولات</GlassButton>
                 </GlassPanel>
-              ))}
-            </div>
-
-            <div className="home-pillars__cta" data-reveal>
-              <GlassButton href="/services">خدمات ما</GlassButton>
-            </div>
-          </div>
-        </section>
-
-        {/* Featured — split magazine */}
-        <section className="home-feature">
-          <div className="home-feature__layout content-shell">
-            <div className="home-feature__frame">
-              <div className="home-feature__media">
-                <img
-                  src={products[0].image}
-                  alt={products[0].name}
-                  data-parallax="14"
-                  loading="lazy"
-                  decoding="async"
-                />
               </div>
-              <div className="home-feature__scrim" />
             </div>
-            <GlassPanel
-              as="aside"
-              mode="backdrop"
-              className="home-feature__aside"
-            >
-              <div data-reveal>
-                <p className="home-kicker home-kicker--gold">محصول شاخص</p>
-                <h2 className="home-feature__title">{products[0].name}</h2>
-                <p className="home-feature__body">{products[0].tagline}</p>
-                <ul className="home-feature__points">
-                  <li>بدنه مقاوم برای ترافیک بالا</li>
-                  <li>نگهداری آسان در سالن واقعی</li>
-                  <li>پشتیبانی قطعات پس از فروش</li>
-                </ul>
-                <GlassButton href={products[0].href}>جزئیات محصول</GlassButton>
-              </div>
-            </GlassPanel>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
-        {/* Horizontal product rail */}
-        <section className="home-rail">
-          <div className="content-shell home-rail__intro" data-reveal>
-            <p className="home-kicker">محصولات</p>
-            <h2 className="home-section-title">برای هر فضا، دستگاه مناسب</h2>
-            <p className="home-section-lede">
-              سالن حرفه‌ای، فضای کودک، یا پشتیبانی قطعات — مسیر را با نیاز مجموعه شما شروع می‌کنیم.
-            </p>
-          </div>
-
-          <div className="home-rail__viewport">
-            <div ref={trackRef} className="home-rail__track">
-              {products.map((product) => (
-                <ProductRailCard key={product.href} {...product} />
-              ))}
-              <GlassPanel
-                mode="frost"
-                frostSrc={products[0].image}
-                className="home-rail__end"
-                bodyClassName="home-rail__end-inner"
-              >
-                <p className="home-rail__end-label">کاتالوگ کامل</p>
-                <GlassButton href="/products">همه محصولات</GlassButton>
+        {/* Proof — from portfolio */}
+        {proofWork ? (
+          <section className="home-proof">
+            <div className="home-proof__media">
+              <img
+                src={proofImage}
+                alt=""
+                data-parallax="10"
+                loading="lazy"
+                decoding="async"
+              />
+              <div className="home-proof__scrim" />
+            </div>
+            <div className="content-shell home-proof__content">
+              <GlassPanel mode="backdrop" className="home-proof__panel">
+                <div data-reveal>
+                  <p className="home-kicker">نمونه‌کارها</p>
+                  <h2 className="home-section-title">{proofWork.titleFa}</h2>
+                  <p className="home-section-lede">
+                    {proofWork.summaryFa ||
+                      'از سالن ماشین برخوردی تا فضاهای خانوادگی؛ کار واقعی با صاحبان مجموعه.'}
+                  </p>
+                  <div className="home-proof__actions">
+                    <GlassButton href={`/portfolio/${proofWork.slug}`}>
+                      دیدن این نمونه‌کار
+                    </GlassButton>
+                    <Link href="/portfolio" className="home-text-link">
+                      همه نمونه‌کارها
+                    </Link>
+                  </div>
+                </div>
               </GlassPanel>
             </div>
-          </div>
-        </section>
-
-        {/* Proof */}
-        <section className="home-proof">
-          <div className="home-proof__media">
-            <img
-              src={PROOF_SCENE}
-              alt=""
-              data-parallax="10"
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="home-proof__scrim" />
-          </div>
-          <div className="content-shell home-proof__content">
-            <GlassPanel mode="backdrop" className="home-proof__panel">
-              <div data-reveal>
-                <p className="home-kicker">نمونه‌کارها</p>
-                <h2 className="home-section-title">مجموعه‌هایی که با هم راه انداختیم</h2>
-                <p className="home-section-lede">
-                  از سالن ماشین برخوردی تا فضاهای خانوادگی؛ کار واقعی با صاحبان مجموعه.
-                </p>
-                <div className="home-proof__actions">
-                  <GlassButton href="/portfolio">دیدن نمونه‌کارها</GlassButton>
-                  <Link href="/projects" className="home-text-link">
-                    بهره‌برداری‌های ما
-                  </Link>
-                </div>
-              </div>
-            </GlassPanel>
-          </div>
-        </section>
+          </section>
+        ) : null}
 
         {/* Close */}
         <section className="home-close">
