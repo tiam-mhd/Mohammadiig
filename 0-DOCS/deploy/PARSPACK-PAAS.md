@@ -48,6 +48,20 @@ MEDIA_PUBLIC_BASE_URL=https://api.mohammadiig.ir
 
 نمونه کامل: `backend/.env.example`
 
+### OTP / پیامک پارس‌گرین
+برای ورود و ثبت‌نام مشتریان با موبایل:
+
+```env
+PARSGREEN_API_KEY=<کلید-وب‌سرویس-از-پنل>
+PARSGREEN_ADD_NAME=true
+PARSGREEN_DRY_RUN=false
+PARSGREEN_DEBUG=false
+OTP_TTL_SECONDS=120
+OTP_RESEND_SECONDS=60
+```
+
+کلید از پنل پارس‌گرین → وب سرویس → تولید API Key. متد: `POST https://sms.parsgreen.ir/Apiv2/Message/SendOtp`
+
 ### ماندگاری فایل‌های رسانه (مهم)
 آپلودهای کتابخانه تصاویر در مسیر `MEDIA_ROOT` ذخیره می‌شوند. روی PaaS این مسیر باید روی **دیسک/Volume پایدار** باشد، وگرنه با Redeploy فایل‌ها پاک می‌شوند.
 
