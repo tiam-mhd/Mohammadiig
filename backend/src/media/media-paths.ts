@@ -39,9 +39,36 @@ export function safeJoinMedia(mediaRoot: string, relativePath: string): string {
 
 export function publicMediaUrl(relativePath: string): string {
   const clean = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
-  const base = (process.env.MEDIA_PUBLIC_BASE_URL ?? '').trim().replace(/\/+$/, '');
-  if (base) return `${base}/media/${clean}`;
+  // Always persist a site-relative path. Absolute hosts (localhost/prod) break when
+  // the same DB is used across environments or opened on mobile.
   return `/media/${clean}`;
+}
+
+/**
+ * Normalize any stored media reference to a relative `/media/...` path when possible.
+ * Leaves external absolute URLs (e.g. CDN) unchanged.
+ */
+export function toRelativeMediaPath(urlOrPath: string | null | undefined): string {
+  const raw = String(urlOrPath ?? '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('/media/')) return raw.replace(/\/{2,}/g, '/');
+  if (raw.startsWith('data:')) return raw;
+
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      const parsed = new URL(raw);
+      if (parsed.pathname.startsWith('/media/')) {
+        return `${parsed.pathname}${parsed.search}`;
+      }
+      // Foreign absolute URL (Unsplash, CDN, …) — keep as-is
+      return raw;
+    }
+  } catch {
+    /* fall through */
+  }
+
+  if (/^\d{4}\/\d{2}\//.test(raw)) return `/media/${raw}`;
+  return raw;
 }
 
 export function dateFolderParts(date = new Date()): { year: string; month: string } {

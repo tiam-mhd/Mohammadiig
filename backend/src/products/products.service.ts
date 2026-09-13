@@ -7,6 +7,7 @@ import { Product, ProductListResponse } from './product.types';
 import { CategoriesService } from './categories.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { randomUUID } from 'node:crypto';
+import { toRelativeMediaPath } from '../media/media-paths';
 
 const imageBase = 'https://images.unsplash.com';
 
@@ -66,6 +67,7 @@ export class ProductsService implements OnModuleInit {
       await this.repository.save(seedProducts);
     } else {
       await this.backfillGalleries();
+      await this.normalizeStoredMediaUrls();
     }
   }
 
@@ -79,6 +81,24 @@ export class ProductsService implements OnModuleInit {
     for (const row of pending) {
       const url = row.thumbnailImageUrl!.trim();
       row.gallery = [url];
+      await this.repository.save(row);
+    }
+  }
+
+  /** Rewrite localhost/absolute /media/... URLs to portable relative paths. */
+  private async normalizeStoredMediaUrls(): Promise<void> {
+    const rows = await this.repository.find({ withDeleted: true });
+    for (const row of rows) {
+      const nextGallery = this.normalizeImages(row.gallery, row.thumbnailImageUrl);
+      const nextThumb = nextGallery[0] ?? null;
+      const prevGallery = Array.isArray(row.gallery) ? row.gallery : [];
+      const galleryChanged =
+        nextGallery.length !== prevGallery.length ||
+        nextGallery.some((url, index) => url !== toRelativeMediaPath(prevGallery[index]));
+      const thumbChanged = toRelativeMediaPath(row.thumbnailImageUrl) !== (nextThumb ?? '');
+      if (!galleryChanged && !thumbChanged) continue;
+      row.gallery = nextGallery;
+      row.thumbnailImageUrl = nextThumb;
       await this.repository.save(row);
     }
   }
@@ -281,21 +301,21 @@ export class ProductsService implements OnModuleInit {
 
   private normalizeImages(images?: string[] | null, fallbackThumbnail?: string | null): string[] {
     const fromList = Array.isArray(images)
-      ? images.map((item) => String(item ?? '').trim()).filter(Boolean)
+      ? images.map((item) => toRelativeMediaPath(String(item ?? ''))).filter(Boolean)
       : [];
     if (fromList.length > 0) {
       return Array.from(new Set(fromList)).slice(0, 30);
     }
-    const single = (fallbackThumbnail ?? '').trim();
+    const single = toRelativeMediaPath(fallbackThumbnail);
     return single ? [single] : [];
   }
 
   private resolveGallery(entity: ProductEntity): string[] {
     const gallery = Array.isArray(entity.gallery)
-      ? entity.gallery.map((item) => String(item ?? '').trim()).filter(Boolean)
+      ? entity.gallery.map((item) => toRelativeMediaPath(String(item ?? ''))).filter(Boolean)
       : [];
     if (gallery.length > 0) return gallery;
-    const thumb = (entity.thumbnailImageUrl ?? '').trim();
+    const thumb = toRelativeMediaPath(entity.thumbnailImageUrl);
     return thumb ? [thumb] : [];
   }
 

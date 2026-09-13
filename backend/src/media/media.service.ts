@@ -32,8 +32,10 @@ import {
   resolveMediaRoot,
   safeJoinMedia,
   settingsFilePath,
+  toRelativeMediaPath,
   trashDir,
 } from './media-paths';
+
 import {
   clampSettings,
   DEFAULT_MEDIA_SETTINGS,
@@ -81,6 +83,24 @@ export class MediaService implements OnModuleInit {
     ensureDir(trashDir(this.mediaRoot));
     ensureDir(backupsDir(this.mediaRoot));
     console.log(`[Media] root=${this.mediaRoot}`);
+    void this.normalizeStoredUrls().catch((error) => {
+      console.warn(`[Media] URL normalize skipped: ${error instanceof Error ? error.message : String(error)}`);
+    });
+  }
+
+  /** Rewrite absolute localhost/prod hosts in media_assets.url to relative /media/... */
+  private async normalizeStoredUrls(): Promise<void> {
+    const rows = await this.media.find({ withDeleted: true });
+    let changed = 0;
+    for (const row of rows) {
+      const next = toRelativeMediaPath(row.url) || publicMediaUrl(row.relativePath);
+      if (next && next !== row.url) {
+        row.url = next;
+        await this.media.save(row);
+        changed += 1;
+      }
+    }
+    if (changed > 0) console.log(`[Media] normalized ${changed} stored URL(s) to relative /media/...`);
   }
 
   getRoot(): string {
@@ -88,18 +108,22 @@ export class MediaService implements OnModuleInit {
   }
 
   private toView(entity: MediaAssetEntity): MediaAssetView {
-    const absoluteUrl = this.resolveAbsoluteUrl(entity.url);
-    return Object.assign(entity, { absoluteUrl });
+    const relative = toRelativeMediaPath(entity.url) || publicMediaUrl(entity.relativePath);
+    // Keep response `url` relative so admin pickers never persist localhost/prod hosts.
+    const normalized = Object.assign(entity, { url: relative });
+    const absoluteUrl = this.resolveAbsoluteUrl(relative);
+    return Object.assign(normalized, { absoluteUrl });
   }
 
   resolveAbsoluteUrl(urlOrPath: string): string {
-    if (/^https?:\/\//i.test(urlOrPath)) return urlOrPath;
+    const relative = toRelativeMediaPath(urlOrPath);
+    if (/^https?:\/\//i.test(relative) || relative.startsWith('data:')) return relative;
     const base = (process.env.MEDIA_PUBLIC_BASE_URL ?? '').trim().replace(/\/+$/, '');
     if (base) {
-      if (urlOrPath.startsWith('/')) return `${base}${urlOrPath}`;
-      return `${base}/media/${urlOrPath}`;
+      if (relative.startsWith('/')) return `${base}${relative}`;
+      return `${base}/media/${relative}`;
     }
-    return urlOrPath.startsWith('/') ? urlOrPath : `/media/${urlOrPath}`;
+    return relative.startsWith('/') ? relative : `/media/${relative}`;
   }
 
   getSettings(): MediaCompressionSettings {

@@ -9,12 +9,13 @@ import {
   MediaAsset,
   uploadMediaAsset,
 } from '@/lib/api-client';
-import { formatBytes, isVideoMedia, resolveMediaUrl } from '@/lib/media';
+import { formatBytes, isVideoMedia, resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
 import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 function pickUrl(asset: MediaAsset): string {
-  return resolveMediaUrl(asset.absoluteUrl || asset.url);
+  // Persist relative `/media/...` so production never receives localhost absolute URLs.
+  return toRelativeMediaPath(asset.url) || toRelativeMediaPath(asset.absoluteUrl);
 }
 
 export function MediaPicker({

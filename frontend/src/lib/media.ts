@@ -4,11 +4,40 @@ export function getApiOrigin(): string {
   return raw.replace(/\/api$/i, '') || 'http://localhost:3001';
 }
 
+/** Prefer storing `/media/...` so the same DB works across local and production. */
+export function toRelativeMediaPath(urlOrPath: string | null | undefined): string {
+  const raw = String(urlOrPath ?? '').trim();
+  if (!raw) return '';
+  if (raw.startsWith('/media/')) return raw.replace(/\/{2,}/g, '/');
+  if (raw.startsWith('data:')) return raw;
+
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      const parsed = new URL(raw);
+      if (parsed.pathname.startsWith('/media/')) {
+        return `${parsed.pathname}${parsed.search}`;
+      }
+      return raw;
+    }
+  } catch {
+    /* ignore */
+  }
+
+  if (/^\d{4}\/\d{2}\//.test(raw)) return `/media/${raw}`;
+  return raw;
+}
+
 export function resolveMediaUrl(url: string | null | undefined): string {
   if (!url) return '';
-  if (/^https?:\/\//i.test(url) || url.startsWith('data:')) return url;
+  if (url.startsWith('data:')) return url;
+
+  const relative = toRelativeMediaPath(url);
+  // External CDN / Unsplash absolute URLs stay absolute.
+  if (/^https?:\/\//i.test(relative)) return relative;
+
   const origin = getApiOrigin();
-  return url.startsWith('/') ? `${origin}${url}` : `${origin}/media/${url}`;
+  if (relative.startsWith('/')) return `${origin}${relative}`;
+  return `${origin}/media/${relative}`;
 }
 
 export function formatBytes(size: number | null | undefined): string {

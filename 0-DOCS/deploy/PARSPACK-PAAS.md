@@ -43,7 +43,8 @@ JWT_SECRET=<حداقل-۳۲-کاراکتر-تصادفی>
 DB_DRIVER=postgres
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/mig
 MEDIA_ROOT=/data/media
-MEDIA_PUBLIC_BASE_URL=https://api.mohammadiig.ir
+# Leave empty — store relative /media/... in DB (do not use localhost absolute URLs)
+# MEDIA_PUBLIC_BASE_URL=
 ```
 
 نمونه کامل: `backend/.env.example`
@@ -68,7 +69,7 @@ OTP_RESEND_SECONDS=60
 پیشنهاد:
 1. یک Persistent Volume (مثلاً `/data`) به اپ بک‌اند وصل کنید.
 2. `MEDIA_ROOT=/data/media` بگذارید.
-3. `MEDIA_PUBLIC_BASE_URL` را روی دامنه API بگذارید تا URLهای ذخیره‌شده در دیتابیس مطلق و پایدار باشند.
+3. `MEDIA_PUBLIC_BASE_URL` را خالی بگذارید تا در دیتابیس فقط مسیر نسبی `/media/...` ذخیره شود (آدرس مطلق `localhost` روی موبایل می‌شکند).
 4. از پنل ادمین → کتابخانه تصاویر، بک‌آپ ZIP بگیرید و جایی امن نگه دارید.
 
 ### نکات
