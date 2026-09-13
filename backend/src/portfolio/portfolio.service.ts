@@ -13,7 +13,8 @@ export class PortfolioService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
-    if ((await this.repository.count()) > 0) return;
+    const existing = await this.repository.count({ withDeleted: true });
+    if (existing > 0) return;
     await this.repository.save([
       this.repository.create({
         id: randomUUID(),

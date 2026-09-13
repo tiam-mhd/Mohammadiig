@@ -1,18 +1,26 @@
 import { ConflictException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ProductEntity } from './product.entity';
 import { ProductVariantEntity } from './product-variant.entity';
 import { ProductSpecificationEntity } from './product-specification.entity';
 import { SparePartEntity } from './spare-part.entity';
 import { ManageSparePartDto } from './dto/manage-spare-part.dto';
+import {
+  CopyProductSpecsDto,
+  ManageProductSpecificationDto,
+  ManageProductVariantDto,
+  ProductSpecCategory,
+  ReorderProductSpecificationsDto,
+} from './dto/manage-product-extensions.dto';
 
 @Injectable()
 export class ProductExtensionsService implements OnModuleInit {
   constructor(
     @InjectRepository(ProductVariantEntity) private readonly variants: Repository<ProductVariantEntity>,
-    @InjectRepository(ProductSpecificationEntity) private readonly specifications: Repository<ProductSpecificationEntity>,
+    @InjectRepository(ProductSpecificationEntity)
+    private readonly specifications: Repository<ProductSpecificationEntity>,
     @InjectRepository(SparePartEntity) private readonly spareParts: Repository<SparePartEntity>,
     @InjectRepository(ProductEntity) private readonly products: Repository<ProductEntity>,
   ) {}
@@ -22,7 +30,7 @@ export class ProductExtensionsService implements OnModuleInit {
       this.products.findOne({ where: { id: '1' } }),
       this.products.findOne({ where: { id: '2' } }),
     ]);
-    if ((await this.variants.count()) === 0 && signature && junior)
+    if ((await this.variants.count()) === 0 && signature && junior) {
       await this.variants.save([
         {
           id: randomUUID(),
@@ -67,37 +75,39 @@ export class ProductExtensionsService implements OnModuleInit {
           isActive: true,
         },
       ]);
-    if ((await this.specifications.count()) === 0 && signature && junior)
+    }
+    if ((await this.specifications.count()) === 0 && signature && junior) {
       await this.specifications.save([
         {
           id: randomUUID(),
           productId: signature.id,
-          specificationKey: 'power',
-          specificationValue: 'Electric',
+          specificationKey: 'توان',
+          specificationValue: 'برقی',
           unit: null,
-          specCategory: 'Engine',
+          specCategory: 'technical',
           displayOrder: 1,
         },
         {
           id: randomUUID(),
           productId: signature.id,
-          specificationKey: 'audience',
-          specificationValue: 'Adult',
+          specificationKey: 'مخاطب',
+          specificationValue: 'بزرگسال',
           unit: null,
-          specCategory: 'Usage',
+          specCategory: 'technical',
           displayOrder: 2,
         },
         {
           id: randomUUID(),
           productId: junior.id,
-          specificationKey: 'audience',
-          specificationValue: 'Family',
+          specificationKey: 'مخاطب',
+          specificationValue: 'خانوادگی',
           unit: null,
-          specCategory: 'Usage',
+          specCategory: 'technical',
           displayOrder: 1,
         },
       ]);
-    if ((await this.spareParts.count()) === 0)
+    }
+    if ((await this.spareParts.count()) === 0) {
       await this.spareParts.save([
         {
           id: randomUUID(),
@@ -132,14 +142,186 @@ export class ProductExtensionsService implements OnModuleInit {
           isActive: true,
         },
       ]);
+    }
+  }
+
+  private async assertProductExists(productId: string): Promise<ProductEntity> {
+    const product = await this.products.findOne({ where: { id: productId } });
+    if (!product) throw new NotFoundException('محصول پیدا نشد.');
+    return product;
   }
 
   findVariants(productId: string): Promise<ProductVariantEntity[]> {
     return this.variants.find({ where: { productId, isActive: true }, order: { createdAt: 'ASC' } });
   }
 
+  findVariantsForAdmin(productId: string): Promise<ProductVariantEntity[]> {
+    return this.variants.find({ where: { productId }, order: { createdAt: 'ASC' } });
+  }
+
   findSpecifications(productId: string): Promise<ProductSpecificationEntity[]> {
-    return this.specifications.find({ where: { productId }, order: { displayOrder: 'ASC' } });
+    return this.specifications.find({
+      where: { productId },
+      order: { displayOrder: 'ASC', createdAt: 'ASC' },
+    });
+  }
+
+  async createSpecification(
+    productId: string,
+    dto: ManageProductSpecificationDto,
+  ): Promise<ProductSpecificationEntity> {
+    await this.assertProductExists(productId);
+    const maxOrder = await this.specifications
+      .createQueryBuilder('s')
+      .select('MAX(s.display_order)', 'max')
+      .where('s.product_id = :productId', { productId })
+      .andWhere('s.spec_category = :category', { category: dto.specCategory })
+      .getRawOne<{ max: number | null }>();
+
+    return this.specifications.save(
+      this.specifications.create({
+        id: randomUUID(),
+        productId,
+        specificationKey: dto.specificationKey.trim(),
+        specificationValue: dto.specificationValue.trim(),
+        unit: dto.unit?.trim() || null,
+        specCategory: dto.specCategory,
+        displayOrder: dto.displayOrder ?? Number(maxOrder?.max ?? -1) + 1,
+      }),
+    );
+  }
+
+  async updateSpecification(
+    productId: string,
+    specId: string,
+    dto: ManageProductSpecificationDto,
+  ): Promise<ProductSpecificationEntity> {
+    const spec = await this.specifications.findOne({ where: { id: specId, productId } });
+    if (!spec) throw new NotFoundException('مشخصات پیدا نشد.');
+    spec.specificationKey = dto.specificationKey.trim();
+    spec.specificationValue = dto.specificationValue.trim();
+    spec.unit = dto.unit?.trim() || null;
+    spec.specCategory = dto.specCategory;
+    if (dto.displayOrder !== undefined) spec.displayOrder = dto.displayOrder;
+    return this.specifications.save(spec);
+  }
+
+  async removeSpecification(productId: string, specId: string): Promise<void> {
+    const spec = await this.specifications.findOne({ where: { id: specId, productId } });
+    if (!spec) throw new NotFoundException('مشخصات پیدا نشد.');
+    await this.specifications.remove(spec);
+  }
+
+  async reorderSpecifications(
+    productId: string,
+    dto: ReorderProductSpecificationsDto,
+  ): Promise<ProductSpecificationEntity[]> {
+    await this.assertProductExists(productId);
+    const specs = await this.specifications.find({ where: { productId, id: In(dto.orderedIds) } });
+    if (specs.length !== dto.orderedIds.length) {
+      throw new NotFoundException('برخی مشخصات پیدا نشد.');
+    }
+    const byId = new Map(specs.map((item) => [item.id, item]));
+    for (let index = 0; index < dto.orderedIds.length; index += 1) {
+      const item = byId.get(dto.orderedIds[index]);
+      if (item) item.displayOrder = index;
+    }
+    await this.specifications.save(specs);
+    return this.findSpecifications(productId);
+  }
+
+  async copySpecifications(
+    targetProductId: string,
+    dto: CopyProductSpecsDto,
+  ): Promise<ProductSpecificationEntity[]> {
+    if (dto.sourceProductId === targetProductId) {
+      throw new ConflictException('محصول مبدأ و مقصد نمی‌توانند یکسان باشند.');
+    }
+    await this.assertProductExists(targetProductId);
+    await this.assertProductExists(dto.sourceProductId);
+
+    const categories = Array.from(new Set(dto.categories)) as ProductSpecCategory[];
+    const sourceSpecs = await this.specifications.find({
+      where: { productId: dto.sourceProductId, specCategory: In(categories) },
+      order: { displayOrder: 'ASC' },
+    });
+
+    const existing = await this.specifications.find({
+      where: { productId: targetProductId, specCategory: In(categories) },
+    });
+    if (existing.length) await this.specifications.remove(existing);
+
+    if (sourceSpecs.length) {
+      await this.specifications.save(
+        sourceSpecs.map((item, index) =>
+          this.specifications.create({
+            id: randomUUID(),
+            productId: targetProductId,
+            specificationKey: item.specificationKey,
+            specificationValue: item.specificationValue,
+            unit: item.unit,
+            specCategory: item.specCategory,
+            displayOrder: index,
+          }),
+        ),
+      );
+    }
+
+    return this.findSpecifications(targetProductId);
+  }
+
+  async createVariant(productId: string, dto: ManageProductVariantDto): Promise<ProductVariantEntity> {
+    const product = await this.assertProductExists(productId);
+    const skuVariant = dto.skuVariant.trim().toUpperCase();
+    const existing = await this.variants.findOne({ where: { skuVariant }, withDeleted: true });
+    if (existing) throw new ConflictException('کد مدل از قبل وجود دارد.');
+
+    return this.variants.save(
+      this.variants.create({
+        id: randomUUID(),
+        productId,
+        skuVariant,
+        variantNameFa: dto.variantNameFa.trim(),
+        variantNameEn: dto.variantNameEn.trim(),
+        variantCode: dto.variantCode?.trim() || null,
+        specifications: {},
+        priceBase: dto.priceBase ?? product.priceBase,
+        priceAdjustment: dto.priceAdjustment ?? 0,
+        currency: 'IRR',
+        stockQuantity: dto.stockQuantity ?? 0,
+        isActive: dto.isActive ?? true,
+      }),
+    );
+  }
+
+  async updateVariant(
+    productId: string,
+    variantId: string,
+    dto: ManageProductVariantDto,
+  ): Promise<ProductVariantEntity> {
+    const variant = await this.variants.findOne({ where: { id: variantId, productId } });
+    if (!variant) throw new NotFoundException('مدل پیدا نشد.');
+
+    const skuVariant = dto.skuVariant.trim().toUpperCase();
+    const duplicate = await this.variants.findOne({ where: { skuVariant }, withDeleted: true });
+    if (duplicate && duplicate.id !== variantId) throw new ConflictException('کد مدل از قبل وجود دارد.');
+
+    variant.skuVariant = skuVariant;
+    variant.variantNameFa = dto.variantNameFa.trim();
+    variant.variantNameEn = dto.variantNameEn.trim();
+    variant.variantCode = dto.variantCode?.trim() || null;
+    if (dto.priceBase !== undefined) variant.priceBase = dto.priceBase;
+    if (dto.priceAdjustment !== undefined) variant.priceAdjustment = dto.priceAdjustment;
+    if (dto.stockQuantity !== undefined) variant.stockQuantity = dto.stockQuantity;
+    if (dto.isActive !== undefined) variant.isActive = dto.isActive;
+
+    return this.variants.save(variant);
+  }
+
+  async removeVariant(productId: string, variantId: string): Promise<void> {
+    const variant = await this.variants.findOne({ where: { id: variantId, productId } });
+    if (!variant) throw new NotFoundException('مدل پیدا نشد.');
+    await this.variants.softRemove(variant);
   }
 
   findSpareParts(): Promise<SparePartEntity[]> {

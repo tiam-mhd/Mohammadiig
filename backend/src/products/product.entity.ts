@@ -27,6 +27,9 @@ export class ProductEntity {
   @Column({ name: 'description_short_fa', type: 'varchar', length: 500 })
   descriptionShortFa!: string;
 
+  @Column({ name: 'description_long_fa', type: 'text', nullable: true })
+  descriptionLongFa!: string | null;
+
   @Column({ type: 'simple-json', default: '{}' })
   specifications!: Record<string, unknown>;
 
@@ -41,6 +44,10 @@ export class ProductEntity {
 
   @Column({ name: 'thumbnail_image_url', type: 'varchar', length: 500, nullable: true })
   thumbnailImageUrl!: string | null;
+
+  /** Product image gallery URLs; first item is the primary/thumbnail. */
+  @Column({ type: 'simple-json', default: '[]' })
+  gallery!: string[];
 
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
