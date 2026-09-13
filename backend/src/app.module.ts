@@ -14,6 +14,7 @@ import { ProjectsModule } from './projects/projects.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { ServicesModule } from './services/services.module';
 import { AttachmentsModule } from './attachments/attachments.module';
+import { MediaModule } from './media/media.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module';
     PortfolioModule,
     ServicesModule,
     AttachmentsModule,
+    MediaModule,
     UsersModule,
   ],
   controllers: [HealthController],
