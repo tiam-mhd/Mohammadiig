@@ -6,6 +6,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { resolveMediaUrl } from '@/lib/media';
 
 interface ProductCardProps {
   id: string;
@@ -28,13 +29,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   slug,
 }) => {
   const target = href || (slug ? `/products/${slug}` : undefined);
+  const imageSrc = resolveMediaUrl(image);
 
   const inner = (
     <article className="group block bg-canvas text-start">
       <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
-        {image ? (
+        {imageSrc ? (
           <img
-            src={image}
+            src={imageSrc}
             alt={name}
             className="h-full w-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]"
           />

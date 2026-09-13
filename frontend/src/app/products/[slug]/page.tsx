@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   fetchProduct,
   fetchProductSpecifications,
@@ -11,6 +11,7 @@ import {
   ProductSpecification,
   ProductVariant,
 } from '@/lib/api-client';
+import { resolveMediaUrl } from '@/lib/media';
 
 export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -35,6 +36,18 @@ export default function ProductDetailPage() {
       .catch(() => setProduct(null))
       .finally(() => setIsLoading(false));
   }, [params.slug]);
+
+  const technicalSpecs = useMemo(
+    () =>
+      specifications.filter(
+        (item) => item.specCategory === 'technical' || !['appearance', 'technical'].includes(item.specCategory),
+      ),
+    [specifications],
+  );
+  const appearanceSpecs = useMemo(
+    () => specifications.filter((item) => item.specCategory === 'appearance'),
+    [specifications],
+  );
 
   if (isLoading) {
     return (
@@ -67,14 +80,42 @@ export default function ProductDetailPage() {
         </Link>
 
         <div className="mt-10 grid gap-12 lg:mt-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-start lg:gap-16">
-          <div className="aspect-[16/11] overflow-hidden bg-surface-soft">
-            {product.image ? (
-              <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <p className="caption-up">بدون تصویر</p>
+          <div className="grid gap-3">
+            <div className="aspect-[16/11] overflow-hidden bg-surface-soft">
+              {product.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={resolveMediaUrl(product.image)} alt={product.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <p className="caption-up">بدون تصویر</p>
+                </div>
+              )}
+            </div>
+            {(product.images?.length ?? 0) > 1 ? (
+              <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                {product.images!.map((url, index) => (
+                  <button
+                    key={`${url}-${index}`}
+                    type="button"
+                    className="aspect-square overflow-hidden bg-surface-soft"
+                    onClick={() =>
+                      setProduct((current) =>
+                        current
+                          ? {
+                              ...current,
+                              image: url,
+                              images: [url, ...current.images!.filter((item) => item !== url)],
+                            }
+                          : current,
+                      )
+                    }
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={resolveMediaUrl(url)} alt="" className="h-full w-full object-cover" />
+                  </button>
+                ))}
               </div>
-            )}
+            ) : null}
           </div>
 
           <div className="text-start">
@@ -96,20 +137,25 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
+        {product.descriptionLong ? (
+          <section className="mt-16 border-t border-hairline pt-12 text-start md:mt-20 md:pt-16">
+            <h2 className="display-sm text-ink">توضیحات کامل</h2>
+            <div className="body-lead mt-5 max-w-3xl whitespace-pre-wrap text-muted">{product.descriptionLong}</div>
+          </section>
+        ) : null}
+
         <div className="mt-16 grid gap-12 border-t border-hairline pt-12 md:mt-20 md:grid-cols-2 md:gap-16 md:pt-16">
           <section className="text-start">
             <h2 className="display-sm text-ink">مشخصات فنی</h2>
-            {specifications.length === 0 ? (
+            {technicalSpecs.length === 0 ? (
               <p className="body-lead mt-5 text-muted">مشخصات فنی ثبت نشده است.</p>
             ) : (
               <div className="mt-6 divide-y divide-white/10">
-                {specifications.map((specification) => (
+                {technicalSpecs.map((specification) => (
                   <div key={specification.id} className="flex justify-between gap-5 py-4">
-                    <span className="font-ui text-sm text-muted">
-                      {specification.specCategory} / {specification.specificationKey}
-                    </span>
+                    <span className="font-ui text-sm text-muted">{specification.specificationKey}</span>
                     <span className="font-ui text-sm text-ink">
-                      {specification.specificationValue}
+                      {specification.specificationValue || '—'}
                       {specification.unit ? ` ${specification.unit}` : ''}
                     </span>
                   </div>
@@ -119,28 +165,45 @@ export default function ProductDetailPage() {
           </section>
 
           <section className="text-start">
-            <h2 className="display-sm text-ink">مدل‌های قابل سفارش</h2>
-            {variants.length === 0 ? (
-              <p className="body-lead mt-5 text-muted">مدل اضافه‌ای ثبت نشده است.</p>
+            <h2 className="display-sm text-ink">مشخصات ظاهری</h2>
+            {appearanceSpecs.length === 0 ? (
+              <p className="body-lead mt-5 text-muted">مشخصات ظاهری ثبت نشده است.</p>
             ) : (
-              <div className="mt-6 space-y-0 divide-y divide-white/10 border-t border-white/10">
-                {variants.map((variant) => (
-                  <div key={variant.id} className="flex items-center justify-between gap-4 py-5">
-                    <div>
-                      <p className="font-ui text-base text-ink">{variant.variantNameFa}</p>
-                      <p className="caption-up mt-2">
-                        {variant.skuVariant} · موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
-                      </p>
-                    </div>
-                    <p className="font-ui text-sm text-ink">
-                      +{variant.priceAdjustment.toLocaleString('fa-IR')}
-                    </p>
+              <div className="mt-6 divide-y divide-white/10">
+                {appearanceSpecs.map((specification) => (
+                  <div key={specification.id} className="flex justify-between gap-5 py-4">
+                    <span className="font-ui text-sm text-muted">{specification.specificationKey}</span>
+                    <span className="font-ui text-sm text-ink">
+                      {specification.specificationValue || '—'}
+                      {specification.unit ? ` ${specification.unit}` : ''}
+                    </span>
                   </div>
                 ))}
               </div>
             )}
           </section>
         </div>
+
+        <section className="mt-16 border-t border-hairline pt-12 text-start md:mt-20 md:pt-16">
+          <h2 className="display-sm text-ink">مدل‌های قابل سفارش</h2>
+          {variants.length === 0 ? (
+            <p className="body-lead mt-5 text-muted">مدل اضافه‌ای ثبت نشده است.</p>
+          ) : (
+            <div className="mt-6 space-y-0 divide-y divide-white/10 border-t border-white/10">
+              {variants.map((variant) => (
+                <div key={variant.id} className="flex items-center justify-between gap-4 py-5">
+                  <div>
+                    <p className="font-ui text-base text-ink">{variant.variantNameFa}</p>
+                    <p className="caption-up mt-2">
+                      {variant.skuVariant} · موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
+                    </p>
+                  </div>
+                  <p className="font-ui text-sm text-ink">+{variant.priceAdjustment.toLocaleString('fa-IR')}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </div>
   );

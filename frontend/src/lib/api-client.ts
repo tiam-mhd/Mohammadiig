@@ -1,16 +1,110 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api';
+function resolveApiUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001/api').trim().replace(/\/+$/, '');
+  if (!raw) return 'http://localhost:3001/api';
+  // Nest global prefix is /api — accept either base form from env.
+  return /\/api$/i.test(raw) ? raw : `${raw}/api`;
+}
+
+const API_URL = resolveApiUrl();
+
+const PRODUCT_FIELD_LABELS: Record<string, string> = {
+  nameFa: 'نام فارسی',
+  nameEn: 'نام لاتین',
+  slug: 'شناسه آدرس',
+  sku: 'کد کالا',
+  descriptionShortFa: 'توضیح کوتاه',
+  category: 'دسته‌بندی',
+  priceBase: 'قیمت پایه',
+  thumbnailImageUrl: 'تصویر محصول',
+  images: 'تصاویر محصول',
+};
+
+async function readApiErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = (await response.json()) as { message?: string | string[] };
+    const raw = body?.message;
+    const messages = Array.isArray(raw) ? raw : typeof raw === 'string' && raw.trim() ? [raw] : [];
+    if (messages.length === 0) return fallback;
+
+    return messages
+      .map((message) => {
+        const longer = message.match(/^(\w+) must be longer than or equal to (\d+) characters$/);
+        if (longer) {
+          const label = PRODUCT_FIELD_LABELS[longer[1]] ?? longer[1];
+          return `${label} باید حداقل ${Number(longer[2]).toLocaleString('fa-IR')} کاراکتر باشد.`;
+        }
+        const shorter = message.match(/^(\w+) must be shorter than or equal to (\d+) characters$/);
+        if (shorter) {
+          const label = PRODUCT_FIELD_LABELS[shorter[1]] ?? shorter[1];
+          return `${label} باید حداکثر ${Number(shorter[2]).toLocaleString('fa-IR')} کاراکتر باشد.`;
+        }
+        if (message.includes('priceBase must be an integer number')) {
+          return 'قیمت پایه باید عدد صحیح باشد.';
+        }
+        if (message.startsWith('property ') && message.endsWith(' should not exist')) {
+          return fallback;
+        }
+        return message;
+      })
+      .join(' ');
+  } catch {
+    return fallback;
+  }
+}
 
 export interface Product {
   id: string;
   name: string;
+  nameEn?: string;
+  sku?: string;
   slug: string;
   description: string;
+  descriptionLong?: string | null;
   price: number;
   currency: 'IRR';
   category: string;
   image: string | null;
+  images?: string[];
+  isActive?: boolean;
   isFeatured: boolean;
+  deletedAt?: string | null;
 }
+
+export type ProductSpecCategory = 'technical' | 'appearance';
+
+export type ManageProductPayload = {
+  nameFa: string;
+  nameEn: string;
+  slug: string;
+  descriptionShortFa: string;
+  descriptionLongFa?: string;
+  sku: string;
+  category: string;
+  priceBase: number;
+  images?: string[];
+  thumbnailImageUrl?: string;
+  isActive?: boolean;
+  isFeatured?: boolean;
+};
+
+export type ManageProductSpecificationPayload = {
+  specificationKey: string;
+  specificationValue: string;
+  unit?: string | null;
+  specCategory: ProductSpecCategory;
+  displayOrder?: number;
+};
+
+export type ManageProductVariantPayload = {
+  skuVariant: string;
+  variantNameFa: string;
+  variantNameEn: string;
+  variantCode?: string | null;
+  priceBase?: number | null;
+  priceAdjustment?: number;
+  stockQuantity?: number;
+  isActive?: boolean;
+};
 
 interface ProductListResponse {
   data: Product[];
@@ -117,7 +211,19 @@ export interface PortfolioWork {
 /** @deprecated use OpsProject — kept temporarily for type migrations */
 export type ProjectSummary = OpsProject;
 export type ProjectAdminSummary = OpsProject;
-export interface ProductVariant { id: string; productId: string; skuVariant: string; variantNameFa: string; variantCode: string | null; priceBase: number | null; priceAdjustment: number; currency: string; stockQuantity: number; }
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  skuVariant: string;
+  variantNameFa: string;
+  variantNameEn?: string;
+  variantCode: string | null;
+  priceBase: number | null;
+  priceAdjustment: number;
+  currency: string;
+  stockQuantity: number;
+  isActive?: boolean;
+}
 export interface ProductSpecification { id: string; productId: string; specificationKey: string; specificationValue: string; unit: string | null; specCategory: string; displayOrder: number; }
 export interface SparePart {
   id: string;
@@ -163,6 +269,51 @@ export interface ServiceAdminSummary {
 }
 export interface AttachmentAdminSummary { id: string; ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize: number | null; fileType: string | null; uploadedBy: string; uploadedAt: string; }
 export interface UserAdminSummary { id: string; email: string; firstName: string | null; lastName: string | null; companyName: string | null; role: string; isActive: boolean; lastLoginAt: string | null; createdAt: string; }
+
+export interface MediaAsset {
+  id: string;
+  originalName: string;
+  storedName: string;
+  relativePath: string;
+  url: string;
+  absoluteUrl: string;
+  mimeType: string;
+  fileSize: number;
+  width: number | null;
+  height: number | null;
+  folder: string;
+  altText: string | null;
+  title: string | null;
+  caption: string | null;
+  description: string | null;
+  checksum: string | null;
+  parentId: string | null;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string | null;
+}
+
+export interface MediaListResponse {
+  data: MediaAsset[];
+  meta: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    folders: string[];
+  };
+}
+
+export interface MediaCompressionSettings {
+  quality: number;
+  maxWidth: number;
+  maxHeight: number;
+  convertToWebp: boolean;
+  stripMetadata: boolean;
+  compressOnUpload: boolean;
+}
+
 
 export async function fetchProducts(): Promise<ProductListResponse> {
   const response = await fetch(`${API_URL}/products?limit=12`, {
@@ -440,30 +591,194 @@ export async function fetchPortfolioWork(slug: string): Promise<PortfolioWork> {
   return response.json() as Promise<PortfolioWork>;
 }
 
-export async function createProduct(accessToken: string, payload: { nameFa: string; nameEn: string; slug: string; descriptionShortFa: string; sku: string; category: string; priceBase: number; thumbnailImageUrl?: string }): Promise<Product> {
+export async function createProduct(accessToken: string, payload: ManageProductPayload): Promise<Product> {
   const response = await fetch(`${API_URL}/products`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-  if (!response.ok) throw new Error('ایجاد محصول انجام نشد.');
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ایجاد محصول انجام نشد.'));
   return response.json() as Promise<Product>;
 }
 
-export async function updateProduct(accessToken: string, productId: string, payload: { nameFa: string; nameEn: string; slug: string; descriptionShortFa: string; sku: string; category: string; priceBase: number; thumbnailImageUrl?: string }): Promise<Product> {
+export async function updateProduct(accessToken: string, productId: string, payload: ManageProductPayload): Promise<Product> {
   const response = await fetch(`${API_URL}/products/${productId}`, { method: 'PATCH', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
-  if (!response.ok) throw new Error('ویرایش محصول انجام نشد.');
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ویرایش محصول انجام نشد.'));
   return response.json() as Promise<Product>;
 }
 
 export async function deleteProduct(accessToken: string, productId: string): Promise<void> {
   const response = await fetch(`${API_URL}/products/${productId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } });
-  if (!response.ok) throw new Error('حذف محصول انجام نشد.');
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'حذف محصول انجام نشد.'));
 }
 
-export async function fetchAdminProducts(): Promise<ProductListResponse> {
-  const response = await fetch(`${API_URL}/products?limit=50`, {
-    headers: { Accept: 'application/json' },
+export async function restoreProduct(accessToken: string, productId: string): Promise<Product> {
+  const response = await fetch(`${API_URL}/products/${productId}/restore`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'بازیابی محصول انجام نشد.'));
+  return response.json() as Promise<Product>;
+}
+
+export async function purgeProduct(accessToken: string, productId: string): Promise<void> {
+  const response = await fetch(`${API_URL}/products/${productId}/purge`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'حذف دائم محصول انجام نشد.'));
+}
+
+export async function fetchAdminProducts(
+  accessToken: string,
+  status: 'active' | 'trash' | 'all' = 'active',
+): Promise<Product[]> {
+  const response = await fetch(`${API_URL}/products/admin/all?status=${encodeURIComponent(status)}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
     cache: 'no-store',
   });
-  if (!response.ok) throw new Error('دریافت محصولات انجام نشد.');
-  return response.json() as Promise<ProductListResponse>;
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت محصولات انجام نشد.'));
+  return response.json() as Promise<Product[]>;
+}
+
+export async function fetchAdminProduct(accessToken: string, productId: string): Promise<Product> {
+  const response = await fetch(`${API_URL}/products/admin/${productId}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت محصول انجام نشد.'));
+  return response.json() as Promise<Product>;
+}
+
+export async function fetchAdminProductSpecifications(
+  accessToken: string,
+  productId: string,
+): Promise<ProductSpecification[]> {
+  const response = await fetch(`${API_URL}/products/admin/${productId}/specifications`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت مشخصات انجام نشد.'));
+  return response.json() as Promise<ProductSpecification[]>;
+}
+
+export async function fetchAdminProductVariants(
+  accessToken: string,
+  productId: string,
+): Promise<ProductVariant[]> {
+  const response = await fetch(`${API_URL}/products/admin/${productId}/variants`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت مدل‌ها انجام نشد.'));
+  return response.json() as Promise<ProductVariant[]>;
+}
+
+export async function createProductSpecification(
+  accessToken: string,
+  productId: string,
+  payload: ManageProductSpecificationPayload,
+): Promise<ProductSpecification> {
+  const response = await fetch(`${API_URL}/products/${productId}/specifications`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'افزودن مشخصات انجام نشد.'));
+  return response.json() as Promise<ProductSpecification>;
+}
+
+export async function updateProductSpecification(
+  accessToken: string,
+  productId: string,
+  specId: string,
+  payload: ManageProductSpecificationPayload,
+): Promise<ProductSpecification> {
+  const response = await fetch(`${API_URL}/products/${productId}/specifications/${specId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ویرایش مشخصات انجام نشد.'));
+  return response.json() as Promise<ProductSpecification>;
+}
+
+export async function deleteProductSpecification(
+  accessToken: string,
+  productId: string,
+  specId: string,
+): Promise<void> {
+  const response = await fetch(`${API_URL}/products/${productId}/specifications/${specId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'حذف مشخصات انجام نشد.'));
+}
+
+export async function reorderProductSpecifications(
+  accessToken: string,
+  productId: string,
+  orderedIds: string[],
+): Promise<ProductSpecification[]> {
+  const response = await fetch(`${API_URL}/products/${productId}/specifications/reorder`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ orderedIds }),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'مرتب‌سازی مشخصات انجام نشد.'));
+  return response.json() as Promise<ProductSpecification[]>;
+}
+
+export async function copyProductSpecs(
+  accessToken: string,
+  productId: string,
+  sourceProductId: string,
+  categories: ProductSpecCategory[],
+): Promise<ProductSpecification[]> {
+  const response = await fetch(`${API_URL}/products/${productId}/copy-specs`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ sourceProductId, categories }),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'کپی مشخصات انجام نشد.'));
+  return response.json() as Promise<ProductSpecification[]>;
+}
+
+export async function createProductVariant(
+  accessToken: string,
+  productId: string,
+  payload: ManageProductVariantPayload,
+): Promise<ProductVariant> {
+  const response = await fetch(`${API_URL}/products/${productId}/variants`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'افزودن مدل انجام نشد.'));
+  return response.json() as Promise<ProductVariant>;
+}
+
+export async function updateProductVariant(
+  accessToken: string,
+  productId: string,
+  variantId: string,
+  payload: ManageProductVariantPayload,
+): Promise<ProductVariant> {
+  const response = await fetch(`${API_URL}/products/${productId}/variants/${variantId}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ویرایش مدل انجام نشد.'));
+  return response.json() as Promise<ProductVariant>;
+}
+
+export async function deleteProductVariant(
+  accessToken: string,
+  productId: string,
+  variantId: string,
+): Promise<void> {
+  const response = await fetch(`${API_URL}/products/${productId}/variants/${variantId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'حذف مدل انجام نشد.'));
 }
 
 async function adminRequest<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
@@ -562,6 +877,139 @@ export function updateAdminService(accessToken: string, id: string, payload: Par
 export function fetchAdminAttachments(accessToken: string): Promise<AttachmentAdminSummary[]> { return adminRequest(accessToken, '/attachments/admin/all'); }
 export function createAdminAttachment(accessToken: string, payload: { ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize?: number; fileType?: string }): Promise<AttachmentAdminSummary> { return adminRequest(accessToken, '/attachments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
 export async function deleteAdminAttachment(accessToken: string, id: string): Promise<void> { await adminRequest(accessToken, `/attachments/admin/${id}`, { method: 'DELETE' }); }
+
+export function fetchMediaLibrary(
+  accessToken: string,
+  params?: { q?: string; folder?: string; status?: string; kind?: string; page?: number; limit?: number },
+): Promise<MediaListResponse> {
+  const query = new URLSearchParams();
+  if (params?.q) query.set('q', params.q);
+  if (params?.folder) query.set('folder', params.folder);
+  if (params?.status) query.set('status', params.status);
+  if (params?.kind && params.kind !== 'all') query.set('kind', params.kind);
+  if (params?.page) query.set('page', String(params.page));
+  if (params?.limit) query.set('limit', String(params.limit));
+  const suffix = query.toString() ? `?${query}` : '';
+  return adminRequest(accessToken, `/media${suffix}`);
+}
+
+export function fetchMediaSettings(accessToken: string): Promise<MediaCompressionSettings> {
+  return adminRequest(accessToken, '/media/settings');
+}
+
+export function updateMediaSettings(
+  accessToken: string,
+  payload: Partial<MediaCompressionSettings>,
+): Promise<MediaCompressionSettings> {
+  return adminRequest(accessToken, '/media/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function uploadMediaAsset(
+  accessToken: string,
+  file: File,
+  meta?: {
+    folder?: string;
+    altText?: string;
+    title?: string;
+    caption?: string;
+    description?: string;
+    kind?: 'image' | 'video';
+  },
+): Promise<MediaAsset> {
+  const body = new FormData();
+  body.append('file', file);
+  if (meta?.folder) body.append('folder', meta.folder);
+  if (meta?.altText) body.append('altText', meta.altText);
+  if (meta?.title) body.append('title', meta.title);
+  if (meta?.caption) body.append('caption', meta.caption);
+  if (meta?.description) body.append('description', meta.description);
+  if (meta?.kind) body.append('kind', meta.kind);
+  const response = await fetch(`${API_URL}/media/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    body,
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('آپلود فایل انجام نشد.');
+  return response.json() as Promise<MediaAsset>;
+}
+
+export function updateMediaAsset(
+  accessToken: string,
+  id: string,
+  payload: Partial<{
+    altText: string | null;
+    title: string | null;
+    caption: string | null;
+    description: string | null;
+    folder: string;
+    originalName: string;
+  }>,
+): Promise<MediaAsset> {
+  return adminRequest(accessToken, `/media/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export function compressMediaAsset(
+  accessToken: string,
+  id: string,
+  payload: {
+    mode?: 'replace' | 'copy';
+    quality?: number;
+    maxWidth?: number;
+    maxHeight?: number;
+    convertToWebp?: boolean;
+    stripMetadata?: boolean;
+  },
+): Promise<MediaAsset> {
+  return adminRequest(accessToken, `/media/${id}/compress`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteMediaAsset(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/media/${id}`, { method: 'DELETE' });
+}
+
+export function restoreMediaAsset(accessToken: string, id: string): Promise<MediaAsset> {
+  return adminRequest(accessToken, `/media/${id}/restore`, { method: 'POST' });
+}
+
+export async function purgeMediaAsset(accessToken: string, id: string): Promise<void> {
+  await adminRequest(accessToken, `/media/${id}/purge`, { method: 'DELETE' });
+}
+
+export async function downloadMediaBackup(accessToken: string): Promise<Blob> {
+  const response = await fetch(`${API_URL}/media/backup/download`, {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('دریافت بک‌آپ انجام نشد.');
+  return response.blob();
+}
+
+export async function restoreMediaBackup(accessToken: string, file: File): Promise<{ restored: number; skipped: number }> {
+  const body = new FormData();
+  body.append('file', file);
+  const response = await fetch(`${API_URL}/media/backup/restore`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    body,
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('بازیابی بک‌آپ انجام نشد.');
+  return response.json() as Promise<{ restored: number; skipped: number }>;
+}
+
 export function fetchAdminUsers(accessToken: string): Promise<UserAdminSummary[]> { return adminRequest(accessToken, '/users/admin/all'); }
 export function updateUserRole(accessToken: string, id: string, role: string): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/role`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }); }
 export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }
