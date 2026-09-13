@@ -74,15 +74,16 @@ export type ProductSpecCategory = 'technical' | 'appearance';
 
 export type ManageProductPayload = {
   nameFa: string;
-  nameEn: string;
   slug: string;
-  descriptionShortFa: string;
+  nameEn?: string;
+  descriptionShortFa?: string;
   descriptionLongFa?: string;
-  sku: string;
-  category: string;
-  priceBase: number;
+  sku?: string;
+  category?: string;
+  priceBase?: number;
   images?: string[];
   thumbnailImageUrl?: string;
+  /** false = پیش‌نویس، true = منتشرشده */
   isActive?: boolean;
   isFeatured?: boolean;
 };
@@ -128,14 +129,45 @@ export interface ProductCategory {
 
 export interface AuthUser {
   id: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
   role: string;
   companyName: string | null;
+  twoFactorEnabled?: boolean;
 }
 
 export interface AuthResponse {
   accessToken: string;
   user: AuthUser;
+}
+
+export type OtpPurpose = 'login' | 'register' | 'forgot_password' | 'change_mobile';
+
+export interface OtpSendResponse {
+  challengeId: string;
+  phoneMasked: string;
+  expiresIn: number;
+  resendAfter: number;
+  purpose: string;
+  debugCode?: string;
+}
+
+export type OtpVerifyResponse =
+  | ({ nextStep: 'done' } & AuthResponse)
+  | { nextStep: 'password'; passwordToken: string; expiresIn: number }
+  | { nextStep: 'profile'; registrationToken: string; expiresIn: number }
+  | { nextStep: 'new_password'; resetToken: string; expiresIn: number }
+  | { nextStep: 'new_mobile'; changeToken: string; expiresIn: number; phoneMasked: string };
+
+export interface QuotationItemSummary {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  customizations?: Record<string, string>;
 }
 
 export interface QuotationSummary {
@@ -144,6 +176,9 @@ export interface QuotationSummary {
   totalAmount: number;
   status: string;
   validUntil: string;
+  items?: QuotationItemSummary[];
+  notes?: string | null;
+  createdAt?: string;
 }
 
 export interface OrderSummary { id: string; orderNumber: string; totalAmount: number; status: string; paymentStatus: string; }
@@ -253,7 +288,22 @@ export interface SparePartCategory {
 }
 export interface ProjectPhaseSummary { id: string; phaseNumber: number; phaseNameFa: string; description: string; startDate: string; endDate: string; status: string; }
 export interface CustomerAdminSummary { id: string; companyName: string; contactPerson: string | null; phone: string | null; country: string | null; isVerified: boolean; paymentTerms: string; createdAt: string; }
-export interface QuotationAdminSummary { id: string; quotationNumber: string; customerId: string; totalAmount: number; status: string; validUntil: string; }
+export interface QuotationAdminSummary {
+  id: string;
+  quotationNumber: string;
+  customerId: string;
+  customerCompanyName: string | null;
+  customerContactPerson: string | null;
+  customerPhone: string | null;
+  totalAmount: number;
+  subtotal?: number;
+  status: string;
+  validUntil: string;
+  notes: string | null;
+  items: QuotationItemSummary[];
+  createdAt: string;
+  updatedAt?: string;
+}
 export interface OrderAdminSummary { id: string; orderNumber: string; customerId: string; totalAmount: number; status: string; paymentStatus: string; createdAt: string; }
 export interface InvoiceAdminSummary { id: string; invoiceNumber: string; customerId: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; dueDate: string; }
 export interface PaymentAdminSummary { id: string; invoiceId: string; orderId: string | null; amount: number; paymentMethod: string; paymentStatus: string; transactionId: string | null; }
@@ -315,14 +365,23 @@ export interface MediaCompressionSettings {
 }
 
 
-export async function fetchProducts(): Promise<ProductListResponse> {
-  const response = await fetch(`${API_URL}/products?limit=12`, {
+export async function fetchProducts(options?: {
+  limit?: number;
+  page?: number;
+  category?: string;
+}): Promise<ProductListResponse> {
+  const params = new URLSearchParams();
+  params.set('limit', String(options?.limit ?? 12));
+  params.set('page', String(options?.page ?? 1));
+  if (options?.category) params.set('category', options.category);
+
+  const response = await fetch(`${API_URL}/products?${params.toString()}`, {
     headers: { Accept: 'application/json' },
     cache: 'no-store',
   });
 
   if (!response.ok) {
-    throw new Error(`Products request failed with status ${response.status}`);
+    throw new Error('دریافت فهرست محصولات انجام نشد.');
   }
 
   return response.json() as Promise<ProductListResponse>;
@@ -452,14 +511,78 @@ export async function login(email: string, password: string): Promise<AuthRespon
   return requestAuth('/login', { email, password });
 }
 
-export async function register(payload: { email: string; password: string; firstName: string; lastName: string; companyName: string; phone?: string }): Promise<AuthResponse> {
+export async function register(payload: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  phone?: string;
+}): Promise<AuthResponse> {
   return requestAuth('/register', payload);
 }
 
-export async function requestQuotation(accessToken: string, payload: { items: Array<{ productId: string; quantity: number; customizations?: Record<string, string> }>; notes?: string }): Promise<{ id: string; quotationNumber: string; totalAmount: number; status: string }> {
-  const response = await fetch(`${API_URL}/quotations/request`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload) });
-  if (!response.ok) throw new Error('ارسال درخواست پیش‌فاکتور انجام نشد.');
-  return response.json() as Promise<{ id: string; quotationNumber: string; totalAmount: number; status: string }>;
+export async function sendOtp(phone: string, purpose: OtpPurpose): Promise<OtpSendResponse> {
+  return requestAuthJson('/otp/send', { phone, purpose });
+}
+
+export async function resendOtp(challengeId: string): Promise<OtpSendResponse> {
+  return requestAuthJson('/otp/resend', { challengeId });
+}
+
+export async function verifyOtp(challengeId: string, code: string): Promise<OtpVerifyResponse> {
+  return requestAuthJson('/otp/verify', { challengeId, code });
+}
+
+export async function completeRegistration(payload: {
+  registrationToken: string;
+  firstName: string;
+  lastName: string;
+}): Promise<AuthResponse> {
+  return requestAuth('/register/complete', payload);
+}
+
+export async function completePasswordLogin(passwordToken: string, password: string): Promise<AuthResponse> {
+  return requestAuth('/login/password', { passwordToken, password });
+}
+
+export async function resetPassword(resetToken: string, newPassword: string): Promise<AuthResponse> {
+  return requestAuth('/password/reset', { resetToken, newPassword });
+}
+
+export async function requestNewMobile(changeToken: string, newPhone: string): Promise<OtpSendResponse> {
+  return requestAuthJson('/mobile/change/request', { changeToken, newPhone });
+}
+
+export async function requestQuotation(
+  accessToken: string,
+  payload: {
+    items: Array<{ productId: string; quantity: number; customizations?: Record<string, string> }>;
+    notes?: string;
+    projectCity?: string;
+    contactPhone?: string;
+    venueDetails?: string;
+  },
+): Promise<{ id: string; quotationNumber: string; totalAmount: number; status: string; validUntil?: string }> {
+  const response = await fetch(`${API_URL}/quotations/request`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, 'ارسال درخواست پیش‌فاکتور انجام نشد.'));
+  }
+  return response.json() as Promise<{
+    id: string;
+    quotationNumber: string;
+    totalAmount: number;
+    status: string;
+    validUntil?: string;
+  }>;
 }
 
 export async function fetchMyQuotations(accessToken: string): Promise<QuotationSummary[]> {
@@ -1015,7 +1138,25 @@ export function updateUserRole(accessToken: string, id: string, role: string): P
 export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }
 
 async function requestAuth(path: string, body: object): Promise<AuthResponse> {
-  const response = await fetch(`${API_URL}/auth${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) });
-  if (!response.ok) throw new Error('اطلاعات ورود یا ثبت‌نام صحیح نیست.');
+  const response = await fetch(`${API_URL}/auth${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, 'اطلاعات ورود یا ثبت‌نام صحیح نیست.'));
+  }
   return response.json() as Promise<AuthResponse>;
+}
+
+async function requestAuthJson<T>(path: string, body: object): Promise<T> {
+  const response = await fetch(`${API_URL}/auth${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, 'عملیات احراز هویت انجام نشد.'));
+  }
+  return response.json() as Promise<T>;
 }
