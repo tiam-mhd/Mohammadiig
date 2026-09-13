@@ -2420,6 +2420,221 @@
   }
 }
 
+/* —— Product editor (WordPress-like main + sidebar) —— */
+.admin-editor__topbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.admin-editor__topbar-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-editor {
+  display: grid;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (min-width: 1080px) {
+  .admin-editor {
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 1.25rem;
+  }
+}
+
+.admin-editor__main,
+.admin-editor__side {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.admin-editor__title-block {
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius);
+  box-shadow: var(--ops-shadow);
+  padding: 1rem 1.1rem 0.9rem;
+}
+
+.admin-editor__title-input {
+  width: 100%;
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius-sm);
+  background: var(--ops-paper);
+  color: var(--ops-ink);
+  font-size: clamp(1.35rem, 2.4vw, 1.75rem);
+  font-weight: 700;
+  line-height: 1.35;
+  padding: 0.7rem 0.85rem;
+}
+
+.admin-editor__title-input:focus {
+  border-color: var(--ops-accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--ops-accent-soft);
+}
+
+.admin-editor__permalink {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--ops-muted);
+}
+
+.admin-editor__permalink-label {
+  font-weight: 600;
+  color: var(--ops-ink-soft);
+}
+
+.admin-editor__permalink-prefix {
+  opacity: 0.8;
+}
+
+.admin-editor__permalink-input {
+  min-width: 10rem;
+  flex: 1 1 12rem;
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius-sm);
+  background: var(--ops-paper);
+  color: var(--ops-ink);
+  padding: 0.35rem 0.55rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+.admin-editor__permalink-unlock {
+  border: none;
+  background: transparent;
+  color: var(--ops-accent);
+  font-size: 0.8rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.admin-editor__hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ops-muted);
+}
+
+.admin-editor__body {
+  min-height: 11rem;
+  resize: vertical;
+}
+
+.admin-metabox {
+  background: var(--ops-surface);
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius);
+  box-shadow: var(--ops-shadow);
+  overflow: hidden;
+}
+
+.admin-metabox__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.95rem;
+  border-bottom: 1px solid var(--ops-line);
+  background: linear-gradient(180deg, #fbfcfe 0%, var(--ops-paper) 100%);
+}
+
+.admin-metabox__title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ops-ink);
+}
+
+.admin-metabox__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.admin-metabox__body {
+  padding: 0.95rem;
+}
+
+.admin-metabox--sticky {
+  position: sticky;
+  top: 0.75rem;
+}
+
+.admin-editor__publish-meta {
+  font-size: 0.9rem;
+  color: var(--ops-ink-soft);
+}
+
+.admin-editor__publish-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+.admin-editor__publish-actions .ops-btn {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.admin-editor__spec-list,
+.admin-editor__variant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.admin-editor__spec-row {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius-sm);
+  background: var(--ops-paper);
+}
+
+@media (min-width: 720px) {
+  .admin-editor__spec-row {
+    grid-template-columns: 1.2fr 1.2fr 0.7fr auto;
+    align-items: end;
+  }
+}
+
+.admin-editor__spec-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.admin-editor__variant-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--ops-line);
+  border-radius: var(--ops-radius-sm);
+  background: var(--ops-paper);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ops-login__card,
   .admin-stat,
