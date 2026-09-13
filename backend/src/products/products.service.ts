@@ -67,7 +67,6 @@ export class ProductsService implements OnModuleInit {
       await this.repository.save(seedProducts);
     } else {
       await this.backfillGalleries();
-      await this.normalizeStoredMediaUrls();
     }
   }
 
@@ -81,24 +80,6 @@ export class ProductsService implements OnModuleInit {
     for (const row of pending) {
       const url = row.thumbnailImageUrl!.trim();
       row.gallery = [url];
-      await this.repository.save(row);
-    }
-  }
-
-  /** Rewrite localhost/absolute /media/... URLs to portable relative paths. */
-  private async normalizeStoredMediaUrls(): Promise<void> {
-    const rows = await this.repository.find({ withDeleted: true });
-    for (const row of rows) {
-      const nextGallery = this.normalizeImages(row.gallery, row.thumbnailImageUrl);
-      const nextThumb = nextGallery[0] ?? null;
-      const prevGallery = Array.isArray(row.gallery) ? row.gallery : [];
-      const galleryChanged =
-        nextGallery.length !== prevGallery.length ||
-        nextGallery.some((url, index) => url !== toRelativeMediaPath(prevGallery[index]));
-      const thumbChanged = toRelativeMediaPath(row.thumbnailImageUrl) !== (nextThumb ?? '');
-      if (!galleryChanged && !thumbChanged) continue;
-      row.gallery = nextGallery;
-      row.thumbnailImageUrl = nextThumb;
       await this.repository.save(row);
     }
   }

@@ -35,6 +35,7 @@ import { CreateMediaLibrary1710000012000 } from './database/migrations/171000001
 import { ProductGallery1710000013000 } from './database/migrations/1710000013000-product-gallery';
 import { ProductDescriptionLong1710000014000 } from './database/migrations/1710000014000-product-description-long';
 import { PhoneOtpAuth1710000015000 } from './database/migrations/1710000015000-phone-otp-auth';
+import { NormalizeMediaUrls1710000016000 } from './database/migrations/1710000016000-normalize-media-urls';
 import { MediaAssetEntity } from './media/media.entity';
 import { OtpChallengeEntity } from './auth/otp-challenge.entity';
 
@@ -55,6 +56,7 @@ const migrations = [
   ProductGallery1710000013000,
   ProductDescriptionLong1710000014000,
   PhoneOtpAuth1710000015000,
+  NormalizeMediaUrls1710000016000,
 ];
 
 const entities = [

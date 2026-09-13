@@ -83,24 +83,6 @@ export class MediaService implements OnModuleInit {
     ensureDir(trashDir(this.mediaRoot));
     ensureDir(backupsDir(this.mediaRoot));
     console.log(`[Media] root=${this.mediaRoot}`);
-    void this.normalizeStoredUrls().catch((error) => {
-      console.warn(`[Media] URL normalize skipped: ${error instanceof Error ? error.message : String(error)}`);
-    });
-  }
-
-  /** Rewrite absolute localhost/prod hosts in media_assets.url to relative /media/... */
-  private async normalizeStoredUrls(): Promise<void> {
-    const rows = await this.media.find({ withDeleted: true });
-    let changed = 0;
-    for (const row of rows) {
-      const next = toRelativeMediaPath(row.url) || publicMediaUrl(row.relativePath);
-      if (next && next !== row.url) {
-        row.url = next;
-        await this.media.save(row);
-        changed += 1;
-      }
-    }
-    if (changed > 0) console.log(`[Media] normalized ${changed} stored URL(s) to relative /media/...`);
   }
 
   getRoot(): string {
