@@ -5,7 +5,8 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 
 export interface AuthUser {
   userId: string;
-  email: string;
+  email: string | null;
+  phone?: string | null;
   role: string;
 }
 

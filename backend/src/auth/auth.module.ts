@@ -4,21 +4,29 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CustomerEntity } from '../customers/customer.entity';
+import { ParsgreenSmsService } from '../sms/parsgreen-sms.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { OtpChallengeEntity } from './otp-challenge.entity';
 import { UserEntity } from './user.entity';
 import { RolesGuard } from './roles.guard';
 
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserEntity, CustomerEntity]),
+    TypeOrmModule.forFeature([UserEntity, CustomerEntity, OtpChallengeEntity]),
     PassportModule,
-    JwtModule.registerAsync({ inject: [ConfigService], useFactory: (config: ConfigService) => ({ secret: config.get<string>('JWT_SECRET', 'mig-development-secret'), signOptions: { expiresIn: '1d' } }) }),
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET', 'mig-development-secret'),
+        signOptions: { expiresIn: '1d' },
+      }),
+    }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RolesGuard],
+  providers: [AuthService, JwtStrategy, RolesGuard, ParsgreenSmsService],
   exports: [AuthService, JwtStrategy, JwtModule, RolesGuard],
 })
 export class AuthModule {}

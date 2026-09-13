@@ -4,7 +4,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryColumn, Upda
 export class CustomerEntity {
   @PrimaryColumn('text') id!: string;
   @Column({ name: 'user_id', type: 'varchar', unique: true }) userId!: string;
-  @Column({ name: 'company_name', type: 'varchar', length: 255 }) companyName!: string;
+  @Column({ name: 'company_name', type: 'varchar', length: 255, nullable: true }) companyName!: string | null;
   @Column({ name: 'company_registration_number', type: 'varchar', length: 50, nullable: true }) companyRegistrationNumber!: string | null;
   @Column({ name: 'company_website', type: 'varchar', length: 255, nullable: true }) companyWebsite!: string | null;
   @Column({ type: 'varchar', length: 100, nullable: true }) industry!: string | null;
