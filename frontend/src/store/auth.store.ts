@@ -2,13 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-export interface AuthUser {
-  id: string;
-  email: string;
-  role: string;
-  companyName: string | null;
-}
+import type { AuthUser } from '@/lib/api-client';
 
 interface AuthStore {
   accessToken: string | null;
@@ -18,10 +12,32 @@ interface AuthStore {
   clearSession: () => void;
 }
 
-export const useAuthStore = create<AuthStore>()(persist((set) => ({
-  accessToken: null,
-  user: null,
-  hasHydrated: false,
-  setSession: (accessToken, user) => set({ accessToken, user }),
-  clearSession: () => set({ accessToken: null, user: null }),
-}), { name: 'mig-auth', onRehydrateStorage: () => () => useAuthStore.setState({ hasHydrated: true }) }));
+export const useAuthStore = create<AuthStore>()(
+  persist(
+    (set) => ({
+      accessToken: null,
+      user: null,
+      hasHydrated: false,
+      setSession: (accessToken, user) => set({ accessToken, user }),
+      clearSession: () => set({ accessToken: null, user: null }),
+    }),
+    {
+      name: 'mig-auth',
+      partialize: (state) => ({
+        accessToken: state.accessToken,
+        user: state.user,
+      }),
+    },
+  ),
+);
+
+function markHydrated() {
+  useAuthStore.setState({ hasHydrated: true });
+}
+
+if (typeof window !== 'undefined') {
+  if (useAuthStore.persist.hasHydrated()) {
+    markHydrated();
+  }
+  useAuthStore.persist.onFinishHydration(markHydrated);
+}

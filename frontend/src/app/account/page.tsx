@@ -14,6 +14,7 @@ import {
   QuotationSummary,
   submitPayment,
 } from '@/lib/api-client';
+import { formatMoney, labelOf, ORDER_STATUS, PAYMENT_STATUS, QUOTATION_STATUS } from '@/lib/admin-labels';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function AccountPage() {
@@ -91,7 +92,12 @@ export default function AccountPage() {
     );
   }
 
-  const displayName = user?.companyName ?? user?.email ?? 'مشتری';
+  const displayName =
+    user?.companyName ||
+    [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+    user?.phone ||
+    user?.email ||
+    'مشتری';
 
   return (
     <div className="bg-canvas">
@@ -125,11 +131,9 @@ export default function AccountPage() {
                 className="flex flex-col justify-between gap-5 border-b border-hairline py-6 sm:flex-row sm:items-center"
               >
                 <div className="text-start">
-                  <p className="caption-up">{quotation.status}</p>
+                  <p className="caption-up">{labelOf(QUOTATION_STATUS, quotation.status)}</p>
                   <h3 className="mt-2 font-ui text-base text-ink">{quotation.quotationNumber}</h3>
-                  <p className="mt-1 font-ui text-sm text-muted">
-                    {quotation.totalAmount.toLocaleString('fa-IR')} ریال
-                  </p>
+                  <p className="mt-1 font-ui text-sm text-muted">{formatMoney(quotation.totalAmount)}</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                   {quotation.status === 'draft' || quotation.status === 'sent' ? (
@@ -162,12 +166,10 @@ export default function AccountPage() {
                 className="flex items-center justify-between gap-5 border-b border-hairline py-6"
               >
                 <div className="text-start">
-                  <p className="caption-up">{order.status}</p>
+                  <p className="caption-up">{labelOf(ORDER_STATUS, order.status)}</p>
                   <h3 className="mt-2 font-ui text-base text-ink">{order.orderNumber}</h3>
                 </div>
-                <span className="font-ui text-sm text-ink">
-                  {order.totalAmount.toLocaleString('fa-IR')} ریال
-                </span>
+                <span className="font-ui text-sm text-ink">{formatMoney(order.totalAmount)}</span>
               </div>
             ))}
             {orders.length === 0 ? (
@@ -187,11 +189,9 @@ export default function AccountPage() {
                 className="flex flex-col justify-between gap-5 border-b border-hairline py-6 sm:flex-row sm:items-center"
               >
                 <div className="text-start">
-                  <p className="caption-up">{invoice.paymentStatus}</p>
+                  <p className="caption-up">{labelOf(PAYMENT_STATUS, invoice.paymentStatus)}</p>
                   <h3 className="mt-2 font-ui text-base text-ink">{invoice.invoiceNumber}</h3>
-                  <p className="mt-1 font-ui text-sm text-muted">
-                    {invoice.totalAfterTax.toLocaleString('fa-IR')} ریال
-                  </p>
+                  <p className="mt-1 font-ui text-sm text-muted">{formatMoney(invoice.totalAfterTax)}</p>
                 </div>
                 {invoice.paymentStatus === 'pending' ? (
                   <Button size="sm" onClick={() => pay(invoice)}>

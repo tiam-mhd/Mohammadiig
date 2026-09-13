@@ -1,28 +1,75 @@
 ﻿'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FormEvent, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components';
-import { login, register } from '@/lib/api-client';
+import { OtpInput, formatCountdown, useCountdown } from '@/components/auth/OtpInput';
+import {
+  completePasswordLogin,
+  completeRegistration,
+  resendOtp,
+  resetPassword,
+  sendOtp,
+  verifyOtp,
+  type AuthResponse,
+  type OtpPurpose,
+  type OtpSendResponse,
+} from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
 type AuthMode = 'login' | 'register';
+type AuthFlow = AuthMode | 'forgot_password';
+type Step = 'phone' | 'otp' | 'profile' | 'password' | 'new_password';
 
-export default function AuthPage() {
+function safeNextPath(raw: string | null): string | null {
+  if (!raw) return null;
+  if (!raw.startsWith('/') || raw.startsWith('//')) return null;
+  if (raw.startsWith('/admin')) return null;
+  return raw;
+}
+
+function normalizePhoneInput(raw: string): string {
+  return raw
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/\D/g, '')
+    .slice(0, 11);
+}
+
+function purposeForFlow(flow: AuthFlow): OtpPurpose {
+  return flow === 'forgot_password' ? 'forgot_password' : flow;
+}
+
+function AuthPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextPath = useMemo(() => safeNextPath(searchParams.get('next')), [searchParams]);
   const { accessToken, user, setSession, clearSession } = useAuthStore();
-  const [mode, setMode] = useState<AuthMode>('login');
-  const [form, setForm] = useState({
-    email: '',
-    password: '',
-    firstName: '',
-    lastName: '',
-    companyName: '',
-    phone: '',
-  });
+
+  const [flow, setFlow] = useState<AuthFlow>('login');
+  const [step, setStep] = useState<Step>('phone');
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [challengeId, setChallengeId] = useState('');
+  const [phoneMasked, setPhoneMasked] = useState('');
+  const [expiresIn, setExpiresIn] = useState(120);
+  const [resendAfter, setResendAfter] = useState(60);
+  const [debugCode, setDebugCode] = useState<string | undefined>();
+  const [registrationToken, setRegistrationToken] = useState('');
+  const [passwordToken, setPasswordToken] = useState('');
+  const [resetToken, setResetToken] = useState('');
+  const [countdownKey, setCountdownKey] = useState(0);
+
+  const otpRemaining = useCountdown(expiresIn, step === 'otp', countdownKey);
+  const resendRemaining = useCountdown(resendAfter, step === 'otp', countdownKey);
 
   useEffect(() => {
     if (!accessToken || !user) return;
@@ -30,190 +77,445 @@ export default function AuthPage() {
       router.replace('/admin');
       return;
     }
-    router.replace('/account');
-  }, [accessToken, user, router]);
+    router.replace(nextPath || '/account');
+  }, [accessToken, user, router, nextPath]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  const applySendResponse = useCallback((response: OtpSendResponse) => {
+    setChallengeId(response.challengeId);
+    setPhoneMasked(response.phoneMasked);
+    setExpiresIn(response.expiresIn);
+    setResendAfter(response.resendAfter);
+    setDebugCode(response.debugCode);
+    setOtp('');
+    setError('');
+    setCountdownKey((k) => k + 1);
+    setStep('otp');
+  }, []);
+
+  function resetToPhone(keepPhone = true) {
+    setStep('phone');
+    setOtp('');
+    setError('');
+    setChallengeId('');
+    setDebugCode(undefined);
+    if (!keepPhone) setPhone('');
+  }
+
+  function switchMode(mode: AuthMode) {
+    setFlow(mode);
+    resetToPhone(true);
+    setPassword('');
+    setPasswordConfirm('');
+  }
+
+  function finishAuth(response: AuthResponse) {
+    if (response.user.role === 'admin') {
+      clearSession();
+      setError('حساب مدیریت از این صفحه وارد نمی‌شود. لطفاً از ورود ادمین استفاده کنید.');
+      resetToPhone(true);
+      return;
+    }
+    setSession(response.accessToken, response.user);
+    router.replace(nextPath || '/account');
+  }
+
+  async function handleSendPhone(event: FormEvent) {
     event.preventDefault();
     setError('');
     setIsSubmitting(true);
     try {
-      const response = mode === 'login' ? await login(form.email, form.password) : await register(form);
-
-      if (response.user.role === 'admin') {
-        clearSession();
-        setError('حساب مدیریت از این صفحه وارد نمی‌شود. لطفاً از ورود ادمین استفاده کنید.');
-        return;
-      }
-
-      setSession(response.accessToken, response.user);
-      router.replace('/account');
-    } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : 'خطایی رخ داد.');
+      const response = await sendOtp(phone, purposeForFlow(flow));
+      applySendResponse(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ارسال کد انجام نشد.');
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  return (
-    <div className="bg-canvas min-h-svh">
-      <div className="content-shell section-copy grid min-h-svh items-center py-16 md:py-20 lg:grid-cols-[1fr_0.95fr] lg:gap-16 xl:gap-24">
-        <section className="hidden text-start lg:block">
-          <p className="caption-up">حساب کاربری</p>
-          <h1 className="display-feature mt-5 max-w-md text-ink">ورود به پنل مشتریان</h1>
-          <p className="body-lead mt-6 max-w-md">
-            درخواست قیمت و دسترسی به حساب سازمانی از اینجا انجام می‌شود.
-          </p>
-          <p className="caption-up mt-14 border-t border-hairline pt-6 text-white/45">
-            MIG · گروه صنعتی محمدی
-          </p>
-        </section>
+  async function handleVerifyOtp(codeOverride?: string) {
+    const code = (codeOverride ?? otp).trim();
+    if (code.length < 4) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      const result = await verifyOtp(challengeId, code);
+      if (result.nextStep === 'done') {
+        finishAuth(result);
+        return;
+      }
+      if (result.nextStep === 'profile') {
+        setRegistrationToken(result.registrationToken);
+        setStep('profile');
+        return;
+      }
+      if (result.nextStep === 'password') {
+        setPasswordToken(result.passwordToken);
+        setStep('password');
+        return;
+      }
+      if (result.nextStep === 'new_password') {
+        setResetToken(result.resetToken);
+        setStep('new_password');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'اعتبارسنجی کد ناموفق بود.');
+      setOtp('');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
-        <section className="mx-auto w-full max-w-md text-start lg:mx-0 lg:max-w-lg">
-          <Link
-            href="/"
-            className="caption-up text-white/70 transition-opacity hover:opacity-100 lg:hidden"
-          >
+  async function handleResend() {
+    if (resendRemaining > 0 || !challengeId) return;
+    setError('');
+    setIsSubmitting(true);
+    try {
+      applySendResponse(await resendOtp(challengeId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ارسال مجدد ناموفق بود.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleCompleteProfile(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      finishAuth(
+        await completeRegistration({
+          registrationToken,
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ثبت‌نام تکمیل نشد.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handlePasswordLogin(event: FormEvent) {
+    event.preventDefault();
+    setError('');
+    setIsSubmitting(true);
+    try {
+      finishAuth(await completePasswordLogin(passwordToken, password));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'رمز عبور نادرست است.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleResetPassword(event: FormEvent) {
+    event.preventDefault();
+    if (password !== passwordConfirm) {
+      setError('تکرار رمز عبور یکسان نیست.');
+      return;
+    }
+    setError('');
+    setIsSubmitting(true);
+    try {
+      finishAuth(await resetPassword(resetToken, password));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'تغییر رمز انجام نشد.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  const copy = {
+    login: {
+      title: 'خوش آمدید',
+      lead: 'شماره موبایل‌تان را بدهید تا کد ورود برایتان پیامک شود.',
+    },
+    register: {
+      title: 'به خانواده MIG بپیوندید',
+      lead: 'فقط با موبایل شروع کنید؛ بقیه را بعداً در پروفایل کامل می‌کنید.',
+    },
+    forgot_password: {
+      title: 'بازیابی رمز',
+      lead: 'شماره موبایل حساب را وارد کنید تا کد تأیید برایتان بیاید.',
+    },
+  } as const;
+
+  const headline = copy[flow];
+  const showModeTabs = flow === 'login' || flow === 'register';
+
+  return (
+    <div className="auth-stage">
+      <div className="auth-stage__wash" aria-hidden />
+      <div className="auth-stage__glow" aria-hidden />
+
+      <div className="content-shell auth-shell">
+        <aside className="auth-story">
+          <p className="auth-story__eyebrow">MIG · پنل مشتریان</p>
+          <h1 className="auth-story__brand">گروه صنعتی محمدی</h1>
+          <p className="auth-story__line">
+            {nextPath?.startsWith('/quote-request')
+              ? 'بعد از ورود، مستقیم به درخواست قیمت برمی‌گردید.'
+              : 'حسابی امن و ساده برای پیش‌فاکتور، سفارش و پیگیری همکاری با MIG.'}
+          </p>
+          <p className="auth-story__soft">ثبت‌نام کمتر از یک دقیقه · ورود با پیامک تأیید</p>
+        </aside>
+
+        <section className="auth-panel">
+          <Link href="/" className="auth-back">
             ← بازگشت به سایت
           </Link>
 
-          <div className="auth-mode mt-8 lg:mt-0" role="tablist" aria-label="ورود یا ثبت‌نام">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'login'}
-              onClick={() => setMode('login')}
-              className={`auth-mode__btn ${mode === 'login' ? 'is-active' : ''}`}
-            >
-              ورود
+          {showModeTabs ? (
+            <div className="auth-pills" role="tablist" aria-label="ورود یا ثبت‌نام">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={flow === 'login'}
+                onClick={() => switchMode('login')}
+                className={`auth-pills__btn ${flow === 'login' ? 'is-active' : ''}`}
+              >
+                ورود
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={flow === 'register'}
+                onClick={() => switchMode('register')}
+                className={`auth-pills__btn ${flow === 'register' ? 'is-active' : ''}`}
+              >
+                ثبت‌نام
+              </button>
+            </div>
+          ) : (
+            <button type="button" className="auth-back auth-back--inline" onClick={() => switchMode('login')}>
+              ← بازگشت به ورود
             </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={mode === 'register'}
-              onClick={() => setMode('register')}
-              className={`auth-mode__btn ${mode === 'register' ? 'is-active' : ''}`}
-            >
-              ثبت‌نام
-            </button>
+          )}
+
+          <div className="auth-panel__head">
+            <h2 className="auth-panel__title">{headline.title}</h2>
+            <p className="auth-panel__lead">{headline.lead}</p>
           </div>
 
-          <div className="mt-10">
-            <p className="caption-up lg:hidden">حساب کاربری</p>
-            <h2 className="display-sm mt-3 text-ink sm:mt-4">
-              {mode === 'login' ? 'ورود به حساب' : 'ایجاد حساب سازمانی'}
-            </h2>
-            <p className="body-lead mt-3 text-sm">
-              {mode === 'login'
-                ? 'ایمیل و رمز عبور خود را وارد کنید.'
-                : 'اطلاعات شرکت را برای همکاری با MIG ثبت کنید.'}
-            </p>
-          </div>
+          {step === 'phone' ? (
+            <form onSubmit={handleSendPhone} className="auth-form">
+              <label className="auth-field">
+                <span className="auth-field__label">شماره موبایل</span>
+                <input
+                  required
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  dir="ltr"
+                  placeholder="0912 000 0000"
+                  value={phone}
+                  onChange={(e) => setPhone(normalizePhoneInput(e.target.value))}
+                  className="auth-field__input"
+                  pattern="09[0-9]{9}"
+                  title="مثال: 09121234567"
+                />
+              </label>
+              <Button type="submit" size="lg" isLoading={isSubmitting} className="auth-cta">
+                ارسال کد تأیید
+              </Button>
+            </form>
+          ) : null}
 
-          <form onSubmit={handleSubmit} className="mt-10 space-y-6">
-            {mode === 'register' ? (
-              <div className="grid gap-6 sm:grid-cols-2">
-                <label className="block">
-                  <span className="caption-up">نام</span>
+          {step === 'otp' ? (
+            <div className="auth-form">
+              <div className="auth-otp-banner">
+                <p className="auth-otp-banner__text">
+                  کد را به <span dir="ltr">{phoneMasked}</span> فرستادیم
+                </p>
+                <button
+                  type="button"
+                  className="auth-otp-banner__edit"
+                  onClick={() => resetToPhone(true)}
+                >
+                  اصلاح شماره
+                </button>
+              </div>
+
+              <OtpInput
+                length={5}
+                value={otp}
+                onChange={setOtp}
+                onComplete={(code) => void handleVerifyOtp(code)}
+                disabled={isSubmitting || otpRemaining === 0}
+                autoFocus
+              />
+
+              <div className="auth-timers">
+                <span>
+                  اعتبار کد <strong dir="ltr">{formatCountdown(otpRemaining)}</strong>
+                </span>
+                {resendRemaining > 0 ? (
+                  <span className="auth-timers__muted">
+                    ارسال مجدد تا <strong dir="ltr">{formatCountdown(resendRemaining)}</strong>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    className="auth-text-btn"
+                    onClick={() => void handleResend()}
+                    disabled={isSubmitting}
+                  >
+                    ارسال دوباره کد
+                  </button>
+                )}
+              </div>
+
+              {debugCode ? <p className="auth-debug">کد توسعه: {debugCode}</p> : null}
+
+              <Button
+                type="button"
+                size="lg"
+                isLoading={isSubmitting}
+                disabled={otp.length < 5 || otpRemaining === 0}
+                onClick={() => void handleVerifyOtp()}
+                className="auth-cta"
+              >
+                تأیید و ادامه
+              </Button>
+            </div>
+          ) : null}
+
+          {step === 'profile' ? (
+            <form onSubmit={handleCompleteProfile} className="auth-form">
+              <p className="auth-soft-note">شماره تأیید شد. فقط نام‌تان را بگویید.</p>
+              <div className="auth-name-grid">
+                <label className="auth-field">
+                  <span className="auth-field__label">نام</span>
                   <input
                     required
                     minLength={2}
                     autoComplete="given-name"
-                    value={form.firstName}
-                    onChange={(event) => setForm({ ...form, firstName: event.target.value })}
-                    className="field-input mt-2"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className="auth-field__input auth-field__input--rtl"
                   />
                 </label>
-                <label className="block">
-                  <span className="caption-up">نام خانوادگی</span>
+                <label className="auth-field">
+                  <span className="auth-field__label">نام خانوادگی</span>
                   <input
                     required
                     minLength={2}
                     autoComplete="family-name"
-                    value={form.lastName}
-                    onChange={(event) => setForm({ ...form, lastName: event.target.value })}
-                    className="field-input mt-2"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="auth-field__input auth-field__input--rtl"
                   />
                 </label>
               </div>
-            ) : null}
+              <Button type="submit" size="lg" isLoading={isSubmitting} className="auth-cta">
+                ورود به حساب
+              </Button>
+            </form>
+          ) : null}
 
-            {mode === 'register' ? (
-              <label className="block">
-                <span className="caption-up">نام شرکت</span>
+          {step === 'password' ? (
+            <form onSubmit={handlePasswordLogin} className="auth-form">
+              <p className="auth-soft-note">ورود دو مرحله‌ای برای حساب شما فعال است.</p>
+              <label className="auth-field">
+                <span className="auth-field__label">رمز عبور</span>
                 <input
                   required
-                  autoComplete="organization"
-                  value={form.companyName}
-                  onChange={(event) => setForm({ ...form, companyName: event.target.value })}
-                  className="field-input mt-2"
-                />
-              </label>
-            ) : null}
-
-            <label className="block">
-              <span className="caption-up">ایمیل</span>
-              <input
-                required
-                type="email"
-                autoComplete="email"
-                dir="ltr"
-                value={form.email}
-                onChange={(event) => setForm({ ...form, email: event.target.value })}
-                className="field-input mt-2 text-start"
-              />
-            </label>
-
-            {mode === 'register' ? (
-              <label className="block">
-                <span className="caption-up">تلفن</span>
-                <input
-                  type="tel"
-                  autoComplete="tel"
+                  type="password"
+                  autoComplete="current-password"
                   dir="ltr"
-                  value={form.phone}
-                  onChange={(event) => setForm({ ...form, phone: event.target.value })}
-                  className="field-input mt-2 text-start"
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-field__input"
                 />
               </label>
-            ) : null}
+              <Button type="submit" size="lg" isLoading={isSubmitting} className="auth-cta">
+                ورود نهایی
+              </Button>
+            </form>
+          ) : null}
 
-            <label className="block">
-              <span className="caption-up">رمز عبور</span>
-              <input
-                required
-                type="password"
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                dir="ltr"
-                value={form.password}
-                onChange={(event) => setForm({ ...form, password: event.target.value })}
-                className="field-input mt-2 text-start"
-              />
-            </label>
+          {step === 'new_password' ? (
+            <form onSubmit={handleResetPassword} className="auth-form">
+              <label className="auth-field">
+                <span className="auth-field__label">رمز عبور جدید</span>
+                <input
+                  required
+                  type="password"
+                  autoComplete="new-password"
+                  dir="ltr"
+                  minLength={8}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-field__input"
+                />
+              </label>
+              <label className="auth-field">
+                <span className="auth-field__label">تکرار رمز عبور</span>
+                <input
+                  required
+                  type="password"
+                  autoComplete="new-password"
+                  dir="ltr"
+                  minLength={8}
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  className="auth-field__input"
+                />
+              </label>
+              <Button type="submit" size="lg" isLoading={isSubmitting} className="auth-cta">
+                ذخیره و ورود
+              </Button>
+            </form>
+          ) : null}
 
-            {error ? (
-              <div className="space-y-3">
-                <p className="field-message field-message--error">{error}</p>
-                {error.includes('مدیریت') ? (
-                  <Link href="/admin/login" className="caption-up inline-block text-[#c3d9f3]">
-                    رفتن به ورود ادمین ←
+          {error ? (
+            <p className="auth-error" role="alert">
+              {error}
+              {error.includes('مدیریت') ? (
+                <>
+                  {' '}
+                  <Link href="/admin/login" className="auth-text-btn">
+                    ورود ادمین
                   </Link>
-                ) : null}
-              </div>
-            ) : null}
+                </>
+              ) : null}
+            </p>
+          ) : null}
 
-            <Button type="submit" size="lg" isLoading={isSubmitting} className="w-full sm:w-auto">
-              {mode === 'login' ? 'ورود به حساب' : 'ثبت‌نام و ادامه'}
-            </Button>
-          </form>
-
-          <p className="mt-10 hidden lg:block">
-            <Link href="/" className="caption-up text-white/70 transition-opacity hover:opacity-100">
-              ← بازگشت به سایت
-            </Link>
-          </p>
+          {showModeTabs && step === 'phone' && flow === 'login' ? (
+            <button
+              type="button"
+              className="auth-forgot"
+              onClick={() => {
+                setFlow('forgot_password');
+                resetToPhone(true);
+              }}
+            >
+              رمز عبور را فراموش کرده‌ام
+            </button>
+          ) : null}
         </section>
       </div>
     </div>
+  );
+}
+
+export default function AuthPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="auth-stage">
+          <div className="content-shell section-copy pt-28">
+            <p className="auth-panel__lead">در حال آماده‌سازی…</p>
+          </div>
+        </div>
+      }
+    >
+      <AuthPageContent />
+    </Suspense>
   );
 }
