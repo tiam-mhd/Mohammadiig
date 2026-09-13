@@ -34,6 +34,24 @@ function expandFrontendOrigins(raw: string): string[] {
   return [...origins];
 }
 
+/** Allow localhost / 127.0.0.1 / LAN IPs during local development so backup uploads don't 500. */
+function isLocalDevOrigin(origin: string): boolean {
+  if ((process.env.NODE_ENV ?? 'development') === 'production') return false;
+  try {
+    const url = new URL(origin);
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    const host = url.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1') return true;
+    // Private LAN ranges (e.g. Next.js "Network" URL like http://192.168.x.x:3000)
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    if (/^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = Number(process.env.PORT ?? 3001);
@@ -60,23 +78,24 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     // Always reflect the request origin when allowed.
     // Never pass a single hard-coded string — that forces one ACAO value and breaks http/www mismatches.
+    // Never pass Error to the callback — cors turns that into HTTP 500 instead of a normal CORS reject.
     origin: (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
       if (!requestOrigin) {
         callback(null, true);
         return;
       }
-      if (frontendOrigins.includes(requestOrigin)) {
+      if (frontendOrigins.includes(requestOrigin) || isLocalDevOrigin(requestOrigin)) {
         callback(null, true);
         return;
       }
       console.warn(`[CORS] blocked origin: ${requestOrigin}`);
-      callback(new Error(`Not allowed by CORS: ${requestOrigin}`), false);
+      callback(null, false);
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
-  console.log(`[CORS] allowed origins: ${frontendOrigins.join(', ')}`);
+  console.log(`[CORS] allowed origins: ${frontendOrigins.join(', ')} (+ local dev hosts)`);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
 
   const swaggerConfig = new DocumentBuilder()

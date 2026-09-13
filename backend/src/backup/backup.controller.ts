@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  Logger,
   Post,
   Query,
   Req,
@@ -34,6 +36,8 @@ const uploadInterceptor = FileInterceptor('file', {
 @Roles('admin')
 @Controller('backup')
 export class BackupController {
+  private readonly logger = new Logger(BackupController.name);
+
   constructor(private readonly backupService: BackupService) {}
 
   @Get('datasets')
@@ -67,6 +71,7 @@ export class BackupController {
   }
 
   @Post('inspect')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Inspect a backup ZIP without restoring' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -78,10 +83,18 @@ export class BackupController {
   })
   @UseInterceptors(uploadInterceptor)
   inspect(@UploadedFile() file: Express.Multer.File) {
-    return this.backupService.inspectArchive(file);
+    try {
+      return this.backupService.inspectArchive(file);
+    } catch (error) {
+      this.logger.error(
+        `inspect failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`,
+      );
+      throw error;
+    }
   }
 
   @Post('restore')
+  @HttpCode(200)
   @ApiOperation({ summary: 'Restore selected datasets from a backup ZIP' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -108,13 +121,20 @@ export class BackupController {
     }
     if (!options.mode) options.mode = 'skip';
 
-    return this.backupService.restoreArchive(file, {
-      datasets: options.datasets,
-      mode: options.mode,
-      dryRun: options.dryRun,
-      restoreMediaFiles: options.restoreMediaFiles,
-      protectCurrentAdmin: options.protectCurrentAdmin,
-      currentUserId: request.user.userId,
-    });
+    try {
+      return await this.backupService.restoreArchive(file, {
+        datasets: options.datasets,
+        mode: options.mode,
+        dryRun: options.dryRun,
+        restoreMediaFiles: options.restoreMediaFiles,
+        protectCurrentAdmin: options.protectCurrentAdmin,
+        currentUserId: request.user.userId,
+      });
+    } catch (error) {
+      this.logger.error(
+        `restore failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`,
+      );
+      throw error;
+    }
   }
 }
