@@ -7,11 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function ProductsPage() {
-  return (
-    <div className="bg-canvas">
-      <div className="content-shell section-copy pt-24 md:pt-28">
-        <ProductsCatalog />
-      </div>
-    </div>
-  );
+  return <ProductsCatalog />;
 }

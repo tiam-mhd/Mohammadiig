@@ -283,6 +283,13 @@ export function AdminShell({
     }
   }, []);
 
+  useEffect(() => {
+    if (!mounted) return;
+    if (!accessToken || user?.role !== 'admin') {
+      router.replace('/admin/login');
+    }
+  }, [mounted, accessToken, user, router]);
+
   function toggleCollapsed() {
     setCollapsed((current) => {
       const next = !current;
@@ -300,29 +307,12 @@ export function AdminShell({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  if (!mounted) {
+  if (!mounted || !accessToken || user?.role !== 'admin') {
     return (
       <div className="ops-gate">
         <div className="ops-gate__card">
           <p className="caption-up">پنل مدیریت</p>
-          <h1 className="display-sm mt-3">در حال آماده‌سازی…</h1>
-        </div>
-      </div>
-    );
-  }
-
-  if (!accessToken || user?.role !== 'admin') {
-    return (
-      <div className="ops-gate">
-        <div className="ops-gate__card">
-          <p className="caption-up">دسترسی محدود</p>
-          <h1 className="display-sm mt-3">ورود مدیر لازم است</h1>
-          <p className="mt-3 text-sm leading-relaxed text-[var(--ops-muted)]">
-            این بخش فقط برای مدیران سیستم است و از ورود مشتریان جدا شده است.
-          </p>
-          <Link href="/admin/login" className="ops-btn mt-8 inline-flex w-full sm:w-auto">
-            ورود به پنل مدیریت
-          </Link>
+          <h1 className="display-sm mt-3">در حال انتقال…</h1>
         </div>
       </div>
     );

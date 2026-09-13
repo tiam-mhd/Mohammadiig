@@ -190,8 +190,10 @@ export function ProductManager() {
               <td>
                 {deleted ? (
                   <span className="admin-badge admin-badge--danger">حذف‌شده</span>
+                ) : product.isActive ? (
+                  <span className="admin-badge admin-badge--ok">منتشرشده</span>
                 ) : (
-                  <span className="admin-badge">فعال</span>
+                  <span className="admin-badge admin-badge--warn">پیش‌نویس</span>
                 )}
               </td>
               <td>

@@ -1,5 +1,5 @@
 /**
- * ProductCard — model-photo pattern
+ * ProductCard — clear product photo first, copy below
  */
 
 'use client';
@@ -17,6 +17,8 @@ interface ProductCardProps {
   image?: string | null;
   href?: string;
   slug?: string;
+  index?: string;
+  showPrice?: boolean;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -32,38 +34,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const imageSrc = resolveMediaUrl(image);
 
   const inner = (
-    <article className="group block bg-canvas text-start">
-      <div className="relative aspect-[16/10] overflow-hidden bg-surface-soft">
+    <article className="pcard">
+      <div className="pcard__media">
         {imageSrc ? (
-          <img
-            src={imageSrc}
-            alt={name}
-            className="h-full w-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-[1.04]"
-          />
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={imageSrc} alt={name} loading="lazy" decoding="async" />
         ) : (
-          <div className="flex h-full items-center justify-center">
-            <p className="caption-up">بدون تصویر</p>
+          <div className="pcard__placeholder">
+            <span>بدون تصویر</span>
           </div>
         )}
       </div>
 
-      <div className="pt-6">
-        <p className="caption-up">{category}</p>
-        <h3 className="display-sm mt-3 text-ink">{name}</h3>
-        <p className="body-md mt-3 line-clamp-2 text-sm">{description}</p>
-        <div className="mt-6 flex items-end justify-between gap-4 border-t border-hairline pt-5">
-          <div>
-            <p className="caption-up">شروع از</p>
-            <p className="mt-1 font-display text-lg text-ink">
+      <div className="pcard__body">
+        <p className="pcard__cat">{category}</p>
+        <h3 className="pcard__title">{name}</h3>
+        <p className="pcard__desc">{description}</p>
+        <div className="pcard__foot">
+          <div className="pcard__price">
+            <span className="pcard__price-label">شروع از</span>
+            <span className="pcard__price-value">
               {price.toLocaleString('fa-IR')}
-              <span className="caption-up mr-2">ریال</span>
-            </p>
-          </div>
-          {target ? (
-            <span className="caption-up text-ink transition-opacity group-hover:opacity-60">
-              جزئیات ←
+              <span className="pcard__price-unit">ریال</span>
             </span>
-          ) : null}
+          </div>
+          {target ? <span className="pcard__link">جزئیات</span> : null}
         </div>
       </div>
     </article>
@@ -71,7 +66,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   if (target) {
     return (
-      <Link href={target} className="block" aria-label={`مشاهده ${name}`}>
+      <Link href={target} className="pcard-link" aria-label={`مشاهده ${name}`}>
         {inner}
       </Link>
     );

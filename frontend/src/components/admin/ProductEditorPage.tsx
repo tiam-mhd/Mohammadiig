@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
@@ -80,7 +80,7 @@ const emptyForm: EditorForm = {
   category: '',
   priceBase: 0,
   images: [],
-  isActive: true,
+  isActive: false,
   isFeatured: false,
 };
 
@@ -101,6 +101,17 @@ const emptyVariantDraft: VariantDraft = {
   isActive: true,
 };
 
+function suggestSlug(title: string): string {
+  return title
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\u0600-\u06FFa-z0-9-]/gi, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 200);
+}
+
 function productToForm(product: Product, categories: ProductCategory[]): EditorForm {
   const matched =
     categories.find(
@@ -112,17 +123,39 @@ function productToForm(product: Product, categories: ProductCategory[]): EditorF
 
   return {
     nameFa: product.name,
-    nameEn: product.nameEn || product.name,
+    nameEn: product.nameEn || '',
     slug: product.slug,
     sku: product.sku || '',
-    descriptionShortFa: product.description,
+    descriptionShortFa: product.description || '',
     descriptionLongFa: product.descriptionLong || '',
     category: matched,
     priceBase: product.price,
     images: product.images?.length ? product.images : product.image ? [product.image] : [],
-    isActive: product.isActive ?? true,
+    isActive: product.isActive ?? false,
     isFeatured: product.isFeatured,
   };
+}
+
+function Metabox({
+  title,
+  children,
+  actions,
+  className = '',
+}: {
+  title: string;
+  children: ReactNode;
+  actions?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`admin-metabox ${className}`.trim()}>
+      <header className="admin-metabox__head">
+        <h2 className="admin-metabox__title">{title}</h2>
+        {actions ? <div className="admin-metabox__actions">{actions}</div> : null}
+      </header>
+      <div className="admin-metabox__body">{children}</div>
+    </section>
+  );
 }
 
 export function ProductEditorPage({ productId }: { productId?: string }) {
@@ -131,6 +164,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   const isNew = !productId;
 
   const [form, setForm] = useState(emptyForm);
+  const [slugLocked, setSlugLocked] = useState(!isNew);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [sourceProducts, setSourceProducts] = useState<Product[]>([]);
   const [specifications, setSpecifications] = useState<ProductSpecification[]>([]);
@@ -163,6 +197,8 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     [specifications],
   );
 
+  const statusLabel = form.isActive ? 'منتشرشده' : 'پیش‌نویس';
+
   const loadExtensions = useCallback(
     async (id: string) => {
       if (!accessToken) return;
@@ -189,16 +225,13 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         if (cancelled) return;
         setCategories(cats);
         setSourceProducts(others.filter((item) => item.id !== productId));
-        setForm((current) => ({
-          ...current,
-          category: current.category || cats[0]?.id || '',
-        }));
 
         if (productId) {
           setLoading(true);
           const product = await fetchAdminProduct(accessToken!, productId);
           if (cancelled) return;
           setForm(productToForm(product, cats));
+          setSlugLocked(true);
           await loadExtensions(productId);
         }
       } catch {
@@ -214,32 +247,53 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     };
   }, [accessToken, productId, loadExtensions]);
 
-  async function saveBasics(event: FormEvent) {
-    event.preventDefault();
+  function onTitleChange(value: string) {
+    setForm((current) => {
+      const next = { ...current, nameFa: value };
+      if (!slugLocked) {
+        next.slug = suggestSlug(value);
+      }
+      return next;
+    });
+  }
+
+  async function persist(publishIntent?: boolean) {
     if (!accessToken) return;
+    const nameFa = form.nameFa.trim();
+    const slug = form.slug.trim();
+    if (nameFa.length < 2) {
+      adminToast.error('عنوان محصول الزامی است.');
+      return;
+    }
+    if (slug.length < 2) {
+      adminToast.error('آدرس محصول (slug) الزامی است.');
+      return;
+    }
+
+    const isActive = publishIntent === undefined ? form.isActive : publishIntent;
     setSaving(true);
     try {
       const payload = {
-        nameFa: form.nameFa,
-        nameEn: form.nameEn,
-        slug: form.slug,
-        sku: form.sku,
-        descriptionShortFa: form.descriptionShortFa,
-        descriptionLongFa: form.descriptionLongFa,
-        category: form.category,
-        priceBase: form.priceBase,
+        nameFa,
+        slug,
+        nameEn: form.nameEn.trim() || undefined,
+        sku: form.sku.trim() || undefined,
+        descriptionShortFa: form.descriptionShortFa.trim() || undefined,
+        descriptionLongFa: form.descriptionLongFa.trim() || undefined,
+        category: form.category || undefined,
+        priceBase: Number.isFinite(form.priceBase) ? form.priceBase : 0,
         images: form.images,
-        isActive: form.isActive,
+        isActive,
         isFeatured: form.isFeatured,
       };
       if (isNew) {
         const created = await createProduct(accessToken, payload);
-        adminToast.success('محصول ایجاد شد. حالا می‌توانید مشخصات را تکمیل کنید.');
+        adminToast.success(isActive ? 'محصول منتشر شد.' : 'پیش‌نویس ذخیره شد.');
         router.replace(`/admin/products/${created.id}`);
       } else {
         const updated = await updateProduct(accessToken, productId!, payload);
         setForm(productToForm(updated, categories));
-        adminToast.success('اطلاعات پایه ذخیره شد.');
+        adminToast.success(isActive ? 'محصول منتشر و ذخیره شد.' : 'پیش‌نویس به‌روز شد.');
       }
     } catch (error) {
       adminToast.error(error instanceof Error ? error.message : 'ذخیره محصول انجام نشد.');
@@ -331,16 +385,16 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
 
   async function runCopySpecs() {
     if (!accessToken || !productId || !copySourceId) return;
-    const categories: ProductSpecCategory[] = [];
-    if (copyTechnical) categories.push('technical');
-    if (copyAppearance) categories.push('appearance');
-    if (categories.length === 0) {
+    const categoriesToCopy: ProductSpecCategory[] = [];
+    if (copyTechnical) categoriesToCopy.push('technical');
+    if (copyAppearance) categoriesToCopy.push('appearance');
+    if (categoriesToCopy.length === 0) {
       adminToast.error('حداقل یک دسته را برای کپی انتخاب کنید.');
       return;
     }
     setCopying(true);
     try {
-      const next = await copyProductSpecs(accessToken, productId, copySourceId, categories);
+      const next = await copyProductSpecs(accessToken, productId, copySourceId, categoriesToCopy);
       setSpecifications(next);
       adminToast.success('مشخصات از محصول مبدأ منتقل شد.');
     } catch (error) {
@@ -356,7 +410,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     const payload = {
       skuVariant: variantDraft.skuVariant,
       variantNameFa: variantDraft.variantNameFa,
-      variantNameEn: variantDraft.variantNameEn,
+      variantNameEn: variantDraft.variantNameEn || variantDraft.variantNameFa,
       variantCode: variantDraft.variantCode || null,
       priceBase: variantDraft.priceBase === '' ? null : Number(variantDraft.priceBase),
       priceAdjustment: Number(variantDraft.priceAdjustment || 0),
@@ -397,12 +451,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
 
   function renderSpecRows(items: ProductSpecification[]) {
     if (items.length === 0) {
-      return <p className="mt-3 text-sm text-[var(--ops-muted)]">هنوز موردی ثبت نشده است.</p>;
+      return <p className="admin-editor__hint">هنوز موردی ثبت نشده است.</p>;
     }
     return (
-      <div className="mt-4 space-y-3">
+      <div className="admin-editor__spec-list">
         {items.map((spec) => (
-          <div key={spec.id} className="admin-form-grid two rounded-[var(--ops-radius)] border border-[var(--ops-line)] bg-[var(--ops-paper)] p-3">
+          <div key={spec.id} className="admin-editor__spec-row">
             <label className="block text-start">
               <span className="ops-login__label">عنوان</span>
               <input
@@ -445,8 +499,8 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 }
               />
             </label>
-            <div className="flex items-end gap-2">
-              <button type="button" className="ops-btn" onClick={() => void saveSpecification(spec)}>
+            <div className="admin-editor__spec-actions">
+              <button type="button" className="ops-btn ops-btn--ghost" onClick={() => void saveSpecification(spec)}>
                 ذخیره
               </button>
               <IconAction label="حذف" tone="danger" onClick={() => setPendingDeleteSpec(spec)}>
@@ -477,51 +531,437 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
 
   return (
     <AdminShell eyebrow="کاتالوگ" title={isNew ? 'افزودن محصول' : 'ویرایش محصول'}>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="admin-editor__topbar">
         <Link href="/admin/products" className="ops-btn ops-btn--ghost">
           ← بازگشت به فهرست
         </Link>
-        {!isNew ? (
-          <Link href={`/products/${form.slug}`} className="ops-btn ops-btn--ghost" target="_blank">
-            مشاهده در سایت
-          </Link>
-        ) : null}
+        <div className="admin-editor__topbar-meta">
+          <span className={`admin-badge ${form.isActive ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
+            {statusLabel}
+          </span>
+          {!isNew && form.isActive ? (
+            <Link href={`/products/${form.slug}`} className="ops-btn ops-btn--ghost" target="_blank">
+              مشاهده در سایت
+            </Link>
+          ) : null}
+        </div>
       </div>
 
-      <form onSubmit={saveBasics} className="space-y-5">
-        <section className="admin-stat text-start">
-          <p className="caption-up">اطلاعات پایه</p>
-          <h2 className="display-sm mt-2">شناسه و قیمت</h2>
-          <div className="admin-form-grid two mt-5">
-            {(
-              [
-                ['nameFa', 'نام فارسی', 2],
-                ['nameEn', 'نام لاتین', 2],
-                ['slug', 'شناسه آدرس', 2],
-                ['sku', 'کد کالا', 2],
-              ] as const
-            ).map(([key, label, minLength]) => (
-              <label key={key} className="block text-start">
-                <span className="ops-login__label">{label}</span>
-                <input
-                  required
-                  minLength={minLength}
-                  className="ops-field"
-                  dir={key === 'nameFa' ? 'rtl' : 'ltr'}
-                  value={form[key]}
-                  onChange={(event) => setForm({ ...form, [key]: event.target.value })}
-                />
-              </label>
-            ))}
+      <div className="admin-editor">
+        <div className="admin-editor__main">
+          <div className="admin-editor__title-block">
             <label className="block text-start">
-              <span className="ops-login__label">دسته‌بندی</span>
-              <select
+              <span className="sr-only">عنوان محصول</span>
+              <input
+                className="admin-editor__title-input"
                 required
+                minLength={2}
+                maxLength={200}
+                placeholder="عنوان محصول"
+                value={form.nameFa}
+                onChange={(event) => onTitleChange(event.target.value)}
+              />
+            </label>
+            <div className="admin-editor__permalink">
+              <span className="admin-editor__permalink-label">آدرس:</span>
+              <span className="admin-editor__permalink-prefix" dir="ltr">
+                /products/
+              </span>
+              <input
+                className="admin-editor__permalink-input"
+                required
+                minLength={2}
+                maxLength={200}
+                dir="ltr"
+                value={form.slug}
+                onChange={(event) => {
+                  setSlugLocked(true);
+                  setForm({ ...form, slug: event.target.value });
+                }}
+              />
+              {slugLocked && isNew ? (
+                <button
+                  type="button"
+                  className="admin-editor__permalink-unlock"
+                  onClick={() => setSlugLocked(false)}
+                >
+                  هم‌تراز با عنوان
+                </button>
+              ) : null}
+            </div>
+            <p className="admin-editor__hint">فقط عنوان و آدرس اجباری‌اند؛ بقیه فیلدها اختیاری‌اند.</p>
+          </div>
+
+          <Metabox title="توضیحات">
+            <label className="block text-start">
+              <span className="ops-login__label">خلاصه کوتاه</span>
+              <input
+                className="ops-field"
+                maxLength={500}
+                placeholder="یک جمله برای کارت محصول و نتایج جستجو"
+                value={form.descriptionShortFa}
+                onChange={(event) => setForm({ ...form, descriptionShortFa: event.target.value })}
+              />
+            </label>
+            <label className="mt-4 block text-start">
+              <span className="ops-login__label">توضیح کامل</span>
+              <textarea
+                className="ops-field admin-editor__body"
+                maxLength={8000}
+                value={form.descriptionLongFa}
+                onChange={(event) => setForm({ ...form, descriptionLongFa: event.target.value })}
+                placeholder="جزئیات کامل محصول، کاربرد، نکات نصب و بهره‌برداری…"
+              />
+            </label>
+          </Metabox>
+
+          <Metabox title="گالری تصاویر">
+            <MediaField label="تصاویر محصول" multiple value={form.images} onChange={(images) => setForm({ ...form, images })} />
+          </Metabox>
+
+          {isNew ? (
+            <Metabox title="مشخصات و مدل‌ها">
+              <p className="admin-editor__hint">
+                پس از ذخیرهٔ پیش‌نویس یا انتشار، بخش مشخصات فنی، ظاهری و مدل‌ها فعال می‌شود.
+              </p>
+            </Metabox>
+          ) : (
+            <>
+              <Metabox title="مشخصات فنی">
+                {renderSpecRows(technicalSpecs)}
+                <div className="admin-editor__spec-row mt-4">
+                  <label className="block text-start">
+                    <span className="ops-login__label">عنوان</span>
+                    <input
+                      className="ops-field"
+                      value={techDraft.specificationKey}
+                      onChange={(event) => setTechDraft({ ...techDraft, specificationKey: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">مقدار</span>
+                    <input
+                      className="ops-field"
+                      value={techDraft.specificationValue}
+                      onChange={(event) => setTechDraft({ ...techDraft, specificationValue: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">واحد</span>
+                    <input
+                      className="ops-field"
+                      value={techDraft.unit}
+                      onChange={(event) => setTechDraft({ ...techDraft, unit: event.target.value })}
+                    />
+                  </label>
+                  <div className="admin-editor__spec-actions">
+                    <button
+                      type="button"
+                      className="ops-btn"
+                      onClick={() => void addSpecification('technical', techDraft)}
+                    >
+                      <span className="inline-flex items-center gap-2">
+                        <IconPlus />
+                        افزودن
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </Metabox>
+
+              <Metabox
+                title="مشخصات ظاهری"
+                actions={
+                  <button type="button" className="ops-btn ops-btn--ghost" onClick={() => void ensureAppearanceDefaults()}>
+                    افزودن پیش‌فرض‌ها
+                  </button>
+                }
+              >
+                {renderSpecRows(appearanceSpecs)}
+                <div className="admin-editor__spec-row mt-4">
+                  <label className="block text-start">
+                    <span className="ops-login__label">عنوان</span>
+                    <input
+                      className="ops-field"
+                      value={appearanceDraft.specificationKey}
+                      onChange={(event) =>
+                        setAppearanceDraft({ ...appearanceDraft, specificationKey: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">مقدار</span>
+                    <input
+                      className="ops-field"
+                      value={appearanceDraft.specificationValue}
+                      onChange={(event) =>
+                        setAppearanceDraft({ ...appearanceDraft, specificationValue: event.target.value })
+                      }
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">واحد</span>
+                    <input
+                      className="ops-field"
+                      value={appearanceDraft.unit}
+                      onChange={(event) => setAppearanceDraft({ ...appearanceDraft, unit: event.target.value })}
+                    />
+                  </label>
+                  <div className="admin-editor__spec-actions">
+                    <button
+                      type="button"
+                      className="ops-btn"
+                      onClick={() => void addSpecification('appearance', appearanceDraft)}
+                    >
+                      افزودن
+                    </button>
+                  </div>
+                </div>
+              </Metabox>
+
+              <Metabox title="کپی مشخصات از محصول دیگر">
+                <p className="admin-editor__hint">
+                  مشخصات دستهٔ انتخاب‌شده جایگزین موارد فعلی همان دسته می‌شود.
+                </p>
+                <div className="admin-form-grid two mt-3">
+                  <label className="block text-start">
+                    <span className="ops-login__label">محصول مبدأ</span>
+                    <select
+                      className="admin-select admin-select--wide"
+                      value={copySourceId}
+                      onChange={(event) => setCopySourceId(event.target.value)}
+                    >
+                      <option value="">انتخاب کنید</option>
+                      {sourceProducts.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex flex-col justify-end gap-2 text-sm">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={copyTechnical}
+                        onChange={(event) => setCopyTechnical(event.target.checked)}
+                      />
+                      مشخصات فنی
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={copyAppearance}
+                        onChange={(event) => setCopyAppearance(event.target.checked)}
+                      />
+                      مشخصات ظاهری
+                    </label>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="ops-btn mt-4"
+                  disabled={copying || !copySourceId}
+                  onClick={() => void runCopySpecs()}
+                >
+                  {copying ? 'در حال کپی…' : 'انتقال مشخصات'}
+                </button>
+              </Metabox>
+
+              <Metabox title="مدل‌ها / واریانت‌ها">
+                {variants.length === 0 ? (
+                  <p className="admin-editor__hint">مدلی ثبت نشده است.</p>
+                ) : (
+                  <div className="admin-editor__variant-list">
+                    {variants.map((variant) => (
+                      <div key={variant.id} className="admin-editor__variant-row">
+                        <div className="text-start">
+                          <strong className="block">{variant.variantNameFa}</strong>
+                          <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
+                            {variant.skuVariant}
+                            {variant.variantCode ? ` · ${variant.variantCode}` : ''}
+                            {' · '}
+                            موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="ops-btn ops-btn--ghost"
+                            onClick={() => {
+                              setEditingVariantId(variant.id);
+                              setVariantDraft({
+                                skuVariant: variant.skuVariant,
+                                variantNameFa: variant.variantNameFa,
+                                variantNameEn: variant.variantNameEn || variant.variantNameFa,
+                                variantCode: variant.variantCode || '',
+                                priceBase: variant.priceBase == null ? '' : String(variant.priceBase),
+                                priceAdjustment: String(variant.priceAdjustment ?? 0),
+                                stockQuantity: String(variant.stockQuantity ?? 0),
+                                isActive: variant.isActive ?? true,
+                              });
+                            }}
+                          >
+                            ویرایش
+                          </button>
+                          <IconAction label="حذف" tone="danger" onClick={() => setPendingDeleteVariant(variant)}>
+                            <IconTrash />
+                          </IconAction>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <form onSubmit={saveVariant} className="admin-form-grid two mt-4">
+                  <label className="block text-start">
+                    <span className="ops-login__label">کد مدل (SKU)</span>
+                    <input
+                      required
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.skuVariant}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, skuVariant: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">کد نمایشی</span>
+                    <input
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.variantCode}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, variantCode: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">نام فارسی</span>
+                    <input
+                      required
+                      className="ops-field"
+                      value={variantDraft.variantNameFa}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, variantNameFa: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">نام لاتین</span>
+                    <input
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.variantNameEn}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, variantNameEn: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">قیمت پایه</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.priceBase}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, priceBase: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">تعدیل قیمت</span>
+                    <input
+                      type="number"
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.priceAdjustment}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, priceAdjustment: event.target.value })}
+                    />
+                  </label>
+                  <label className="block text-start">
+                    <span className="ops-login__label">موجودی</span>
+                    <input
+                      type="number"
+                      min={0}
+                      className="ops-field"
+                      dir="ltr"
+                      value={variantDraft.stockQuantity}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, stockQuantity: event.target.value })}
+                    />
+                  </label>
+                  <label className="flex items-end gap-2 pb-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={variantDraft.isActive}
+                      onChange={(event) => setVariantDraft({ ...variantDraft, isActive: event.target.checked })}
+                    />
+                    مدل فعال باشد
+                  </label>
+                  <div className="flex flex-wrap gap-2 sm:col-span-2">
+                    <button type="submit" className="ops-btn">
+                      {editingVariantId ? 'ذخیره مدل' : 'افزودن مدل'}
+                    </button>
+                    {editingVariantId ? (
+                      <button
+                        type="button"
+                        className="ops-btn ops-btn--ghost"
+                        onClick={() => {
+                          setEditingVariantId(null);
+                          setVariantDraft(emptyVariantDraft);
+                        }}
+                      >
+                        انصراف ویرایش
+                      </button>
+                    ) : null}
+                  </div>
+                </form>
+              </Metabox>
+            </>
+          )}
+        </div>
+
+        <aside className="admin-editor__side">
+          <Metabox title="انتشار" className="admin-metabox--sticky">
+            <div className="admin-editor__publish-meta">
+              <p>
+                وضعیت:{' '}
+                <strong className={form.isActive ? 'text-[var(--ops-ok)]' : 'text-[var(--ops-warn)]'}>
+                  {statusLabel}
+                </strong>
+              </p>
+              <label className="mt-3 block text-start">
+                <span className="ops-login__label">تغییر وضعیت</span>
+                <select
+                  className="admin-select admin-select--wide"
+                  value={form.isActive ? 'published' : 'draft'}
+                  onChange={(event) => setForm({ ...form, isActive: event.target.value === 'published' })}
+                >
+                  <option value="draft">پیش‌نویس</option>
+                  <option value="published">منتشرشده</option>
+                </select>
+              </label>
+            </div>
+            <div className="admin-editor__publish-actions">
+              <button type="button" className="ops-btn ops-btn--ghost" disabled={saving} onClick={() => void persist(false)}>
+                {saving ? '…' : 'ذخیره پیش‌نویس'}
+              </button>
+              <button
+                type="button"
+                className="ops-btn"
+                disabled={saving}
+                onClick={() => void persist(true)}
+              >
+                {saving ? 'در حال ذخیره…' : form.isActive || !isNew ? 'انتشار / به‌روزرسانی' : 'انتشار'}
+              </button>
+            </div>
+            <p className="admin-editor__hint mt-3">
+              پیش‌نویس در سایت عمومی دیده نمی‌شود. هر وقت آماده بودید، منتشر کنید.
+            </p>
+          </Metabox>
+
+          <Metabox title="دسته‌بندی">
+            <label className="block text-start">
+              <span className="ops-login__label">دسته</span>
+              <select
                 className="admin-select admin-select--wide"
                 value={form.category}
                 onChange={(event) => setForm({ ...form, category: event.target.value })}
               >
-                {categoryOptions.length === 0 ? <option value="">دسته‌ای ثبت نشده</option> : null}
+                <option value="">بدون دسته (اختیاری)</option>
                 {categoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -529,377 +969,54 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 ))}
               </select>
             </label>
+          </Metabox>
+
+          <Metabox title="قیمت و کد کالا">
             <label className="block text-start">
               <span className="ops-login__label">قیمت پایه (ریال)</span>
               <input
-                required
                 type="number"
                 min={0}
                 className="ops-field"
                 dir="ltr"
                 value={form.priceBase}
-                onChange={(event) => setForm({ ...form, priceBase: Number(event.target.value) })}
+                onChange={(event) => setForm({ ...form, priceBase: Number(event.target.value) || 0 })}
               />
             </label>
-            <label className="block text-start sm:col-span-2">
-              <span className="ops-login__label">توضیح کوتاه (حداقل ۱۰ کاراکتر)</span>
+            <label className="mt-3 block text-start">
+              <span className="ops-login__label">کد کالا (SKU)</span>
               <input
-                required
-                minLength={10}
-                maxLength={500}
                 className="ops-field"
-                value={form.descriptionShortFa}
-                onChange={(event) => setForm({ ...form, descriptionShortFa: event.target.value })}
+                dir="ltr"
+                placeholder="خالی = ساخت خودکار از آدرس"
+                value={form.sku}
+                onChange={(event) => setForm({ ...form, sku: event.target.value })}
               />
             </label>
-            <label className="block text-start sm:col-span-2">
-              <span className="ops-login__label">توضیح کامل</span>
-              <textarea
-                className="ops-field min-h-36"
-                maxLength={8000}
-                value={form.descriptionLongFa}
-                onChange={(event) => setForm({ ...form, descriptionLongFa: event.target.value })}
-                placeholder="جزئیات کامل محصول، کاربرد، نکات نصب و بهره‌برداری…"
-              />
-            </label>
-            <div className="sm:col-span-2">
-              <MediaField
-                label="گالری تصاویر"
-                multiple
-                value={form.images}
-                onChange={(images) => setForm({ ...form, images })}
-              />
-            </div>
-            <label className="flex items-center gap-2 text-start text-sm">
+            <label className="mt-3 block text-start">
+              <span className="ops-login__label">نام لاتین</span>
               <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
+                className="ops-field"
+                dir="ltr"
+                placeholder="اختیاری"
+                value={form.nameEn}
+                onChange={(event) => setForm({ ...form, nameEn: event.target.value })}
               />
-              محصول فعال باشد
             </label>
-            <label className="flex items-center gap-2 text-start text-sm">
+          </Metabox>
+
+          <Metabox title="نمایش">
+            <label className="flex items-center gap-2 text-sm">
               <input
                 type="checkbox"
                 checked={form.isFeatured}
                 onChange={(event) => setForm({ ...form, isFeatured: event.target.checked })}
               />
-              نمایش ویژه در سایت
+              محصول ویژه در صفحه اصلی
             </label>
-          </div>
-          <div className="mt-5">
-            <button type="submit" className="ops-btn" disabled={saving}>
-              {saving ? 'در حال ذخیره…' : isNew ? 'ایجاد و ادامه' : 'ذخیره اطلاعات پایه'}
-            </button>
-          </div>
-        </section>
-      </form>
-
-      {isNew ? (
-        <section className="admin-stat mt-5 text-start">
-          <p className="text-sm text-[var(--ops-muted)]">
-            پس از ایجاد محصول، بخش‌های مشخصات فنی، ظاهری، کپی از محصول دیگر و مدل‌ها فعال می‌شوند.
-          </p>
-        </section>
-      ) : (
-        <>
-          <section className="admin-stat mt-5 text-start">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="caption-up">مشخصات فنی</p>
-                <h2 className="display-sm mt-2">ویژگی‌های فنی منعطف</h2>
-              </div>
-            </div>
-            {renderSpecRows(technicalSpecs)}
-            <div className="admin-form-grid two mt-4">
-              <label className="block text-start">
-                <span className="ops-login__label">عنوان</span>
-                <input
-                  className="ops-field"
-                  value={techDraft.specificationKey}
-                  onChange={(event) => setTechDraft({ ...techDraft, specificationKey: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">مقدار</span>
-                <input
-                  className="ops-field"
-                  value={techDraft.specificationValue}
-                  onChange={(event) => setTechDraft({ ...techDraft, specificationValue: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">واحد</span>
-                <input
-                  className="ops-field"
-                  value={techDraft.unit}
-                  onChange={(event) => setTechDraft({ ...techDraft, unit: event.target.value })}
-                />
-              </label>
-              <div className="flex items-end">
-                <button type="button" className="ops-btn" onClick={() => void addSpecification('technical', techDraft)}>
-                  <span className="inline-flex items-center gap-2">
-                    <IconPlus />
-                    افزودن مشخصه فنی
-                  </span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="admin-stat mt-5 text-start">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="caption-up">مشخصات ظاهری</p>
-                <h2 className="display-sm mt-2">پیش‌فرض + موارد سفارشی</h2>
-              </div>
-              <button type="button" className="ops-btn ops-btn--ghost" onClick={() => void ensureAppearanceDefaults()}>
-                افزودن پیش‌فرض‌ها
-              </button>
-            </div>
-            {renderSpecRows(appearanceSpecs)}
-            <div className="admin-form-grid two mt-4">
-              <label className="block text-start">
-                <span className="ops-login__label">عنوان</span>
-                <input
-                  className="ops-field"
-                  value={appearanceDraft.specificationKey}
-                  onChange={(event) =>
-                    setAppearanceDraft({ ...appearanceDraft, specificationKey: event.target.value })
-                  }
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">مقدار</span>
-                <input
-                  className="ops-field"
-                  value={appearanceDraft.specificationValue}
-                  onChange={(event) =>
-                    setAppearanceDraft({ ...appearanceDraft, specificationValue: event.target.value })
-                  }
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">واحد</span>
-                <input
-                  className="ops-field"
-                  value={appearanceDraft.unit}
-                  onChange={(event) => setAppearanceDraft({ ...appearanceDraft, unit: event.target.value })}
-                />
-              </label>
-              <div className="flex items-end">
-                <button
-                  type="button"
-                  className="ops-btn"
-                  onClick={() => void addSpecification('appearance', appearanceDraft)}
-                >
-                  افزودن مشخصه ظاهری
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <section className="admin-stat mt-5 text-start">
-            <p className="caption-up">نقل مشخصات</p>
-            <h2 className="display-sm mt-2">کپی از محصول دیگر</h2>
-            <p className="mt-2 text-sm text-[var(--ops-muted)]">
-              مشخصات دستهٔ انتخاب‌شده جایگزین موارد فعلی همان دسته می‌شود.
-            </p>
-            <div className="admin-form-grid two mt-4">
-              <label className="block text-start">
-                <span className="ops-login__label">محصول مبدأ</span>
-                <select
-                  className="admin-select admin-select--wide"
-                  value={copySourceId}
-                  onChange={(event) => setCopySourceId(event.target.value)}
-                >
-                  <option value="">انتخاب کنید</option>
-                  {sourceProducts.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex flex-col justify-end gap-2 text-sm">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={copyTechnical}
-                    onChange={(event) => setCopyTechnical(event.target.checked)}
-                  />
-                  مشخصات فنی
-                </label>
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={copyAppearance}
-                    onChange={(event) => setCopyAppearance(event.target.checked)}
-                  />
-                  مشخصات ظاهری
-                </label>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="ops-btn mt-4"
-              disabled={copying || !copySourceId}
-              onClick={() => void runCopySpecs()}
-            >
-              {copying ? 'در حال کپی…' : 'انتقال مشخصات'}
-            </button>
-          </section>
-
-          <section className="admin-stat mt-5 text-start">
-            <p className="caption-up">مدل‌ها</p>
-            <h2 className="display-sm mt-2">واریانت‌های قابل سفارش</h2>
-            {variants.length === 0 ? (
-              <p className="mt-3 text-sm text-[var(--ops-muted)]">مدلی ثبت نشده است.</p>
-            ) : (
-              <div className="mt-4 space-y-2">
-                {variants.map((variant) => (
-                  <div
-                    key={variant.id}
-                    className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--ops-radius)] border border-[var(--ops-line)] bg-[var(--ops-paper)] px-3 py-3"
-                  >
-                    <div className="text-start">
-                      <strong className="block">{variant.variantNameFa}</strong>
-                      <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
-                        {variant.skuVariant}
-                        {variant.variantCode ? ` · ${variant.variantCode}` : ''}
-                        {' · '}
-                        موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        className="ops-btn ops-btn--ghost"
-                        onClick={() => {
-                          setEditingVariantId(variant.id);
-                          setVariantDraft({
-                            skuVariant: variant.skuVariant,
-                            variantNameFa: variant.variantNameFa,
-                            variantNameEn: variant.variantNameEn || variant.variantNameFa,
-                            variantCode: variant.variantCode || '',
-                            priceBase: variant.priceBase == null ? '' : String(variant.priceBase),
-                            priceAdjustment: String(variant.priceAdjustment ?? 0),
-                            stockQuantity: String(variant.stockQuantity ?? 0),
-                            isActive: variant.isActive ?? true,
-                          });
-                        }}
-                      >
-                        ویرایش
-                      </button>
-                      <IconAction label="حذف" tone="danger" onClick={() => setPendingDeleteVariant(variant)}>
-                        <IconTrash />
-                      </IconAction>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <form onSubmit={saveVariant} className="admin-form-grid two mt-4">
-              <label className="block text-start">
-                <span className="ops-login__label">کد مدل (SKU)</span>
-                <input
-                  required
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.skuVariant}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, skuVariant: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">کد نمایشی</span>
-                <input
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.variantCode}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, variantCode: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">نام فارسی</span>
-                <input
-                  required
-                  className="ops-field"
-                  value={variantDraft.variantNameFa}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, variantNameFa: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">نام لاتین</span>
-                <input
-                  required
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.variantNameEn}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, variantNameEn: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">قیمت پایه</span>
-                <input
-                  type="number"
-                  min={0}
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.priceBase}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, priceBase: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">تعدیل قیمت</span>
-                <input
-                  type="number"
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.priceAdjustment}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, priceAdjustment: event.target.value })}
-                />
-              </label>
-              <label className="block text-start">
-                <span className="ops-login__label">موجودی</span>
-                <input
-                  type="number"
-                  min={0}
-                  className="ops-field"
-                  dir="ltr"
-                  value={variantDraft.stockQuantity}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, stockQuantity: event.target.value })}
-                />
-              </label>
-              <label className="flex items-end gap-2 pb-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={variantDraft.isActive}
-                  onChange={(event) => setVariantDraft({ ...variantDraft, isActive: event.target.checked })}
-                />
-                مدل فعال باشد
-              </label>
-              <div className="flex flex-wrap gap-2 sm:col-span-2">
-                <button type="submit" className="ops-btn">
-                  {editingVariantId ? 'ذخیره مدل' : 'افزودن مدل'}
-                </button>
-                {editingVariantId ? (
-                  <button
-                    type="button"
-                    className="ops-btn ops-btn--ghost"
-                    onClick={() => {
-                      setEditingVariantId(null);
-                      setVariantDraft(emptyVariantDraft);
-                    }}
-                  >
-                    انصراف ویرایش
-                  </button>
-                ) : null}
-              </div>
-            </form>
-          </section>
-        </>
-      )}
+          </Metabox>
+        </aside>
+      </div>
 
       <AdminConfirmModal
         open={Boolean(pendingDeleteSpec)}
