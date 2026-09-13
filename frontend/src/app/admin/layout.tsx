@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import { AdminToaster } from '@/components/admin/AdminToaster';
 import './admin-ops.css';
 
 export const metadata: Metadata = {
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="mig-ops" data-theme="ops">
+      <AdminToaster />
       {children}
     </div>
   );

@@ -15,6 +15,7 @@ import {
   SparePartCategory,
   updateAdminSparePartCategory,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const emptyForm = {
@@ -35,7 +36,6 @@ export default function AdminSparePartCategoriesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: SparePartCategory) =>
@@ -52,7 +52,7 @@ export default function AdminSparePartCategoriesPage() {
     if (!token) return;
     fetchAdminSparePartCategories(token)
       .then(setCategories)
-      .catch(() => setMessage('دریافت دسته‌بندی قطعات انجام نشد.'));
+      .catch(() => adminToast.error('دریافت دسته‌بندی قطعات انجام نشد.'));
   }, [token]);
 
   function openCreate() {
@@ -78,20 +78,19 @@ export default function AdminSparePartCategoriesPage() {
     event.preventDefault();
     if (!token) return;
     setBusy(true);
-    setMessage('');
     try {
       if (editingId) {
         const updated = await updateAdminSparePartCategory(token, editingId, form);
         setCategories((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        setMessage('دسته با موفقیت ویرایش شد.');
+        adminToast.success('دسته با موفقیت ویرایش شد.');
       } else {
         const created = await createAdminSparePartCategory(token, form);
         setCategories((current) => [...current, created].sort((a, b) => a.displayOrder - b.displayOrder));
-        setMessage('دسته با موفقیت افزوده شد.');
+        adminToast.success('دسته با موفقیت افزوده شد.');
       }
       setModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ذخیره دسته انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره دسته انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -104,9 +103,9 @@ export default function AdminSparePartCategoriesPage() {
       await deleteAdminSparePartCategory(token, pendingDelete.id);
       setCategories((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('دسته حذف شد.');
+      adminToast.success('دسته حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف دسته انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف دسته انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -142,20 +141,6 @@ export default function AdminSparePartCategoriesPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? (
-        <p
-          className={`field-message mb-4 ${
-            message.includes('موفقیت') || message.includes('حذف شد')
-              ? 'field-message--ok'
-              : message.includes('نشد')
-                ? 'field-message--error'
-                : 'field-message--ok'
-          }`}
-        >
-          {message}
-        </p>
-      ) : null}
 
       <DataTable
         headers={['نام', 'شناسه', 'ترتیب', 'وضعیت', 'عملیات']}

@@ -7,6 +7,7 @@ import { AdminModal } from '@/components/admin/AdminModal';
 import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
+import { MediaField } from '@/components/admin/MediaField';
 import { useAdminList } from '@/hooks/useAdminList';
 import { formatMoney } from '@/lib/admin-labels';
 import {
@@ -18,6 +19,7 @@ import {
   SparePartCategory,
   updateAdminSparePart,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const emptyForm = {
@@ -52,7 +54,6 @@ export default function AdminSparePartsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const categoryOptions = useMemo(
     () => categories.map((category) => ({ value: category.id, label: category.nameFa })),
@@ -82,7 +83,7 @@ export default function AdminSparePartsPage() {
         setParts(nextParts);
         setCategories(nextCategories);
       })
-      .catch(() => setMessage('دریافت قطعات یدکی انجام نشد.'));
+      .catch(() => adminToast.error('دریافت قطعات یدکی انجام نشد.'));
   }, [token]);
 
   function categoryLabel(value: string) {
@@ -123,7 +124,6 @@ export default function AdminSparePartsPage() {
     event.preventDefault();
     if (!token) return;
     setBusy(true);
-    setMessage('');
     try {
       const payload = {
         partNumber: form.partNumber,
@@ -142,15 +142,15 @@ export default function AdminSparePartsPage() {
       if (editingId) {
         const updated = await updateAdminSparePart(token, editingId, payload);
         setParts((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        setMessage('قطعه با موفقیت ویرایش شد.');
+        adminToast.success('قطعه با موفقیت ویرایش شد.');
       } else {
         const created = await createAdminSparePart(token, payload);
         setParts((current) => [created, ...current]);
-        setMessage('قطعه با موفقیت افزوده شد.');
+        adminToast.success('قطعه با موفقیت افزوده شد.');
       }
       setModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ذخیره قطعه انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره قطعه انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -163,9 +163,9 @@ export default function AdminSparePartsPage() {
       await deleteAdminSparePart(token, pendingDelete.id);
       setParts((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('قطعه حذف شد.');
+      adminToast.success('قطعه حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف قطعه انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف قطعه انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -214,20 +214,6 @@ export default function AdminSparePartsPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? (
-        <p
-          className={`field-message mb-4 ${
-            message.includes('موفقیت') || message.includes('حذف شد')
-              ? 'field-message--ok'
-              : message.includes('نشد')
-                ? 'field-message--error'
-                : 'field-message--ok'
-          }`}
-        >
-          {message}
-        </p>
-      ) : null}
 
       <DataTable
         headers={['قطعه', 'دسته', 'شماره', 'موجودی', 'قیمت', 'وضعیت', 'عملیات']}
@@ -398,15 +384,13 @@ export default function AdminSparePartsPage() {
               onChange={(event) => setForm({ ...form, warrantyMonths: Number(event.target.value) })}
             />
           </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">آدرس تصویر (اختیاری)</span>
-            <input
-              className="ops-field"
-              dir="ltr"
+          <div className="sm:col-span-2">
+            <MediaField
+              label="تصویر قطعه"
               value={form.imageUrl}
-              onChange={(event) => setForm({ ...form, imageUrl: event.target.value })}
+              onChange={(imageUrl) => setForm({ ...form, imageUrl })}
             />
-          </label>
+          </div>
           <label className="flex items-end gap-3 pb-3 text-sm text-[var(--ops-ink-soft)]">
             <input
               type="checkbox"

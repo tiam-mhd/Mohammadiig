@@ -25,6 +25,7 @@ export function AdminToolbar({
   activeFilterCount,
   onAdd,
   addLabel = 'افزودن',
+  extraActions,
   children,
 }: {
   countLabel: string;
@@ -35,27 +36,20 @@ export function AdminToolbar({
   activeFilterCount: number;
   onAdd?: () => void;
   addLabel?: string;
+  extraActions?: ReactNode;
   children?: ReactNode;
 }) {
   return (
     <div className="admin-toolbar">
       <div className="admin-toolbar__row">
-        <p className="admin-toolbar__count">{countLabel}</p>
-
         <div className="admin-toolbar__actions">
-          <label className="admin-search">
-            <span className="admin-search__icon" aria-hidden>
-              <IconSearch />
-            </span>
-            <span className="sr-only">جستجو</span>
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="جستجو…"
-              className="admin-search__input"
-            />
-          </label>
+          {onAdd ? (
+            <IconAction label={addLabel} tone="primary" onClick={onAdd}>
+              <IconPlus />
+            </IconAction>
+          ) : null}
+
+          {extraActions}
 
           <IconAction
             label="فیلتر پیشرفته"
@@ -67,13 +61,23 @@ export function AdminToolbar({
               <span className="admin-toolbar__badge">{activeFilterCount.toLocaleString('fa-IR')}</span>
             ) : null}
           </IconAction>
-
-          {onAdd ? (
-            <IconAction label={addLabel} tone="primary" onClick={onAdd}>
-              <IconPlus />
-            </IconAction>
-          ) : null}
         </div>
+
+        <label className="admin-search">
+          <span className="admin-search__icon" aria-hidden>
+            <IconSearch />
+          </span>
+          <span className="sr-only">جستجو</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جستجو…"
+            className="admin-search__input"
+          />
+        </label>
+
+        <p className="admin-toolbar__count">{countLabel}</p>
       </div>
       {children}
     </div>

@@ -7,6 +7,8 @@ import { AdminModal } from '@/components/admin/AdminModal';
 import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
+import { MediaField } from '@/components/admin/MediaField';
+import { PersianDatePicker } from '@/components/admin/PersianDatePicker';
 import { useAdminList } from '@/hooks/useAdminList';
 import { PORTFOLIO_CATEGORY } from '@/lib/admin-labels';
 import {
@@ -16,6 +18,7 @@ import {
   PortfolioWork,
   updateAdminPortfolio,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const categoryOptions = Object.entries(PORTFOLIO_CATEGORY).map(([value, label]) => ({ value, label }));
@@ -35,7 +38,7 @@ const emptyForm = {
   startDate: '',
   endDate: '',
   coverImageUrl: '',
-  galleryText: '',
+  gallery: [] as string[],
   highlightsText: '',
   areaOrCapacity: '',
   isPublished: true,
@@ -63,7 +66,6 @@ export default function AdminPortfolioPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: PortfolioWork) =>
@@ -81,7 +83,7 @@ export default function AdminPortfolioPage() {
     if (!token) return;
     fetchAdminPortfolio(token)
       .then(setItems)
-      .catch(() => setMessage('دریافت نمونه‌کارها انجام نشد.'));
+      .catch(() => adminToast.error('دریافت نمونه‌کارها انجام نشد.'));
   }, [token]);
 
   function openCreate() {
@@ -107,7 +109,7 @@ export default function AdminPortfolioPage() {
       startDate: item.startDate ?? '',
       endDate: item.endDate ?? '',
       coverImageUrl: item.coverImageUrl ?? '',
-      galleryText: (item.gallery ?? []).join('\n'),
+      gallery: item.gallery ?? [],
       highlightsText: (item.highlights ?? []).join('\n'),
       areaOrCapacity: item.areaOrCapacity ?? '',
       isPublished: item.isPublished,
@@ -133,7 +135,7 @@ export default function AdminPortfolioPage() {
       startDate: form.startDate || undefined,
       endDate: form.endDate || undefined,
       coverImageUrl: form.coverImageUrl || undefined,
-      gallery: linesToList(form.galleryText),
+      gallery: form.gallery,
       highlights: linesToList(form.highlightsText),
       areaOrCapacity: form.areaOrCapacity || undefined,
       isPublished: form.isPublished,
@@ -146,21 +148,20 @@ export default function AdminPortfolioPage() {
     event.preventDefault();
     if (!token) return;
     setBusy(true);
-    setMessage('');
     try {
       const payload = payloadFromForm();
       if (editingId) {
         const updated = await updateAdminPortfolio(token, editingId, payload);
         setItems((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        setMessage('نمونه‌کار با موفقیت ویرایش شد.');
+        adminToast.success('نمونه‌کار با موفقیت ویرایش شد.');
       } else {
         const created = await createAdminPortfolio(token, payload);
         setItems((current) => [created, ...current]);
-        setMessage('نمونه‌کار با موفقیت افزوده شد.');
+        adminToast.success('نمونه‌کار با موفقیت افزوده شد.');
       }
       setModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ذخیره نمونه‌کار انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره نمونه‌کار انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -173,9 +174,9 @@ export default function AdminPortfolioPage() {
       await deleteAdminPortfolio(token, pendingDelete.id);
       setItems((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('نمونه‌کار حذف شد.');
+      adminToast.success('نمونه‌کار حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف نمونه‌کار انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف نمونه‌کار انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -212,20 +213,6 @@ export default function AdminPortfolioPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? (
-        <p
-          className={`field-message mb-4 ${
-            message.includes('موفقیت') || message.includes('حذف شد')
-              ? 'field-message--ok'
-              : message.includes('نشد')
-                ? 'field-message--error'
-                : 'field-message--ok'
-          }`}
-        >
-          {message}
-        </p>
-      ) : null}
 
       <DataTable
         headers={['عنوان', 'مشتری', 'لوکیشن', 'وضعیت', 'عملیات']}
@@ -323,22 +310,35 @@ export default function AdminPortfolioPage() {
             <span className="ops-login__label">لوکیشن دقیق</span>
             <input className="ops-field" value={form.locationDetail} onChange={(e) => setForm({ ...form, locationDetail: e.target.value })} />
           </label>
-          <label className="block text-start">
-            <span className="ops-login__label">تاریخ شروع</span>
-            <input type="date" className="ops-field" dir="ltr" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">تاریخ پایان</span>
-            <input type="date" className="ops-field" dir="ltr" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} />
-          </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">آدرس تصویر کاور</span>
-            <input className="ops-field" dir="ltr" value={form.coverImageUrl} onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })} />
-          </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">گالری (هر خط یک آدرس)</span>
-            <textarea className="ops-field min-h-20" dir="ltr" value={form.galleryText} onChange={(e) => setForm({ ...form, galleryText: e.target.value })} />
-          </label>
+          <div className="block text-start">
+            <PersianDatePicker
+              label="تاریخ شروع"
+              value={form.startDate}
+              onChange={(startDate) => setForm({ ...form, startDate })}
+            />
+          </div>
+          <div className="block text-start">
+            <PersianDatePicker
+              label="تاریخ پایان"
+              value={form.endDate}
+              onChange={(endDate) => setForm({ ...form, endDate })}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <MediaField
+              label="تصویر کاور"
+              value={form.coverImageUrl}
+              onChange={(coverImageUrl) => setForm({ ...form, coverImageUrl })}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <MediaField
+              label="گالری (چندتصویری)"
+              multiple
+              value={form.gallery}
+              onChange={(gallery) => setForm({ ...form, gallery })}
+            />
+          </div>
           <label className="block text-start sm:col-span-2">
             <span className="ops-login__label">نکات برجسته (هر خط یک مورد)</span>
             <textarea className="ops-field min-h-20" value={form.highlightsText} onChange={(e) => setForm({ ...form, highlightsText: e.target.value })} />

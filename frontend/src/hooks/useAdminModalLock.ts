@@ -32,3 +32,10 @@ export function useAdminModalLock(open: boolean) {
     };
   }, [open]);
 }
+
+/** True when a nested overlay (media picker / lightbox) should own Escape. */
+export function isNestedAdminOverlayOpen(): boolean {
+  return Boolean(
+    document.querySelector('.media-picker, .media-library__lightbox'),
+  );
+}

@@ -3,7 +3,7 @@
 import { FormEvent, ReactNode, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { IconAction, IconClear } from '@/components/admin/AdminIcons';
-import { useAdminModalLock } from '@/hooks/useAdminModalLock';
+import { isNestedAdminOverlayOpen, useAdminModalLock } from '@/hooks/useAdminModalLock';
 
 export function AdminModal({
   open,
@@ -29,7 +29,9 @@ export function AdminModal({
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !busy) onClose();
+      if (event.key !== 'Escape' || busy) return;
+      if (isNestedAdminOverlayOpen()) return;
+      onClose();
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

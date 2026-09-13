@@ -15,6 +15,7 @@ import {
   fetchAdminCustomers,
   updateCustomerVerified,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 export default function AdminCustomersPage() {
@@ -26,7 +27,6 @@ export default function AdminCustomersPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: CustomerAdminSummary) =>
@@ -40,7 +40,7 @@ export default function AdminCustomersPage() {
   const list = useAdminList(customers, searchText, matchFilter);
 
   useEffect(() => {
-    if (token) fetchAdminCustomers(token).then(setCustomers).catch(() => setMessage('دریافت مشتریان انجام نشد.'));
+    if (token) fetchAdminCustomers(token).then(setCustomers).catch(() => adminToast.error('دریافت مشتریان انجام نشد.'));
   }, [token]);
 
   async function saveEdit(event: FormEvent) {
@@ -51,9 +51,9 @@ export default function AdminCustomersPage() {
       const updated = await updateCustomerVerified(token, editing.id, verified);
       setCustomers((current) => current.map((item) => (item.id === editing.id ? updated : item)));
       setEditing(null);
-      setMessage('وضعیت مشتری ذخیره شد.');
+      adminToast.success('وضعیت مشتری ذخیره شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -66,9 +66,9 @@ export default function AdminCustomersPage() {
       await deleteAdminCustomer(token, pendingDelete.id);
       setCustomers((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('مشتری حذف شد.');
+      adminToast.success('مشتری حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -104,8 +104,6 @@ export default function AdminCustomersPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? <p className="field-message field-message--ok mb-4">{message}</p> : null}
 
       <DataTable
         headers={['شرکت', 'تماس', 'کشور', 'شرایط پرداخت', 'تاریخ', 'وضعیت', 'عملیات']}

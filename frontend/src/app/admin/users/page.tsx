@@ -16,6 +16,7 @@ import {
   updateUserRole,
   UserAdminSummary,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const roleOptions = Object.entries(USER_ROLE).map(([value, label]) => ({ value, label }));
@@ -41,7 +42,6 @@ export default function AdminUsersPage() {
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: UserAdminSummary) =>
@@ -63,7 +63,7 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetchAdminUsers(token).then(setUsers).catch(() => setMessage('دریافت کاربران انجام نشد.'));
+    fetchAdminUsers(token).then(setUsers).catch(() => adminToast.error('دریافت کاربران انجام نشد.'));
   }, [token]);
 
   async function saveEdit(event: FormEvent) {
@@ -75,9 +75,9 @@ export default function AdminUsersPage() {
       updated = await updateUserActive(token, editing.id, isActive);
       setUsers((current) => current.map((item) => (item.id === editing.id ? updated : item)));
       setEditing(null);
-      setMessage('کاربر به‌روزرسانی شد.');
+      adminToast.success('کاربر به‌روزرسانی شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -90,9 +90,9 @@ export default function AdminUsersPage() {
       const updated = await updateUserActive(token, pendingDelete.id, false);
       setUsers((current) => current.map((item) => (item.id === pendingDelete.id ? updated : item)));
       setPendingDelete(null);
-      setMessage('کاربر غیرفعال شد.');
+      adminToast.success('کاربر غیرفعال شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -117,9 +117,9 @@ export default function AdminUsersPage() {
       await reload();
       setAddOpen(false);
       setForm(emptyForm);
-      setMessage('کاربر جدید ثبت شد.');
+      adminToast.success('کاربر جدید ثبت شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ثبت کاربر انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ثبت کاربر انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -156,8 +156,6 @@ export default function AdminUsersPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? <p className="field-message field-message--ok mb-4">{message}</p> : null}
 
       <DataTable
         headers={['نام', 'ایمیل', 'شرکت', 'نقش', 'وضعیت', 'آخرین ورود', 'عملیات']}

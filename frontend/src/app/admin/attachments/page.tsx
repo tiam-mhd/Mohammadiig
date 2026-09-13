@@ -15,6 +15,7 @@ import {
   deleteAdminAttachment,
   fetchAdminAttachments,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const emptyForm = {
@@ -35,7 +36,6 @@ export default function AdminAttachmentsPage() {
   const [pendingDelete, setPendingDelete] = useState<AttachmentAdminSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: AttachmentAdminSummary) =>
@@ -51,7 +51,7 @@ export default function AdminAttachmentsPage() {
 
   useEffect(() => {
     if (token)
-      fetchAdminAttachments(token).then(setAttachments).catch(() => setMessage('دریافت فایل‌ها انجام نشد.'));
+      fetchAdminAttachments(token).then(setAttachments).catch(() => adminToast.error('دریافت فایل‌ها انجام نشد.'));
   }, [token]);
 
   async function submit(event: FormEvent) {
@@ -66,9 +66,9 @@ export default function AdminAttachmentsPage() {
       setAttachments((current) => [created, ...current]);
       setModalOpen(false);
       setForm(emptyForm);
-      setMessage('فایل ثبت شد.');
+      adminToast.success('فایل ثبت شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ثبت فایل انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ثبت فایل انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -81,9 +81,9 @@ export default function AdminAttachmentsPage() {
       await deleteAdminAttachment(token, pendingDelete.id);
       setAttachments((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('فایل حذف شد.');
+      adminToast.success('فایل حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -110,8 +110,6 @@ export default function AdminAttachmentsPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? <p className="field-message field-message--ok mb-4">{message}</p> : null}
 
       <DataTable
         headers={['نام فایل', 'مرتبط با', 'نوع', 'حجم', 'تاریخ', 'عملیات']}

@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
+import { IconEye, IconEyeOff } from '@/components/admin/AdminIcons';
 import { login } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -11,6 +12,7 @@ export default function AdminLoginPage() {
   const { accessToken, user, setSession, clearSession } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -98,16 +100,27 @@ export default function AdminLoginPage() {
               <label htmlFor="admin-password" className="ops-login__label">
                 رمز عبور
               </label>
-              <input
-                id="admin-password"
-                required
-                type="password"
-                autoComplete="current-password"
-                dir="ltr"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="ops-field text-start"
-              />
+              <div className="ops-password-field">
+                <input
+                  id="admin-password"
+                  required
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete="current-password"
+                  dir="ltr"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  className="ops-field text-start"
+                />
+                <button
+                  type="button"
+                  className="ops-password-field__toggle"
+                  aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((current) => !current)}
+                >
+                  {showPassword ? <IconEyeOff /> : <IconEye />}
+                </button>
+              </div>
             </div>
 
             {error ? (

@@ -7,6 +7,8 @@ import { AdminModal } from '@/components/admin/AdminModal';
 import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
+import { MediaField } from '@/components/admin/MediaField';
+import { PersianDatePicker } from '@/components/admin/PersianDatePicker';
 import { useAdminList } from '@/hooks/useAdminList';
 import { labelOf, PROJECT_STATUS, PROJECT_TYPE } from '@/lib/admin-labels';
 import {
@@ -16,6 +18,7 @@ import {
   OpsProject,
   updateAdminProject,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const typeOptions = Object.entries(PROJECT_TYPE).map(([value, label]) => ({ value, label }));
@@ -41,7 +44,7 @@ const emptyForm = {
   profitSharingPercentage: 0,
   status: 'planning',
   coverImageUrl: '',
-  galleryText: '',
+  gallery: [] as string[],
   highlightsText: '',
   isPublished: true,
 };
@@ -66,7 +69,6 @@ export default function AdminProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: OpsProject) =>
@@ -85,7 +87,7 @@ export default function AdminProjectsPage() {
     if (!token) return;
     fetchAdminProjects(token)
       .then(setItems)
-      .catch(() => setMessage('دریافت پروژه‌ها انجام نشد.'));
+      .catch(() => adminToast.error('دریافت پروژه‌ها انجام نشد.'));
   }, [token]);
 
   function openCreate() {
@@ -116,7 +118,7 @@ export default function AdminProjectsPage() {
       profitSharingPercentage: item.profitSharingPercentage,
       status: item.status,
       coverImageUrl: item.coverImageUrl ?? '',
-      galleryText: (item.gallery ?? []).join('\n'),
+      gallery: item.gallery ?? [],
       highlightsText: (item.highlights ?? []).join('\n'),
       isPublished: item.isPublished,
     });
@@ -144,7 +146,7 @@ export default function AdminProjectsPage() {
       profitSharingPercentage: form.profitSharingPercentage,
       status: form.status,
       coverImageUrl: form.coverImageUrl || undefined,
-      gallery: linesToList(form.galleryText),
+      gallery: form.gallery,
       highlights: linesToList(form.highlightsText),
       isPublished: form.isPublished,
     };
@@ -154,21 +156,20 @@ export default function AdminProjectsPage() {
     event.preventDefault();
     if (!token) return;
     setBusy(true);
-    setMessage('');
     try {
       const payload = payloadFromForm();
       if (editingId) {
         const updated = await updateAdminProject(token, editingId, payload);
         setItems((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        setMessage('پروژه با موفقیت ویرایش شد.');
+        adminToast.success('پروژه با موفقیت ویرایش شد.');
       } else {
         const created = await createAdminProject(token, payload);
         setItems((current) => [created, ...current]);
-        setMessage('پروژه با موفقیت افزوده شد.');
+        adminToast.success('پروژه با موفقیت افزوده شد.');
       }
       setModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ذخیره پروژه انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره پروژه انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -181,9 +182,9 @@ export default function AdminProjectsPage() {
       await deleteAdminProject(token, pendingDelete.id);
       setItems((current) => current.filter((item) => item.id !== pendingDelete.id));
       setPendingDelete(null);
-      setMessage('پروژه حذف شد.');
+      adminToast.success('پروژه حذف شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف پروژه انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف پروژه انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -221,20 +222,6 @@ export default function AdminProjectsPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? (
-        <p
-          className={`field-message mb-4 ${
-            message.includes('موفقیت') || message.includes('حذف شد')
-              ? 'field-message--ok'
-              : message.includes('نشد')
-                ? 'field-message--error'
-                : 'field-message--ok'
-          }`}
-        >
-          {message}
-        </p>
-      ) : null}
 
       <DataTable
         headers={['پروژه', 'نوع', 'لوکیشن', 'وضعیت', 'عملیات']}
@@ -343,18 +330,27 @@ export default function AdminProjectsPage() {
             <span className="ops-login__label">لوکیشن دقیق</span>
             <input className="ops-field" value={form.locationDetail} onChange={(e) => setForm({ ...form, locationDetail: e.target.value })} />
           </label>
-          <label className="block text-start">
-            <span className="ops-login__label">شروع</span>
-            <input type="date" className="ops-field" dir="ltr" value={form.startDate} onChange={(e) => setForm({ ...form, startDate: e.target.value })} />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">پایان پیش‌بینی</span>
-            <input type="date" className="ops-field" dir="ltr" value={form.expectedCompletionDate} onChange={(e) => setForm({ ...form, expectedCompletionDate: e.target.value })} />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">تاریخ اتمام</span>
-            <input type="date" className="ops-field" dir="ltr" value={form.completionDate} onChange={(e) => setForm({ ...form, completionDate: e.target.value })} />
-          </label>
+          <div className="block text-start">
+            <PersianDatePicker
+              label="شروع"
+              value={form.startDate}
+              onChange={(startDate) => setForm({ ...form, startDate })}
+            />
+          </div>
+          <div className="block text-start">
+            <PersianDatePicker
+              label="پایان پیش‌بینی"
+              value={form.expectedCompletionDate}
+              onChange={(expectedCompletionDate) => setForm({ ...form, expectedCompletionDate })}
+            />
+          </div>
+          <div className="block text-start">
+            <PersianDatePicker
+              label="تاریخ اتمام"
+              value={form.completionDate}
+              onChange={(completionDate) => setForm({ ...form, completionDate })}
+            />
+          </div>
           <label className="block text-start">
             <span className="ops-login__label">بودجه (ریال)</span>
             <input type="number" min={0} className="ops-field" dir="ltr" value={form.budgetTotal} onChange={(e) => setForm({ ...form, budgetTotal: Number(e.target.value) })} />
@@ -367,14 +363,21 @@ export default function AdminProjectsPage() {
             <span className="ops-login__label">سهم سود (%)</span>
             <input type="number" min={0} max={100} className="ops-field" dir="ltr" value={form.profitSharingPercentage} onChange={(e) => setForm({ ...form, profitSharingPercentage: Number(e.target.value) })} />
           </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">آدرس تصویر کاور</span>
-            <input className="ops-field" dir="ltr" value={form.coverImageUrl} onChange={(e) => setForm({ ...form, coverImageUrl: e.target.value })} />
-          </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">گالری (هر خط یک آدرس)</span>
-            <textarea className="ops-field min-h-20" dir="ltr" value={form.galleryText} onChange={(e) => setForm({ ...form, galleryText: e.target.value })} />
-          </label>
+          <div className="sm:col-span-2">
+            <MediaField
+              label="تصویر کاور"
+              value={form.coverImageUrl}
+              onChange={(coverImageUrl) => setForm({ ...form, coverImageUrl })}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <MediaField
+              label="گالری (چندتصویری)"
+              multiple
+              value={form.gallery}
+              onChange={(gallery) => setForm({ ...form, gallery })}
+            />
+          </div>
           <label className="block text-start sm:col-span-2">
             <span className="ops-login__label">نکات برجسته (هر خط یک مورد)</span>
             <textarea className="ops-field min-h-20" value={form.highlightsText} onChange={(e) => setForm({ ...form, highlightsText: e.target.value })} />

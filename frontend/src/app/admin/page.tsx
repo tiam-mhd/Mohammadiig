@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { AdminShell } from '@/components/admin/AdminShell';
-import { fetchCategories, fetchAdminProducts } from '@/lib/api-client';
+import { fetchCategories, fetchProducts } from '@/lib/api-client';
 
 export default function AdminDashboardPage() {
   const [productCount, setProductCount] = useState(0);
@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([fetchAdminProducts(), fetchCategories()])
+    Promise.all([fetchProducts(), fetchCategories()])
       .then(([products, categories]) => {
         setProductCount(products.meta.total);
         setCategoryCount(categories.length);

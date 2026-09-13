@@ -20,6 +20,7 @@ import {
   ServiceAdminSummary,
   updateAdminService,
 } from '@/lib/api-client';
+import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
 const emptyForm = {
@@ -44,7 +45,6 @@ export default function AdminServicesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [message, setMessage] = useState('');
 
   const searchText = useCallback(
     (item: ServiceAdminSummary) =>
@@ -59,7 +59,7 @@ export default function AdminServicesPage() {
   const list = useAdminList(services, searchText, matchFilter);
 
   useEffect(() => {
-    if (token) fetchAdminServices(token).then(setServices).catch(() => setMessage('دریافت خدمات انجام نشد.'));
+    if (token) fetchAdminServices(token).then(setServices).catch(() => adminToast.error('دریافت خدمات انجام نشد.'));
   }, [token]);
 
   function openCreate() {
@@ -99,15 +99,15 @@ export default function AdminServicesPage() {
       if (editingId) {
         const updated = await updateAdminService(token, editingId, payload);
         setServices((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        setMessage('خدمت ویرایش شد.');
+        adminToast.success('خدمت ویرایش شد.');
       } else {
         const created = await createAdminService(token, payload);
         setServices((current) => [...current, created]);
-        setMessage('خدمت افزوده شد.');
+        adminToast.success('خدمت افزوده شد.');
       }
       setModalOpen(false);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'ذخیره خدمت انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره خدمت انجام نشد.');
     } finally {
       setBusy(false);
     }
@@ -120,9 +120,9 @@ export default function AdminServicesPage() {
       const updated = await updateAdminService(token, pendingDelete.id, { isActive: false });
       setServices((current) => current.map((item) => (item.id === pendingDelete.id ? updated : item)));
       setPendingDelete(null);
-      setMessage('خدمت غیرفعال شد.');
+      adminToast.success('خدمت غیرفعال شد.');
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'حذف انجام نشد.');
     } finally {
       setDeleting(false);
     }
@@ -159,8 +159,6 @@ export default function AdminServicesPage() {
           />
         ) : null}
       </AdminToolbar>
-
-      {message ? <p className="field-message field-message--ok mb-4">{message}</p> : null}
 
       <DataTable
         headers={['خدمت', 'نوع', 'قیمت پایه', 'واحد', 'وضعیت', 'عملیات']}
