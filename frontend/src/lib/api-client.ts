@@ -1133,6 +1133,156 @@ export async function restoreMediaBackup(accessToken: string, file: File): Promi
   return response.json() as Promise<{ restored: number; skipped: number }>;
 }
 
+export type BackupDatasetKey =
+  | 'categories'
+  | 'products'
+  | 'spare_part_categories'
+  | 'spare_parts'
+  | 'services'
+  | 'portfolio'
+  | 'projects'
+  | 'users'
+  | 'customers'
+  | 'quotations'
+  | 'orders'
+  | 'invoices'
+  | 'payments'
+  | 'attachments'
+  | 'media';
+
+export type RestoreConflictMode = 'skip' | 'overwrite' | 'replace';
+
+export type BackupDatasetCount = {
+  key: BackupDatasetKey;
+  labelFa: string;
+  groupFa: string;
+  count: number;
+  tableCounts: Record<string, number>;
+  warningFa: string | null;
+  includesFiles: boolean;
+  dependsOn: BackupDatasetKey[];
+};
+
+export type BackupDatasetsResponse = {
+  definitions: Array<{
+    key: BackupDatasetKey;
+    labelFa: string;
+    descriptionFa: string;
+    groupFa: string;
+    dependsOn: BackupDatasetKey[];
+    includesFiles: boolean;
+    warningFa: string | null;
+    tables: string[];
+  }>;
+  counts: BackupDatasetCount[];
+};
+
+export type BackupInspectResponse = {
+  manifest: {
+    format: string;
+    version: number;
+    createdAt: string;
+    datasets: BackupDatasetKey[];
+    counts: Record<string, number>;
+    tableCounts: Record<string, number>;
+    includeSoftDeleted: boolean;
+    includeMediaFiles: boolean;
+    notes?: string[];
+  };
+  availableDatasets: Array<{
+    key: BackupDatasetKey;
+    labelFa: string;
+    groupFa: string;
+    count: number;
+    inFile: boolean;
+    warningFa: string | null;
+    includesFiles: boolean;
+    dependsOn: BackupDatasetKey[];
+  }>;
+  tableCounts: Record<string, number>;
+  datasetDetails: Array<{ key: BackupDatasetKey; tables: Array<{ name: string; rows: number }> }>;
+};
+
+export type BackupRestoreReport = {
+  dryRun: boolean;
+  mode: RestoreConflictMode;
+  datasets: BackupDatasetKey[];
+  tables: Array<{
+    table: string;
+    inserted: number;
+    updated: number;
+    skipped: number;
+    cleared: number;
+    errors: string[];
+  }>;
+  mediaFilesRestored: number;
+  mediaFilesSkipped: number;
+  warnings: string[];
+};
+
+export function fetchBackupDatasets(accessToken: string): Promise<BackupDatasetsResponse> {
+  return adminRequest(accessToken, '/backup/datasets');
+}
+
+export async function downloadSystemBackup(
+  accessToken: string,
+  options: {
+    datasets: BackupDatasetKey[] | ['all'];
+    includeSoftDeleted?: boolean;
+    includeMediaFiles?: boolean;
+  },
+): Promise<Blob> {
+  const response = await fetch(`${API_URL}/backup/export`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/zip',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(options),
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ساخت بک‌آپ انجام نشد.'));
+  return response.blob();
+}
+
+export async function inspectSystemBackup(accessToken: string, file: File): Promise<BackupInspectResponse> {
+  const body = new FormData();
+  body.append('file', file);
+  const response = await fetch(`${API_URL}/backup/inspect`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    body,
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'خواندن فایل بک‌آپ انجام نشد.'));
+  return response.json() as Promise<BackupInspectResponse>;
+}
+
+export async function restoreSystemBackup(
+  accessToken: string,
+  file: File,
+  options: {
+    datasets?: BackupDatasetKey[];
+    mode: RestoreConflictMode;
+    dryRun?: boolean;
+    restoreMediaFiles?: boolean;
+    protectCurrentAdmin?: boolean;
+  },
+): Promise<BackupRestoreReport> {
+  const body = new FormData();
+  body.append('file', file);
+  body.append('options', JSON.stringify(options));
+  const response = await fetch(`${API_URL}/backup/restore`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    body,
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'بازیابی بک‌آپ انجام نشد.'));
+  return response.json() as Promise<BackupRestoreReport>;
+}
+
 export function fetchAdminUsers(accessToken: string): Promise<UserAdminSummary[]> { return adminRequest(accessToken, '/users/admin/all'); }
 export function updateUserRole(accessToken: string, id: string, role: string): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/role`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }); }
 export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }
