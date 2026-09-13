@@ -13,9 +13,14 @@ import { formatBytes, isVideoMedia, resolveMediaUrl, toRelativeMediaPath } from 
 import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
-function pickUrl(asset: MediaAsset): string {
+function pickStoredUrl(asset: MediaAsset): string {
   // Persist relative `/media/...` so production never receives localhost absolute URLs.
   return toRelativeMediaPath(asset.url) || toRelativeMediaPath(asset.absoluteUrl);
+}
+
+function pickDisplayUrl(asset: MediaAsset): string {
+  // Browser <img> must hit the API origin, not the Next.js site origin.
+  return resolveMediaUrl(asset.url || asset.absoluteUrl);
 }
 
 export function MediaPicker({
@@ -149,7 +154,7 @@ export function MediaPicker({
   function confirm(event?: FormEvent) {
     event?.preventDefault();
     if (!selectedList.length) return;
-    onSelect(selectedList.map(pickUrl), selectedList);
+    onSelect(selectedList.map(pickStoredUrl), selectedList);
     onClose();
   }
 
@@ -234,7 +239,7 @@ export function MediaPicker({
           ) : null}
           {items.map((item) => {
             const active = Boolean(selected[item.id]);
-            const src = pickUrl(item);
+            const src = pickDisplayUrl(item);
             const video = isVideoMedia(item.mimeType);
             return (
               <button
@@ -243,7 +248,7 @@ export function MediaPicker({
                 className={`media-picker__card ${active ? 'is-selected' : ''}`}
                 onClick={() => toggle(item)}
                 onDoubleClick={() => {
-                  onSelect([pickUrl(item)], [item]);
+                  onSelect([pickStoredUrl(item)], [item]);
                   onClose();
                 }}
               >

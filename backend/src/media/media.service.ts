@@ -105,6 +105,8 @@ export class MediaService implements OnModuleInit {
       if (relative.startsWith('/')) return `${base}${relative}`;
       return `${base}/media/${relative}`;
     }
+    // Without MEDIA_PUBLIC_BASE_URL, still return a path starting with /media for clients
+    // that resolve against NEXT_PUBLIC_API_URL — never invent a localhost host here.
     return relative.startsWith('/') ? relative : `/media/${relative}`;
   }
 
@@ -253,6 +255,12 @@ export class MediaService implements OnModuleInit {
     const checksum = createHash('sha256').update(buffer).digest('hex');
     const duplicate = await this.media.findOne({ where: { checksum, deletedAt: IsNull() } });
     if (duplicate) {
+      // DB row may outlive files when MEDIA_ROOT is not on a persistent volume.
+      const existingPath = safeJoinMedia(this.getRoot(), duplicate.relativePath);
+      if (!existsSync(existingPath)) {
+        ensureDir(dirname(existingPath));
+        await fs.writeFile(existingPath, buffer);
+      }
       return this.toView(duplicate);
     }
 
