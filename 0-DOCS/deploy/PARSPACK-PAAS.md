@@ -42,15 +42,27 @@ FRONTEND_URL=https://mohammadiig.ir,https://www.mohammadiig.ir
 JWT_SECRET=<حداقل-۳۲-کاراکتر-تصادفی>
 DB_DRIVER=postgres
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/mig
+MEDIA_ROOT=/data/media
+MEDIA_PUBLIC_BASE_URL=https://api.mohammadiig.ir
 ```
 
 نمونه کامل: `backend/.env.example`
+
+### ماندگاری فایل‌های رسانه (مهم)
+آپلودهای کتابخانه تصاویر در مسیر `MEDIA_ROOT` ذخیره می‌شوند. روی PaaS این مسیر باید روی **دیسک/Volume پایدار** باشد، وگرنه با Redeploy فایل‌ها پاک می‌شوند.
+
+پیشنهاد:
+1. یک Persistent Volume (مثلاً `/data`) به اپ بک‌اند وصل کنید.
+2. `MEDIA_ROOT=/data/media` بگذارید.
+3. `MEDIA_PUBLIC_BASE_URL` را روی دامنه API بگذارید تا URLهای ذخیره‌شده در دیتابیس مطلق و پایدار باشند.
+4. از پنل ادمین → کتابخانه تصاویر، بک‌آپ ZIP بگیرید و جایی امن نگه دارید.
 
 ### نکات
 - اپ روی `0.0.0.0` گوش می‌دهد (سازگار با کانتینر).
 - `FRONTEND_URL` می‌تواند چند origin با ویرگول باشد (CORS).
 - مایگریشن‌ها هنگام استارت با TypeORM اجرا می‌شوند (`migrationsRun`).
 - دسترسی پنل ادمین فقط نقش `admin` است (فرانت + API).
+- فایل‌های رسانه از مسیر استاتیک `https://api…/media/…` سرو می‌شوند (خارج از `/api`).
 
 دامنه `api.mohammadiig.ir` را به این اپ وصل کنید. تست: `https://api.mohammadiig.ir/api`
 

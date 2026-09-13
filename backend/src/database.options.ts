@@ -31,6 +31,10 @@ import { CreateProductExtensions1710000008000 } from './database/migrations/1710
 import { CreateOrderCustomizations1710000009000 } from './database/migrations/1710000009000-create-order-customizations';
 import { CreateSparePartCategories1710000010000 } from './database/migrations/1710000010000-create-spare-part-categories';
 import { PortfolioAndOpsProjects1710000011000 } from './database/migrations/1710000011000-portfolio-and-ops-projects';
+import { CreateMediaLibrary1710000012000 } from './database/migrations/1710000012000-create-media-library';
+import { ProductGallery1710000013000 } from './database/migrations/1710000013000-product-gallery';
+import { ProductDescriptionLong1710000014000 } from './database/migrations/1710000014000-product-description-long';
+import { MediaAssetEntity } from './media/media.entity';
 
 const migrations = [
   CreateProducts1710000000000,
@@ -45,8 +49,10 @@ const migrations = [
   CreateOrderCustomizations1710000009000,
   CreateSparePartCategories1710000010000,
   PortfolioAndOpsProjects1710000011000,
+  CreateMediaLibrary1710000012000,
+  ProductGallery1710000013000,
+  ProductDescriptionLong1710000014000,
 ];
-const usePostgres = process.env.DB_DRIVER === 'postgres';
 
 const entities = [
   ProductEntity,
@@ -68,24 +74,70 @@ const entities = [
   SparePartEntity,
   SparePartCategoryEntity,
   PortfolioWorkEntity,
+  MediaAssetEntity,
 ];
 
-export const databaseDataSourceOptions: DataSourceOptions = usePostgres
-  ? {
-      type: 'postgres',
-      url: process.env.DATABASE_URL,
-      entities,
-      migrations,
-    }
-  : {
-      type: 'better-sqlite3',
-      database: process.env.DATABASE_PATH ?? 'backend/data/mig.sqlite',
-      entities,
-      migrations,
-    };
+function resolveUsePostgres(): boolean {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const driverHint = (process.env.DB_DRIVER ?? '').trim().toLowerCase();
+  return (
+    driverHint === 'postgres' ||
+    Boolean(databaseUrl && /^postgres(ql)?:\/\//i.test(databaseUrl))
+  );
+}
 
-export const databaseOptions: TypeOrmModuleOptions = {
-  ...databaseDataSourceOptions,
-  autoLoadEntities: true,
-  migrationsRun: true,
-};
+function maskDatabaseUrl(url: string): string {
+  return url.replace(/:[^:@/]+@/, ':***@');
+}
+
+/** Build DB options at call-time so platform env vars are already injected. */
+export function buildDatabaseDataSourceOptions(): DataSourceOptions {
+  const databaseUrl = process.env.DATABASE_URL?.trim();
+  const usePostgres = resolveUsePostgres();
+  const sqlitePath = process.env.DATABASE_PATH ?? 'backend/data/mig.sqlite';
+
+  console.log(
+    usePostgres
+      ? `[DB] driver=postgres migrationsRun=true url=${databaseUrl ? maskDatabaseUrl(databaseUrl) : '(missing DATABASE_URL)'}`
+      : `[DB] driver=better-sqlite3 migrationsRun=true path=${sqlitePath}`,
+  );
+
+  if (usePostgres && !databaseUrl) {
+    throw new Error('[DB] DATABASE_URL is required when DB_DRIVER=postgres');
+  }
+
+  return usePostgres
+    ? {
+        type: 'postgres',
+        url: databaseUrl,
+        entities,
+        migrations,
+        synchronize: false,
+        migrationsRun: true,
+        logging: ['error', 'warn', 'migration', 'schema'],
+      }
+    : {
+        type: 'better-sqlite3',
+        database: sqlitePath,
+        entities,
+        migrations,
+        synchronize: false,
+        migrationsRun: true,
+        logging: ['error', 'warn', 'migration', 'schema'],
+      };
+}
+
+export function buildDatabaseOptions(): TypeOrmModuleOptions {
+  return {
+    ...buildDatabaseDataSourceOptions(),
+    autoLoadEntities: true,
+    migrationsRun: true,
+    retryAttempts: 10,
+    retryDelay: 3000,
+  };
+}
+
+/** Lazy getter for TypeORM CLI — call after env is loaded. */
+export function getDatabaseDataSourceOptions(): DataSourceOptions {
+  return buildDatabaseDataSourceOptions();
+}

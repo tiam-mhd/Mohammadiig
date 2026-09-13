@@ -6,6 +6,10 @@ dist/
 coverage/
 data/*.sqlite
 
+# Media library files (persist folder structure)
+data/media/**
+!data/media/.gitkeep
+
 # Runtime files
 *.log
 logs/

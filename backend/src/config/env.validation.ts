@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import * as Joi from 'joi';
 
 export const environmentValidationSchema = Joi.object({
   NODE_ENV: Joi.string().valid('development', 'test', 'production').default('development'),
@@ -7,11 +7,26 @@ export const environmentValidationSchema = Joi.object({
   // Comma-separated origins allowed, e.g. https://mohammadiig.ir,https://www.mohammadiig.ir
   FRONTEND_URL: Joi.string().default('http://localhost:3000'),
   JWT_SECRET: Joi.string().min(32).default('mig-development-secret-change-in-production-32'),
-  DB_DRIVER: Joi.string().valid('better-sqlite3', 'sqlite', 'postgres').default('better-sqlite3'),
+  DB_DRIVER: Joi.string().valid('better-sqlite3', 'sqlite', 'postgres').optional(),
   DATABASE_PATH: Joi.string().default('backend/data/mig.sqlite'),
-  DATABASE_URL: Joi.string().uri({ scheme: ['postgres', 'postgresql'] }).when('DB_DRIVER', {
-    is: 'postgres',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
+  DATABASE_URL: Joi.string().uri({ scheme: ['postgres', 'postgresql'] }).optional(),
+  /** Absolute or relative path for uploaded media (must be on a persistent volume in production). */
+  MEDIA_ROOT: Joi.string().default('./data/media'),
+  /** Public origin for media URLs, e.g. https://api.mohammadiig.ir — leave empty for relative /media/... */
+  MEDIA_PUBLIC_BASE_URL: Joi.string().allow('').default(''),
+}).custom((value, helpers) => {
+  const driver = (value.DB_DRIVER ?? '').toLowerCase();
+  const hasPostgresUrl = Boolean(value.DATABASE_URL);
+  const usePostgres = driver === 'postgres' || hasPostgresUrl;
+
+  if (usePostgres && !value.DATABASE_URL) {
+    return helpers.error('any.custom', {
+      message: 'DATABASE_URL is required when using Postgres (DB_DRIVER=postgres or a postgres DATABASE_URL)',
+    });
+  }
+
+  return {
+    ...value,
+    DB_DRIVER: usePostgres ? 'postgres' : driver || 'better-sqlite3',
+  };
 });

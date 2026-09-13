@@ -1,4 +1,4 @@
 import { DataSource } from 'typeorm';
-import { databaseDataSourceOptions } from './database.options';
+import { buildDatabaseDataSourceOptions } from './database.options';
 
-export default new DataSource(databaseDataSourceOptions);
+export default new DataSource(buildDatabaseDataSourceOptions());
