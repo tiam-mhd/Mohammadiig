@@ -14,6 +14,10 @@ export const environmentValidationSchema = Joi.object({
   MEDIA_ROOT: Joi.string().default('./data/media'),
   /** Public origin for media URLs, e.g. https://api.mohammadiig.ir — leave empty for relative /media/... */
   MEDIA_PUBLIC_BASE_URL: Joi.string().allow('').default(''),
+  ADMIN_EMAIL: Joi.string().email().default('admin@mohammadiig.ir'),
+  ADMIN_PASSWORD: Joi.string().min(8).max(128).default('MigAdmin2026!'),
+  ADMIN_FIRST_NAME: Joi.string().min(1).max(100).default('MIG'),
+  ADMIN_LAST_NAME: Joi.string().min(1).max(100).default('Admin'),
 }).custom((value, helpers) => {
   const driver = (value.DB_DRIVER ?? '').toLowerCase();
   const hasPostgresUrl = Boolean(value.DATABASE_URL);

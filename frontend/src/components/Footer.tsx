@@ -1,11 +1,12 @@
 /**
- * Footer — بسته شدن آرام و شکیل صفحه
+ * Footer — luxury close for MIG promotional site
  */
 
 'use client';
 
 import React from 'react';
 import Link from 'next/link';
+import { GlassButton } from '@/components/GlassButton';
 
 const explore = [
   { href: '/products', label: 'محصولات' },
@@ -31,28 +32,39 @@ export const Footer: React.FC = () => {
 
   return (
     <footer className="site-footer">
-      {/* نوار بالایی — معرفی کوتاه + CTA */}
+      <div className="site-footer__glow" aria-hidden />
+
       <div className="site-footer__intro">
         <div className="site-footer__shell site-footer__intro-inner">
           <div className="site-footer__intro-copy">
-            <p className="caption-up text-white/55">گروه صنعتی محمدی</p>
+            <p className="site-footer__eyebrow" lang="en">
+              Mohammadi Industrial Group
+            </p>
             <p className="site-footer__tagline">
               تجهیزات شهربازی، نصب و پشتیبانی — کنار مجموعه شما.
             </p>
           </div>
-          <Link href="/quote-request" className="btn-pill site-footer__cta">
+          <GlassButton href="/quote-request" className="site-footer__cta">
             درخواست مشاوره
-          </Link>
+          </GlassButton>
         </div>
       </div>
 
-      {/* بدنه لینک‌ها */}
       <div className="site-footer__shell site-footer__body">
         <div className="site-footer__grid">
           <div className="site-footer__brand-col">
-            <p className="wordmark site-footer__mark" lang="en">
-              MIG
-            </p>
+            <div className="site-footer__brand-row">
+              <img
+                src="/Logo-Gold.webp"
+                alt=""
+                className="site-footer__logo"
+                width={56}
+                height={56}
+              />
+              <p className="site-footer__mark" lang="en">
+                MIG
+              </p>
+            </div>
             <p className="site-footer__brand-text">
               تولید و تأمین دستگاه‌های تفریحی برای صاحبان شهربازی و مجموعه‌های سرگرمی.
             </p>
@@ -71,7 +83,7 @@ export const Footer: React.FC = () => {
             </ul>
           </nav>
 
-          <nav className="site-footer__nav-col" aria-label="خدمات">
+          <nav className="site-footer__nav-col" aria-label="همکاری">
             <p className="site-footer__heading">همکاری</p>
             <ul className="site-footer__list">
               {company.map((item) => (
@@ -109,7 +121,6 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* نوار پایینی */}
       <div className="site-footer__bottom">
         <div className="site-footer__shell site-footer__bottom-inner">
           <p className="site-footer__copy">

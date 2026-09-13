@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
+import { ConflictException, Injectable, Logger, OnModuleInit, UnauthorizedException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcryptjs';
@@ -14,12 +15,52 @@ export interface AuthResponse {
 }
 
 @Injectable()
-export class AuthService {
+export class AuthService implements OnModuleInit {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(UserEntity) private readonly users: Repository<UserEntity>,
     @InjectRepository(CustomerEntity) private readonly customers: Repository<CustomerEntity>,
     private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.ensureDefaultAdmin();
+  }
+
+  /** Creates the bootstrap admin when that email is missing (safe for PaaS deploys). */
+  async ensureDefaultAdmin(): Promise<void> {
+    const email = this.config.get<string>('ADMIN_EMAIL', 'admin@mohammadiig.ir').trim().toLowerCase();
+    const password = this.config.get<string>('ADMIN_PASSWORD', 'MigAdmin2026!');
+    const firstName = this.config.get<string>('ADMIN_FIRST_NAME', 'MIG');
+    const lastName = this.config.get<string>('ADMIN_LAST_NAME', 'Admin');
+
+    const existing = await this.users.findOne({ where: { email } });
+    if (existing) {
+      if (existing.role !== 'admin' || !existing.isActive) {
+        existing.role = 'admin';
+        existing.isActive = true;
+        await this.users.save(existing);
+        this.logger.log(`Ensured admin role for existing user ${email}`);
+      }
+      return;
+    }
+
+    await this.users.save({
+      id: randomUUID(),
+      email,
+      passwordHash: await hash(password, 12),
+      firstName,
+      lastName,
+      phone: null,
+      companyName: 'MIG Industrial Group',
+      role: 'admin',
+      isActive: true,
+      lastLoginAt: null,
+    });
+    this.logger.log(`Default admin created: ${email}`);
+  }
 
   async register(dto: RegisterDto): Promise<AuthResponse> {
     const email = dto.email.trim().toLowerCase();
