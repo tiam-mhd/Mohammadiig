@@ -7,6 +7,7 @@ import { AdminShell } from '@/components/admin/AdminShell';
 import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
 import { IconAction, IconPlus, IconTrash } from '@/components/admin/AdminIcons';
 import { MediaField } from '@/components/admin/MediaField';
+import { PriceField } from '@/components/admin/PriceField';
 import {
   Product,
   ProductCategory,
@@ -48,6 +49,7 @@ type EditorForm = {
   descriptionLongFa: string;
   category: string;
   priceBase: number;
+  priceNegotiable: boolean;
   images: string[];
   isActive: boolean;
   isFeatured: boolean;
@@ -79,6 +81,7 @@ const emptyForm: EditorForm = {
   descriptionLongFa: '',
   category: '',
   priceBase: 0,
+  priceNegotiable: false,
   images: [],
   isActive: false,
   isFeatured: false,
@@ -130,6 +133,7 @@ function productToForm(product: Product, categories: ProductCategory[]): EditorF
     descriptionLongFa: product.descriptionLong || '',
     category: matched,
     priceBase: product.price,
+    priceNegotiable: Boolean(product.priceNegotiable),
     images: product.images?.length ? product.images : product.image ? [product.image] : [],
     isActive: product.isActive ?? false,
     isFeatured: product.isFeatured,
@@ -282,6 +286,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         descriptionLongFa: form.descriptionLongFa.trim() || undefined,
         category: form.category || undefined,
         priceBase: Number.isFinite(form.priceBase) ? form.priceBase : 0,
+        priceNegotiable: form.priceNegotiable,
         images: form.images,
         isActive,
         isFeatured: form.isFeatured,
@@ -972,17 +977,13 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
           </Metabox>
 
           <Metabox title="قیمت و کد کالا">
-            <label className="block text-start">
-              <span className="ops-login__label">قیمت پایه (ریال)</span>
-              <input
-                type="number"
-                min={0}
-                className="ops-field"
-                dir="ltr"
-                value={form.priceBase}
-                onChange={(event) => setForm({ ...form, priceBase: Number(event.target.value) || 0 })}
-              />
-            </label>
+            <PriceField
+              label="قیمت پایه (ریال)"
+              value={form.priceBase}
+              negotiable={form.priceNegotiable}
+              onValueChange={(priceBase) => setForm({ ...form, priceBase: Number(priceBase) || 0 })}
+              onNegotiableChange={(priceNegotiable) => setForm({ ...form, priceNegotiable })}
+            />
             <label className="mt-3 block text-start">
               <span className="ops-login__label">کد کالا (SKU)</span>
               <input

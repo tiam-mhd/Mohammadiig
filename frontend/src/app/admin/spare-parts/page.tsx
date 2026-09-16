@@ -1,20 +1,19 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
-import { AdminModal } from '@/components/admin/AdminModal';
 import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
-import { MediaField } from '@/components/admin/MediaField';
 import { useAdminList } from '@/hooks/useAdminList';
-import { formatMoney } from '@/lib/admin-labels';
+import { formatDisplayPrice } from '@/lib/admin-labels';
 import {
-  createAdminSparePart,
   deleteAdminSparePart,
   fetchAdminSparePartCategories,
   fetchAdminSpareParts,
+  ManageSparePartPayload,
   SparePart,
   SparePartCategory,
   updateAdminSparePart,
@@ -22,37 +21,20 @@ import {
 import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
-const emptyForm = {
-  partNumber: '',
-  nameFa: '',
-  nameEn: '',
-  description: '',
-  category: '',
-  compatibleProductsText: '',
-  price: 0,
-  stockQuantity: 0,
-  reorderLevel: 5,
-  imageUrl: '',
-  warrantyMonths: 12,
-  isActive: true,
+type QuickDraft = {
+  stockQuantity: string;
+  price: string;
+  priceNegotiable: boolean;
 };
 
-function parseCompatibleIds(value: string) {
-  return value
-    .split(/[,\s]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 export default function AdminSparePartsPage() {
+  const router = useRouter();
   const token = useAuthStore((state) => state.accessToken);
   const [parts, setParts] = useState<SparePart[]>([]);
   const [categories, setCategories] = useState<SparePartCategory[]>([]);
-  const [form, setForm] = useState(emptyForm);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, QuickDraft>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SparePart | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   const categoryOptions = useMemo(
@@ -76,6 +58,29 @@ export default function AdminSparePartsPage() {
   }, []);
   const list = useAdminList(parts, searchText, matchFilter);
 
+  function draftFor(part: SparePart): QuickDraft {
+    return (
+      drafts[part.id] ?? {
+        stockQuantity: String(part.stockQuantity),
+        price: String(part.price),
+        priceNegotiable: Boolean(part.priceNegotiable),
+      }
+    );
+  }
+
+  function setDraft(partId: string, patch: Partial<QuickDraft>, fallback: SparePart) {
+    setDrafts((current) => {
+      const base =
+        current[partId] ??
+        ({
+          stockQuantity: String(fallback.stockQuantity),
+          price: String(fallback.price),
+          priceNegotiable: Boolean(fallback.priceNegotiable),
+        } satisfies QuickDraft);
+      return { ...current, [partId]: { ...base, ...patch } };
+    });
+  }
+
   useEffect(() => {
     if (!token) return;
     Promise.all([fetchAdminSpareParts(token), fetchAdminSparePartCategories(token)])
@@ -92,68 +97,61 @@ export default function AdminSparePartsPage() {
     return value || '—';
   }
 
-  function openCreate() {
-    setEditingId(null);
-    setForm({
-      ...emptyForm,
-      category: categoryOptions[0]?.value ?? '',
-    });
-    setModalOpen(true);
-  }
-
-  function openEdit(part: SparePart) {
-    setEditingId(part.id);
-    setForm({
-      partNumber: part.partNumber,
-      nameFa: part.nameFa,
-      nameEn: part.nameEn ?? '',
-      description: part.description,
-      category: part.category || categoryOptions[0]?.value || '',
-      compatibleProductsText: part.compatibleProducts.join(', '),
-      price: part.price,
-      stockQuantity: part.stockQuantity,
-      reorderLevel: part.reorderLevel ?? 5,
-      imageUrl: part.imageUrl ?? '',
-      warrantyMonths: part.warrantyMonths,
-      isActive: part.isActive ?? true,
-    });
-    setModalOpen(true);
-  }
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
+  async function saveQuick(part: SparePart, payload: ManageSparePartPayload, successMessage: string) {
     if (!token) return;
-    setBusy(true);
+    setSavingId(part.id);
     try {
-      const payload = {
-        partNumber: form.partNumber,
-        nameFa: form.nameFa,
-        nameEn: form.nameEn,
-        description: form.description,
-        category: form.category,
-        compatibleProducts: parseCompatibleIds(form.compatibleProductsText),
-        price: form.price,
-        stockQuantity: form.stockQuantity,
-        reorderLevel: form.reorderLevel,
-        imageUrl: form.imageUrl || undefined,
-        warrantyMonths: form.warrantyMonths,
-        isActive: form.isActive,
-      };
-      if (editingId) {
-        const updated = await updateAdminSparePart(token, editingId, payload);
-        setParts((current) => current.map((item) => (item.id === editingId ? updated : item)));
-        adminToast.success('قطعه با موفقیت ویرایش شد.');
-      } else {
-        const created = await createAdminSparePart(token, payload);
-        setParts((current) => [created, ...current]);
-        adminToast.success('قطعه با موفقیت افزوده شد.');
-      }
-      setModalOpen(false);
+      const updated = await updateAdminSparePart(token, part.id, payload);
+      setParts((current) => current.map((item) => (item.id === part.id ? updated : item)));
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[part.id];
+        return next;
+      });
+      adminToast.success(successMessage);
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره قطعه انجام نشد.');
+      adminToast.error(error instanceof Error ? error.message : 'ذخیره سریع انجام نشد.');
     } finally {
-      setBusy(false);
+      setSavingId(null);
     }
+  }
+
+  async function commitStock(part: SparePart) {
+    const draft = draftFor(part);
+    const stockQuantity = Number(draft.stockQuantity);
+    if (!Number.isFinite(stockQuantity) || stockQuantity < 0) {
+      adminToast.error('موجودی نامعتبر است.');
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[part.id];
+        return next;
+      });
+      return;
+    }
+    if (stockQuantity === part.stockQuantity) return;
+    await saveQuick(part, { stockQuantity }, 'موجودی به‌روز شد.');
+  }
+
+  async function commitPrice(part: SparePart) {
+    const draft = draftFor(part);
+    const price = Number(draft.price);
+    if (!Number.isFinite(price) || price < 0) {
+      adminToast.error('قیمت نامعتبر است.');
+      setDrafts((current) => {
+        const next = { ...current };
+        delete next[part.id];
+        return next;
+      });
+      return;
+    }
+    if (price === part.price && draft.priceNegotiable === Boolean(part.priceNegotiable)) return;
+    await saveQuick(part, { price, priceNegotiable: draft.priceNegotiable }, 'قیمت به‌روز شد.');
+  }
+
+  async function commitNegotiable(part: SparePart, priceNegotiable: boolean) {
+    setDraft(part.id, { priceNegotiable }, part);
+    if (priceNegotiable === Boolean(part.priceNegotiable)) return;
+    await saveQuick(part, { priceNegotiable }, priceNegotiable ? 'قیمت توافقی فعال شد.' : 'قیمت توافقی برداشته شد.');
   }
 
   async function confirmRemove() {
@@ -180,7 +178,7 @@ export default function AdminSparePartsPage() {
         filtersOpen={list.filtersOpen}
         onToggleFilters={() => list.setFiltersOpen((open) => !open)}
         activeFilterCount={list.activeFilterCount}
-        onAdd={openCreate}
+        onAdd={() => router.push('/admin/spare-parts/new')}
         addLabel="افزودن قطعه"
       >
         {list.filtersOpen ? (
@@ -221,7 +219,11 @@ export default function AdminSparePartsPage() {
         emptyText="قطعه‌ای با این جستجو پیدا نشد."
       >
         {list.filtered.map((part) => {
-          const lowStock = part.stockQuantity <= (part.reorderLevel ?? 5);
+          const draft = draftFor(part);
+          const stockValue = Number(draft.stockQuantity);
+          const lowStock =
+            (Number.isFinite(stockValue) ? stockValue : part.stockQuantity) <= (part.reorderLevel ?? 5);
+          const busy = savingId === part.id;
           return (
             <DataRow key={part.id}>
               <td className="text-start">
@@ -237,11 +239,61 @@ export default function AdminSparePartsPage() {
                 </span>
               </td>
               <td>
-                <span className={lowStock ? 'text-[var(--ops-warn)]' : ''}>
-                  {part.stockQuantity.toLocaleString('fa-IR')}
-                </span>
+                <div className="admin-quick-row">
+                  <input
+                    type="number"
+                    min={0}
+                    className={`admin-quick-field ${lowStock ? 'admin-quick-field--warn' : ''}`}
+                    dir="ltr"
+                    disabled={busy}
+                    value={draft.stockQuantity}
+                    onChange={(event) => setDraft(part.id, { stockQuantity: event.target.value }, part)}
+                    onBlur={() => void commitStock(part)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.currentTarget.blur();
+                      }
+                    }}
+                    aria-label={`موجودی ${part.nameFa}`}
+                    title={lowStock ? 'موجودی کم — Enter برای ذخیره' : 'ویرایش سریع موجودی'}
+                  />
+                </div>
               </td>
-              <td>{formatMoney(part.price)}</td>
+              <td>
+                <div className="admin-quick-row">
+                  <label className="admin-quick-check">
+                    <input
+                      type="checkbox"
+                      checked={draft.priceNegotiable}
+                      disabled={busy}
+                      onChange={(event) => void commitNegotiable(part, event.target.checked)}
+                    />
+                    توافقی
+                  </label>
+                  {draft.priceNegotiable ? (
+                    <span className="text-xs text-[var(--ops-ink)]">توافقی</span>
+                  ) : (
+                    <input
+                      type="number"
+                      min={0}
+                      className="admin-quick-field admin-quick-field--price"
+                      dir="ltr"
+                      disabled={busy}
+                      value={draft.price}
+                      onChange={(event) => setDraft(part.id, { price: event.target.value }, part)}
+                      onBlur={() => void commitPrice(part)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          event.currentTarget.blur();
+                        }
+                      }}
+                      aria-label={`قیمت ${part.nameFa}`}
+                      title="ویرایش سریع قیمت"
+                    />
+                  )}
+                  <span className="sr-only">{formatDisplayPrice(part.price, part.priceNegotiable)}</span>
+                </div>
+              </td>
               <td>
                 <span className={`admin-badge ${part.isActive ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
                   {part.isActive ? 'فعال' : 'غیرفعال'}
@@ -249,7 +301,7 @@ export default function AdminSparePartsPage() {
               </td>
               <td>
                 <RowActions>
-                  <IconAction label="ویرایش" onClick={() => openEdit(part)}>
+                  <IconAction label="ویرایش" onClick={() => router.push(`/admin/spare-parts/${part.id}`)}>
                     <IconEdit />
                   </IconAction>
                   <IconAction label="حذف" tone="danger" onClick={() => setPendingDelete(part)}>
@@ -261,147 +313,6 @@ export default function AdminSparePartsPage() {
           );
         })}
       </DataTable>
-
-      <AdminModal
-        open={modalOpen}
-        title={editingId ? 'ویرایش قطعه' : 'افزودن قطعه'}
-        description="اطلاعات قطعه یدکی را وارد کنید."
-        onClose={() => setModalOpen(false)}
-        onSubmit={submit}
-        busy={busy}
-        submitLabel={editingId ? 'ذخیره تغییرات' : 'ثبت قطعه'}
-      >
-        <div className="admin-form-grid two">
-          <label className="block text-start">
-            <span className="ops-login__label">شماره قطعه</span>
-            <input
-              required
-              className="ops-field"
-              dir="ltr"
-              value={form.partNumber}
-              onChange={(event) => setForm({ ...form, partNumber: event.target.value })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">دسته‌بندی</span>
-            <select
-              required
-              className="admin-select admin-select--wide"
-              value={form.category}
-              onChange={(event) => setForm({ ...form, category: event.target.value })}
-            >
-              {categoryOptions.length === 0 ? <option value="">دسته‌ای ثبت نشده</option> : null}
-              {categoryOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">نام فارسی</span>
-            <input
-              required
-              className="ops-field"
-              value={form.nameFa}
-              onChange={(event) => setForm({ ...form, nameFa: event.target.value })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">نام لاتین</span>
-            <input
-              required
-              className="ops-field"
-              dir="ltr"
-              value={form.nameEn}
-              onChange={(event) => setForm({ ...form, nameEn: event.target.value })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">شناسه محصولات سازگار</span>
-            <input
-              className="ops-field"
-              dir="ltr"
-              placeholder="1, 2"
-              value={form.compatibleProductsText}
-              onChange={(event) => setForm({ ...form, compatibleProductsText: event.target.value })}
-            />
-          </label>
-          <label className="block text-start sm:col-span-2">
-            <span className="ops-login__label">توضیح</span>
-            <textarea
-              required
-              className="ops-field min-h-24"
-              value={form.description}
-              onChange={(event) => setForm({ ...form, description: event.target.value })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">قیمت (ریال)</span>
-            <input
-              required
-              type="number"
-              min={0}
-              className="ops-field"
-              dir="ltr"
-              value={form.price}
-              onChange={(event) => setForm({ ...form, price: Number(event.target.value) })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">موجودی</span>
-            <input
-              required
-              type="number"
-              min={0}
-              className="ops-field"
-              dir="ltr"
-              value={form.stockQuantity}
-              onChange={(event) => setForm({ ...form, stockQuantity: Number(event.target.value) })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">حد سفارش مجدد</span>
-            <input
-              required
-              type="number"
-              min={0}
-              className="ops-field"
-              dir="ltr"
-              value={form.reorderLevel}
-              onChange={(event) => setForm({ ...form, reorderLevel: Number(event.target.value) })}
-            />
-          </label>
-          <label className="block text-start">
-            <span className="ops-login__label">گارانتی (ماه)</span>
-            <input
-              required
-              type="number"
-              min={0}
-              className="ops-field"
-              dir="ltr"
-              value={form.warrantyMonths}
-              onChange={(event) => setForm({ ...form, warrantyMonths: Number(event.target.value) })}
-            />
-          </label>
-          <div className="sm:col-span-2">
-            <MediaField
-              label="تصویر قطعه"
-              value={form.imageUrl}
-              onChange={(imageUrl) => setForm({ ...form, imageUrl })}
-            />
-          </div>
-          <label className="flex items-end gap-3 pb-3 text-sm text-[var(--ops-ink-soft)]">
-            <input
-              type="checkbox"
-              checked={form.isActive}
-              onChange={(event) => setForm({ ...form, isActive: event.target.checked })}
-              className="h-4 w-4 accent-[var(--ops-accent)]"
-            />
-            قطعه فعال باشد
-          </label>
-        </div>
-      </AdminModal>
 
       <AdminConfirmModal
         open={Boolean(pendingDelete)}

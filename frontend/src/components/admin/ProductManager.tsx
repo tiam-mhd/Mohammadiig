@@ -7,7 +7,7 @@ import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { IconAction, IconEdit, IconRestore, IconTrash } from '@/components/admin/AdminIcons';
 import { useAdminList } from '@/hooks/useAdminList';
-import { CATEGORY_LABELS, formatMoney, labelOf } from '@/lib/admin-labels';
+import { CATEGORY_LABELS, formatDisplayPrice, labelOf } from '@/lib/admin-labels';
 import {
   deleteProduct,
   fetchAdminProducts,
@@ -201,7 +201,7 @@ export function ProductManager() {
               </td>
               <td>
                 <span className="font-medium text-[var(--ops-ink)]" dir="ltr">
-                  {formatMoney(product.price)}
+                  {formatDisplayPrice(product.price, product.priceNegotiable)}
                 </span>
               </td>
               <td>

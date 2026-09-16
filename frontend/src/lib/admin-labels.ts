@@ -128,6 +128,17 @@ export function formatMoney(amount: number | null | undefined) {
   return `${amount.toLocaleString('fa-IR')} ریال`;
 }
 
+/** نمایش قیمت عمومی: توافقی یا مبلغ ریالی */
+export function formatDisplayPrice(
+  amount: number | null | undefined,
+  priceNegotiable?: boolean,
+  emptyLabel = '—',
+) {
+  if (priceNegotiable) return 'توافقی';
+  if (amount === null || amount === undefined) return emptyLabel;
+  return formatMoney(amount);
+}
+
 export function formatDate(value: string | null | undefined) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('fa-IR');
