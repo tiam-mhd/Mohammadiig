@@ -10,6 +10,8 @@ export class SparePartEntity {
   @Column({ type: 'text' }) description!: string;
   @Column({ name: 'compatible_products', type: 'simple-json', default: '[]' }) compatibleProducts!: string[];
   @Column({ type: 'integer' }) price!: number;
+  /** When true, public UI shows «توافقی» instead of a Rial amount. */
+  @Column({ name: 'price_negotiable', type: 'boolean', default: false }) priceNegotiable!: boolean;
   @Column({ type: 'varchar', length: 3, default: 'IRR' }) currency!: string;
   @Column({ name: 'stock_quantity', type: 'integer', default: 0 }) stockQuantity!: number;
   @Column({ name: 'reorder_level', type: 'integer', default: 5 }) reorderLevel!: number;

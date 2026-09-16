@@ -57,6 +57,13 @@ export class PortfolioWorkEntity {
   @Column({ name: 'area_or_capacity', type: 'varchar', length: 200, nullable: true })
   areaOrCapacity!: string | null;
 
+  @Column({ name: 'price_base', type: 'integer', nullable: true })
+  priceBase!: number | null;
+
+  /** When true, public UI shows «توافقی» instead of a Rial amount. */
+  @Column({ name: 'price_negotiable', type: 'boolean', default: false })
+  priceNegotiable!: boolean;
+
   @Column({ name: 'is_published', type: 'boolean', default: true })
   isPublished!: boolean;
 

@@ -1,4 +1,5 @@
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Length, Min, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ManagePortfolioWorkDto {
@@ -96,6 +97,19 @@ export class ManagePortfolioWorkDto {
   @IsString()
   @Length(0, 200)
   areaOrCapacity?: string;
+
+  @ApiPropertyOptional({ description: 'قیمت پایه (ریال) — اختیاری' })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  priceBase?: number | null;
+
+  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @IsOptional()
+  @IsBoolean()
+  priceNegotiable?: boolean;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()

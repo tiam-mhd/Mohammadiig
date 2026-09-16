@@ -36,6 +36,10 @@ export class ProductEntity {
   @Column({ name: 'price_base', type: 'integer' })
   priceBase!: number;
 
+  /** When true, public UI shows «توافقی» instead of a Rial amount. */
+  @Column({ name: 'price_negotiable', type: 'boolean', default: false })
+  priceNegotiable!: boolean;
+
   @Column({ type: 'varchar', length: 3, default: 'IRR' })
   currency!: 'IRR';
 

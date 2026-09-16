@@ -1,7 +1,7 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProductExtensionsService } from './product-extensions.service';
-import { ManageSparePartDto } from './dto/manage-spare-part.dto';
+import { ManageSparePartDto, PatchSparePartDto } from './dto/manage-spare-part.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
@@ -27,6 +27,15 @@ export class SparePartsController {
     return this.extensionsService.findSparePartsForAdmin();
   }
 
+  @Get('admin/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get one spare part for admin editor' })
+  adminOne(@Param('id') id: string): Promise<SparePartEntity> {
+    return this.extensionsService.findSparePartForAdmin(id);
+  }
+
   @Post()
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,8 +49,8 @@ export class SparePartsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  @ApiOperation({ summary: 'Update spare part' })
-  update(@Param('id') id: string, @Body() dto: ManageSparePartDto): Promise<SparePartEntity> {
+  @ApiOperation({ summary: 'Update spare part (full or partial / quick edit)' })
+  update(@Param('id') id: string, @Body() dto: PatchSparePartDto): Promise<SparePartEntity> {
     return this.extensionsService.updateSparePart(id, dto);
   }
 

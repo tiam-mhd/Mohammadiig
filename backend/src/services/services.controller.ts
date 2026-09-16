@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ServiceEntity } from './service.entity';
 import { ServicesService } from './services.service';
 import { ManageServiceDto } from './dto/manage-service.dto';
@@ -14,8 +14,43 @@ export class ServicesController {
 
   @Get()
   @ApiOperation({ summary: 'List active MIG services' })
-  findAll(): Promise<ServiceEntity[]> { return this.servicesService.findAll(); }
-  @Get('admin/all') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List services for admin' }) adminAll(): Promise<ServiceEntity[]> { return this.servicesService.findAllForAdmin(); }
-  @Post() @UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Create service' }) create(@Body() dto: ManageServiceDto): Promise<ServiceEntity> { return this.servicesService.create(dto); }
-  @Patch(':id') @UseGuards(JwtAuthGuard, RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update service' }) update(@Param('id') id: string, @Body() dto: Partial<ManageServiceDto>): Promise<ServiceEntity> { return this.servicesService.update(id, dto); }
+  findAll(): Promise<ServiceEntity[]> {
+    return this.servicesService.findAll();
+  }
+
+  @Get('admin/all')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'List services for admin' })
+  adminAll(): Promise<ServiceEntity[]> {
+    return this.servicesService.findAllForAdmin();
+  }
+
+  @Get('admin/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get one service for admin editor' })
+  adminOne(@Param('id') id: string): Promise<ServiceEntity> {
+    return this.servicesService.findOneForAdmin(id);
+  }
+
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Create service' })
+  create(@Body() dto: ManageServiceDto): Promise<ServiceEntity> {
+    return this.servicesService.create(dto);
+  }
+
+  @Patch(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update service' })
+  update(@Param('id') id: string, @Body() dto: Partial<ManageServiceDto>): Promise<ServiceEntity> {
+    return this.servicesService.update(id, dto);
+  }
 }

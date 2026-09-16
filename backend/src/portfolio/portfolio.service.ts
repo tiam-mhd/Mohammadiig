@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException, OnModuleInit } from '
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
+import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
 import { PortfolioWorkEntity } from './portfolio-work.entity';
 import { ManagePortfolioWorkDto } from './dto/manage-portfolio-work.dto';
 
@@ -36,6 +37,8 @@ export class PortfolioService implements OnModuleInit {
         gallery: [],
         highlights: ['نصب کامل', 'آموزش تیم', 'پشتیبانی راه‌اندازی'],
         areaOrCapacity: '۱۲ دستگاه',
+        priceBase: null,
+        priceNegotiable: false,
         isPublished: true,
         isFeatured: true,
         displayOrder: 1,
@@ -56,6 +59,11 @@ export class PortfolioService implements OnModuleInit {
     return trimmed ? trimmed : null;
   }
 
+  private mediaOrNull(value?: string | null): string | null {
+    const relative = toRelativeMediaPath(value);
+    return relative || null;
+  }
+
   findPublished(): Promise<PortfolioWorkEntity[]> {
     return this.repository.find({
       where: { isPublished: true },
@@ -71,6 +79,12 @@ export class PortfolioService implements OnModuleInit {
 
   findAllForAdmin(): Promise<PortfolioWorkEntity[]> {
     return this.repository.find({ order: { displayOrder: 'ASC', createdAt: 'DESC' } });
+  }
+
+  async findOneForAdmin(id: string): Promise<PortfolioWorkEntity> {
+    const item = await this.repository.findOne({ where: { id } });
+    if (!item) throw new NotFoundException('نمونه‌کار پیدا نشد.');
+    return item;
   }
 
   async create(dto: ManagePortfolioWorkDto): Promise<PortfolioWorkEntity> {
@@ -95,10 +109,12 @@ export class PortfolioService implements OnModuleInit {
         locationDetail: this.emptyToNull(dto.locationDetail),
         startDate: this.emptyToNull(dto.startDate),
         endDate: this.emptyToNull(dto.endDate),
-        coverImageUrl: this.emptyToNull(dto.coverImageUrl),
-        gallery: (dto.gallery ?? []).map((item) => item.trim()).filter(Boolean),
+        coverImageUrl: this.mediaOrNull(dto.coverImageUrl),
+        gallery: normalizeMediaList(dto.gallery),
         highlights: (dto.highlights ?? []).map((item) => item.trim()).filter(Boolean),
         areaOrCapacity: this.emptyToNull(dto.areaOrCapacity),
+        priceBase: dto.priceBase ?? null,
+        priceNegotiable: dto.priceNegotiable ?? false,
         isPublished: dto.isPublished ?? true,
         isFeatured: dto.isFeatured ?? false,
         displayOrder: dto.displayOrder ?? 0,
@@ -128,10 +144,12 @@ export class PortfolioService implements OnModuleInit {
     item.locationDetail = this.emptyToNull(dto.locationDetail);
     item.startDate = this.emptyToNull(dto.startDate);
     item.endDate = this.emptyToNull(dto.endDate);
-    item.coverImageUrl = this.emptyToNull(dto.coverImageUrl);
-    item.gallery = (dto.gallery ?? []).map((value) => value.trim()).filter(Boolean);
+    item.coverImageUrl = this.mediaOrNull(dto.coverImageUrl);
+    item.gallery = normalizeMediaList(dto.gallery);
     item.highlights = (dto.highlights ?? []).map((value) => value.trim()).filter(Boolean);
     item.areaOrCapacity = this.emptyToNull(dto.areaOrCapacity);
+    if (dto.priceBase !== undefined) item.priceBase = dto.priceBase;
+    if (dto.priceNegotiable !== undefined) item.priceNegotiable = dto.priceNegotiable;
     if (dto.isPublished !== undefined) item.isPublished = dto.isPublished;
     if (dto.isFeatured !== undefined) item.isFeatured = dto.isFeatured;
     if (dto.displayOrder !== undefined) item.displayOrder = dto.displayOrder;

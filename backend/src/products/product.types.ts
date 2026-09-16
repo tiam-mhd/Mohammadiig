@@ -7,6 +7,7 @@ export interface Product {
   description: string;
   descriptionLong: string | null;
   price: number;
+  priceNegotiable: boolean;
   currency: 'IRR';
   category: string;
   /** Primary image (first gallery item) for cards/listings. */

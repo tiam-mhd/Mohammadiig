@@ -36,6 +36,9 @@ import { ProductGallery1710000013000 } from './database/migrations/1710000013000
 import { ProductDescriptionLong1710000014000 } from './database/migrations/1710000014000-product-description-long';
 import { PhoneOtpAuth1710000015000 } from './database/migrations/1710000015000-phone-otp-auth';
 import { NormalizeMediaUrls1710000016000 } from './database/migrations/1710000016000-normalize-media-urls';
+import { NormalizeSparePartMediaUrls1710000017000 } from './database/migrations/1710000017000-normalize-spare-part-media-urls';
+import { PriceNegotiableAndServiceMedia1710000018000 } from './database/migrations/1710000018000-price-negotiable-and-service-media';
+import { SparePartPriceNegotiable1710000019000 } from './database/migrations/1710000019000-spare-part-price-negotiable';
 import { MediaAssetEntity } from './media/media.entity';
 import { OtpChallengeEntity } from './auth/otp-challenge.entity';
 
@@ -57,6 +60,9 @@ const migrations = [
   ProductDescriptionLong1710000014000,
   PhoneOtpAuth1710000015000,
   NormalizeMediaUrls1710000016000,
+  NormalizeSparePartMediaUrls1710000017000,
+  PriceNegotiableAndServiceMedia1710000018000,
+  SparePartPriceNegotiable1710000019000,
 ];
 
 const entities = [

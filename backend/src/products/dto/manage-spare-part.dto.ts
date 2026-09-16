@@ -1,5 +1,14 @@
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Min,
+} from 'class-validator';
+import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 
 export class ManageSparePartDto {
   @ApiProperty({ example: 'MIG-SP-MOTOR-A' })
@@ -34,18 +43,26 @@ export class ManageSparePartDto {
   compatibleProducts?: string[];
 
   @ApiProperty({ example: 3500000 })
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   price!: number;
 
+  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @IsOptional()
+  @IsBoolean()
+  priceNegotiable?: boolean;
+
   @ApiPropertyOptional({ example: 24 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   stockQuantity?: number;
 
   @ApiPropertyOptional({ example: 5 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   reorderLevel?: number;
@@ -58,6 +75,7 @@ export class ManageSparePartDto {
 
   @ApiPropertyOptional({ example: 12 })
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   warrantyMonths?: number;
@@ -67,3 +85,6 @@ export class ManageSparePartDto {
   @IsBoolean()
   isActive?: boolean;
 }
+
+/** Partial update — for full editor saves and quick stock/price edits */
+export class PatchSparePartDto extends PartialType(ManageSparePartDto) {}

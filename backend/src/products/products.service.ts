@@ -7,7 +7,7 @@ import { Product, ProductListResponse } from './product.types';
 import { CategoriesService } from './categories.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { randomUUID } from 'node:crypto';
-import { toRelativeMediaPath } from '../media/media-paths';
+import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
 
 const imageBase = 'https://images.unsplash.com';
 
@@ -150,6 +150,7 @@ export class ProductsService implements OnModuleInit {
       descriptionLongFa: dto.descriptionLongFa?.trim() || null,
       specifications: {},
       priceBase: dto.priceBase ?? 0,
+      priceNegotiable: dto.priceNegotiable ?? false,
       currency: 'IRR',
       category: (dto.category?.trim() || 'uncategorized').slice(0, 40),
       gallery: images,
@@ -183,6 +184,7 @@ export class ProductsService implements OnModuleInit {
       entity.category = (dto.category.trim() || 'uncategorized').slice(0, 40);
     }
     if (dto.priceBase !== undefined) entity.priceBase = dto.priceBase;
+    if (dto.priceNegotiable !== undefined) entity.priceNegotiable = dto.priceNegotiable;
     if (dto.images !== undefined) {
       const images = this.normalizeImages(dto.images);
       entity.gallery = images;
@@ -281,20 +283,14 @@ export class ProductsService implements OnModuleInit {
   }
 
   private normalizeImages(images?: string[] | null, fallbackThumbnail?: string | null): string[] {
-    const fromList = Array.isArray(images)
-      ? images.map((item) => toRelativeMediaPath(String(item ?? ''))).filter(Boolean)
-      : [];
-    if (fromList.length > 0) {
-      return Array.from(new Set(fromList)).slice(0, 30);
-    }
+    const fromList = normalizeMediaList(images).slice(0, 30);
+    if (fromList.length > 0) return fromList;
     const single = toRelativeMediaPath(fallbackThumbnail);
     return single ? [single] : [];
   }
 
   private resolveGallery(entity: ProductEntity): string[] {
-    const gallery = Array.isArray(entity.gallery)
-      ? entity.gallery.map((item) => toRelativeMediaPath(String(item ?? ''))).filter(Boolean)
-      : [];
+    const gallery = normalizeMediaList(entity.gallery);
     if (gallery.length > 0) return gallery;
     const thumb = toRelativeMediaPath(entity.thumbnailImageUrl);
     return thumb ? [thumb] : [];
@@ -311,6 +307,7 @@ export class ProductsService implements OnModuleInit {
       description: entity.descriptionShortFa,
       descriptionLong: entity.descriptionLongFa ?? null,
       price: entity.priceBase,
+      priceNegotiable: Boolean(entity.priceNegotiable),
       currency: entity.currency,
       category: entity.category,
       image: images[0] ?? null,

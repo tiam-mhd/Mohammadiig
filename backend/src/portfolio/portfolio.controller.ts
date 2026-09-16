@@ -27,6 +27,15 @@ export class PortfolioController {
     return this.portfolioService.findAllForAdmin();
   }
 
+  @Get('admin/:id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get one portfolio work for admin editor' })
+  adminOne(@Param('id') id: string): Promise<PortfolioWorkEntity> {
+    return this.portfolioService.findOneForAdmin(id);
+  }
+
   @Get(':slug')
   @ApiOperation({ summary: 'Get published portfolio work by slug' })
   findBySlug(@Param('slug') slug: string): Promise<PortfolioWorkEntity> {

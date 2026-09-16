@@ -6,7 +6,8 @@ import { ProductEntity } from './product.entity';
 import { ProductVariantEntity } from './product-variant.entity';
 import { ProductSpecificationEntity } from './product-specification.entity';
 import { SparePartEntity } from './spare-part.entity';
-import { ManageSparePartDto } from './dto/manage-spare-part.dto';
+import { toRelativeMediaPath } from '../media/media-paths';
+import { ManageSparePartDto, PatchSparePartDto } from './dto/manage-spare-part.dto';
 import {
   CopyProductSpecsDto,
   ManageProductSpecificationDto,
@@ -118,6 +119,7 @@ export class ProductExtensionsService implements OnModuleInit {
           category: 'motors',
           compatibleProducts: ['1', '2'],
           price: 3500000,
+          priceNegotiable: false,
           currency: 'IRR',
           stockQuantity: 24,
           reorderLevel: 5,
@@ -134,6 +136,7 @@ export class ProductExtensionsService implements OnModuleInit {
           category: 'electrical',
           compatibleProducts: ['1', '2'],
           price: 2500000,
+          priceNegotiable: false,
           currency: 'IRR',
           stockQuantity: 15,
           reorderLevel: 5,
@@ -332,6 +335,12 @@ export class ProductExtensionsService implements OnModuleInit {
     return this.spareParts.find({ order: { createdAt: 'DESC' } });
   }
 
+  async findSparePartForAdmin(id: string): Promise<SparePartEntity> {
+    const part = await this.spareParts.findOne({ where: { id } });
+    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    return part;
+  }
+
   async createSparePart(dto: ManageSparePartDto): Promise<SparePartEntity> {
     const partNumber = dto.partNumber.trim().toUpperCase();
     const existing = await this.spareParts.findOne({ where: { partNumber } });
@@ -347,34 +356,39 @@ export class ProductExtensionsService implements OnModuleInit {
         category: dto.category.trim(),
         compatibleProducts: (dto.compatibleProducts ?? []).map((id) => id.trim()).filter(Boolean),
         price: dto.price,
+        priceNegotiable: dto.priceNegotiable ?? false,
         currency: 'IRR',
         stockQuantity: dto.stockQuantity ?? 0,
         reorderLevel: dto.reorderLevel ?? 5,
-        imageUrl: dto.imageUrl?.trim() || null,
+        imageUrl: toRelativeMediaPath(dto.imageUrl) || null,
         warrantyMonths: dto.warrantyMonths ?? 12,
         isActive: dto.isActive ?? true,
       }),
     );
   }
 
-  async updateSparePart(id: string, dto: ManageSparePartDto): Promise<SparePartEntity> {
+  async updateSparePart(id: string, dto: PatchSparePartDto): Promise<SparePartEntity> {
     const part = await this.spareParts.findOne({ where: { id } });
     if (!part) throw new NotFoundException('قطعه پیدا نشد.');
 
-    const partNumber = dto.partNumber.trim().toUpperCase();
-    const duplicate = await this.spareParts.findOne({ where: { partNumber } });
-    if (duplicate && duplicate.id !== id) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
-
-    part.partNumber = partNumber;
-    part.nameFa = dto.nameFa.trim();
-    part.nameEn = dto.nameEn.trim();
-    part.description = dto.description.trim();
-    part.category = dto.category.trim();
-    part.compatibleProducts = (dto.compatibleProducts ?? []).map((value) => value.trim()).filter(Boolean);
-    part.price = dto.price;
+    if (dto.partNumber !== undefined) {
+      const partNumber = dto.partNumber.trim().toUpperCase();
+      const duplicate = await this.spareParts.findOne({ where: { partNumber } });
+      if (duplicate && duplicate.id !== id) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
+      part.partNumber = partNumber;
+    }
+    if (dto.nameFa !== undefined) part.nameFa = dto.nameFa.trim();
+    if (dto.nameEn !== undefined) part.nameEn = dto.nameEn.trim();
+    if (dto.description !== undefined) part.description = dto.description.trim();
+    if (dto.category !== undefined) part.category = dto.category.trim();
+    if (dto.compatibleProducts !== undefined) {
+      part.compatibleProducts = dto.compatibleProducts.map((value) => value.trim()).filter(Boolean);
+    }
+    if (dto.price !== undefined) part.price = dto.price;
+    if (dto.priceNegotiable !== undefined) part.priceNegotiable = dto.priceNegotiable;
     if (dto.stockQuantity !== undefined) part.stockQuantity = dto.stockQuantity;
     if (dto.reorderLevel !== undefined) part.reorderLevel = dto.reorderLevel;
-    if (dto.imageUrl !== undefined) part.imageUrl = dto.imageUrl.trim() || null;
+    if (dto.imageUrl !== undefined) part.imageUrl = toRelativeMediaPath(dto.imageUrl) || null;
     if (dto.warrantyMonths !== undefined) part.warrantyMonths = dto.warrantyMonths;
     if (dto.isActive !== undefined) part.isActive = dto.isActive;
 

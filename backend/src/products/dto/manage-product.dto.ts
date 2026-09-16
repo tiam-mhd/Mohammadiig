@@ -55,6 +55,11 @@ export class ManageProductDto {
   @Min(0)
   priceBase?: number;
 
+  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @IsOptional()
+  @IsBoolean()
+  priceNegotiable?: boolean;
+
   /** @deprecated prefer images — kept for backward compatibility */
   @ApiPropertyOptional() @IsOptional() @IsString() thumbnailImageUrl?: string;
 
