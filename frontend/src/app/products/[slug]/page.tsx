@@ -162,8 +162,14 @@ export default function ProductDetailPage() {
             <div className="pd-info__price">
               <span className="pcard__price-label">قیمت پایه</span>
               <p className="pd-info__price-value">
-                {product.price.toLocaleString('fa-IR')}
-                <span className="pcard__price-unit">ریال</span>
+                {product.priceNegotiable ? (
+                  'توافقی'
+                ) : (
+                  <>
+                    {product.price.toLocaleString('fa-IR')}
+                    <span className="pcard__price-unit">ریال</span>
+                  </>
+                )}
               </p>
             </div>
 

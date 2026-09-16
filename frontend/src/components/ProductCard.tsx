@@ -13,6 +13,7 @@ interface ProductCardProps {
   name: string;
   description: string;
   price: number;
+  priceNegotiable?: boolean;
   category: string;
   image?: string | null;
   href?: string;
@@ -25,6 +26,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   name,
   description,
   price,
+  priceNegotiable,
   category,
   image,
   href,
@@ -52,11 +54,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <p className="pcard__desc">{description}</p>
         <div className="pcard__foot">
           <div className="pcard__price">
-            <span className="pcard__price-label">شروع از</span>
-            <span className="pcard__price-value">
-              {price.toLocaleString('fa-IR')}
-              <span className="pcard__price-unit">ریال</span>
-            </span>
+            {priceNegotiable ? (
+              <span className="pcard__price-value">توافقی</span>
+            ) : (
+              <>
+                <span className="pcard__price-label">شروع از</span>
+                <span className="pcard__price-value">
+                  {price.toLocaleString('fa-IR')}
+                  <span className="pcard__price-unit">ریال</span>
+                </span>
+              </>
+            )}
           </div>
           {target ? <span className="pcard__link">جزئیات</span> : null}
         </div>

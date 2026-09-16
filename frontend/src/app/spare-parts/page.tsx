@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { fetchSpareParts, SparePart } from '@/lib/api-client';
+import { resolveMediaUrl } from '@/lib/media';
 
 export default function SparePartsPage() {
   const [parts, setParts] = useState<SparePart[]>([]);
@@ -31,12 +32,24 @@ export default function SparePartsPage() {
         </div>
 
         <div className="mt-12 border-t border-hairline md:mt-16">
-          {parts.map((part) => (
+          {parts.map((part) => {
+            const imageSrc = resolveMediaUrl(part.imageUrl);
+            return (
             <article
               key={part.id}
               className="flex flex-col justify-between gap-6 border-b border-hairline py-8 sm:flex-row sm:items-end"
             >
-              <div className="max-w-xl text-start">
+              <div className="flex max-w-xl gap-5 text-start">
+                {imageSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={imageSrc}
+                    alt={part.nameFa}
+                    className="h-20 w-20 shrink-0 object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+                <div>
                 <p className="caption-up">{part.partNumber}</p>
                 <h2 className="display-sm mt-3 text-ink">{part.nameFa}</h2>
                 <p className="body-lead mt-3 text-sm">{part.description}</p>
@@ -44,12 +57,16 @@ export default function SparePartsPage() {
                   موجودی: {part.stockQuantity.toLocaleString('fa-IR')} · گارانتی:{' '}
                   {part.warrantyMonths.toLocaleString('fa-IR')} ماه
                 </p>
+                </div>
               </div>
               <p className="shrink-0 font-ui text-sm text-ink">
-                {part.price.toLocaleString('fa-IR')} ریال
+                {part.priceNegotiable
+                  ? 'توافقی'
+                  : `${part.price.toLocaleString('fa-IR')} ریال`}
               </p>
             </article>
-          ))}
+            );
+          })}
 
           {loaded && parts.length === 0 ? (
             <p className="border border-dashed border-white/20 py-16 text-center font-ui text-sm text-muted">

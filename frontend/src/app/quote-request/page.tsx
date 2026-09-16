@@ -108,7 +108,9 @@ export default function QuoteRequestPage() {
         .map((product) => ({
           product,
           quantity: quantities[product.id] ?? 0,
-          lineTotal: product.price * (quantities[product.id] ?? 0),
+          lineTotal: product.priceNegotiable
+            ? 0
+            : product.price * (quantities[product.id] ?? 0),
         })),
     [products, quantities],
   );
@@ -305,7 +307,9 @@ export default function QuoteRequestPage() {
                         <p className="caption-up text-white/45">{product.category || 'محصول'}</p>
                         <h3 className="quote-product__title">{product.name}</h3>
                         <p className="quote-product__price">
-                          شروع از {product.price.toLocaleString('fa-IR')} ریال
+                          {product.priceNegotiable
+                            ? 'قیمت توافقی'
+                            : `شروع از ${product.price.toLocaleString('fa-IR')} ریال`}
                         </p>
                       </div>
                       <div className="quote-product__qty" aria-label={`تعداد ${product.name}`}>

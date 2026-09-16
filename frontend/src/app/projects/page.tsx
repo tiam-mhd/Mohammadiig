@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { fetchPublishedProjects, OpsProject } from '@/lib/api-client';
 import { labelOf, PROJECT_TYPE } from '@/lib/admin-labels';
+import { resolveMediaUrl } from '@/lib/media';
 
 function locationLine(project: OpsProject) {
   return [project.province, project.city, project.locationDetail].filter(Boolean).join(' · ');
@@ -36,12 +37,24 @@ export default function ProjectsPage() {
         </div>
 
         <div className="mt-12 border-t border-hairline md:mt-16">
-          {projects.map((project) => (
+          {projects.map((project) => {
+            const coverSrc = resolveMediaUrl(project.coverImageUrl);
+            return (
             <article
               key={project.id}
               className="flex flex-col justify-between gap-6 border-b border-hairline py-8 sm:flex-row sm:items-end"
             >
-              <div className="max-w-xl text-start">
+              <div className="flex max-w-xl gap-5 text-start">
+                {coverSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={coverSrc}
+                    alt=""
+                    className="h-24 w-32 shrink-0 object-cover"
+                    loading="lazy"
+                  />
+                ) : null}
+                <div>
                 <p className="caption-up">
                   {labelOf(PROJECT_TYPE, project.projectType)}
                   {locationLine(project) ? ` · ${locationLine(project)}` : ''}
@@ -51,6 +64,7 @@ export default function ProjectsPage() {
                 {project.clientDisplayName ? (
                   <p className="caption-up mt-4 text-white/45">طرف مقابل: {project.clientDisplayName}</p>
                 ) : null}
+                </div>
               </div>
               {project.slug ? (
                 <Link href={`/projects/${project.slug}`} className="btn-pill shrink-0">
@@ -58,7 +72,8 @@ export default function ProjectsPage() {
                 </Link>
               ) : null}
             </article>
-          ))}
+            );
+          })}
 
           {loaded && projects.length === 0 ? (
             <p className="border border-dashed border-white/20 py-16 text-center font-ui text-sm text-muted">

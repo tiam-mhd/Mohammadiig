@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { fetchPublishedProject, OpsProject } from '@/lib/api-client';
 import { labelOf, PROJECT_STATUS, PROJECT_TYPE } from '@/lib/admin-labels';
+import { resolveMediaUrl } from '@/lib/media';
 
 export default function ProjectDetailPage() {
   const params = useParams<{ slug: string }>();
@@ -45,6 +46,8 @@ export default function ProjectDetailPage() {
   const location = [project.country, project.province, project.city, project.locationDetail]
     .filter(Boolean)
     .join(' · ');
+  const coverSrc = resolveMediaUrl(project.coverImageUrl);
+  const gallery = (project.gallery ?? []).map((url) => resolveMediaUrl(url)).filter(Boolean);
 
   return (
     <div className="bg-canvas">
@@ -60,6 +63,22 @@ export default function ProjectDetailPage() {
           <h1 className="display-feature mt-4 text-ink">{project.projectName}</h1>
           {project.summaryFa ? <p className="body-lead mt-5 max-w-xl">{project.summaryFa}</p> : null}
         </div>
+
+        {coverSrc ? (
+          <div className="mt-10 overflow-hidden rounded-sm">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={coverSrc} alt={project.projectName} className="w-full object-cover" loading="eager" />
+          </div>
+        ) : null}
+
+        {gallery.length > 0 ? (
+          <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
+            {gallery.map((src) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={src} src={src} alt="" className="aspect-[4/3] w-full object-cover" loading="lazy" />
+            ))}
+          </div>
+        ) : null}
 
         <dl className="mt-12 grid max-w-3xl grid-cols-1 gap-6 border-t border-hairline pt-10 text-start sm:grid-cols-2">
           {location ? (
