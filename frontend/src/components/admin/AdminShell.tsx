@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/auth.store';
 
 type NavItem = {
@@ -288,8 +288,7 @@ export function AdminShell({
   const { accessToken, user, clearSession } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-
-  const flatItems = useMemo(() => navigation.flatMap((section) => section.items), []);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -306,6 +305,24 @@ export function AdminShell({
       router.replace('/admin/login');
     }
   }, [mounted, accessToken, user, router]);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setMobileNavOpen(false);
+    }
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mobileNavOpen]);
 
   function toggleCollapsed() {
     setCollapsed((current) => {
@@ -341,8 +358,19 @@ export function AdminShell({
   }
 
   return (
-    <div className={`admin-shell min-h-svh lg:flex ${collapsed ? 'is-sidebar-collapsed' : ''}`} dir="rtl">
-      <aside className="admin-sidebar hidden shrink-0 lg:flex lg:flex-col" aria-label="منوی کناری">
+    <div
+      className={`admin-shell min-h-svh lg:flex ${collapsed ? 'is-sidebar-collapsed' : ''} ${mobileNavOpen ? 'is-mobile-nav-open' : ''}`}
+      dir="rtl"
+    >
+      <button
+        type="button"
+        className="admin-sidebar-backdrop"
+        aria-label="بستن منو"
+        tabIndex={mobileNavOpen ? 0 : -1}
+        onClick={() => setMobileNavOpen(false)}
+      />
+
+      <aside className="admin-sidebar" aria-label="منوی کناری" id="admin-sidebar-nav">
         <div className="admin-sidebar__brand">
           <div className="admin-sidebar__brand-row">
             <Link href="/admin" className="admin-sidebar__brand-link" title="پنل مدیریت">
@@ -354,7 +382,7 @@ export function AdminShell({
             </Link>
             <button
               type="button"
-              className="admin-sidebar__toggle"
+              className="admin-sidebar__toggle admin-sidebar__toggle--desktop"
               onClick={toggleCollapsed}
               aria-expanded={!collapsed}
               aria-label={collapsed ? 'باز کردن منو' : 'جمع کردن منو'}
@@ -362,6 +390,16 @@ export function AdminShell({
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 {collapsed ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="admin-sidebar__toggle admin-sidebar__toggle--drawer-close"
+              onClick={() => setMobileNavOpen(false)}
+              aria-label="بستن منو"
+            >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+                <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
           </div>
@@ -378,6 +416,7 @@ export function AdminShell({
                     href={item.href}
                     className={`admin-nav-link ${isActive(item.href) ? 'is-active' : ''}`}
                     title={item.label}
+                    onClick={() => setMobileNavOpen(false)}
                   >
                     {item.icon}
                     <span className="admin-nav-link__label">{item.label}</span>
@@ -409,44 +448,31 @@ export function AdminShell({
         </div>
       </aside>
 
-      <div className="min-w-0 flex-1">
+      <div className="admin-shell__content min-w-0 flex-1">
         <header className="admin-topbar">
           <div className="admin-topbar__start text-start">
             <button
               type="button"
-              className="admin-sidebar__toggle admin-sidebar__toggle--mobile lg:inline-flex"
-              onClick={toggleCollapsed}
-              aria-expanded={!collapsed}
-              aria-label={collapsed ? 'باز کردن منو' : 'جمع کردن منو'}
+              className="admin-sidebar__toggle admin-sidebar__toggle--mobile"
+              onClick={() => setMobileNavOpen(true)}
+              aria-expanded={mobileNavOpen}
+              aria-controls="admin-sidebar-nav"
+              aria-label="باز کردن منو"
             >
               <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             </button>
-            <div>
+            <div className="admin-topbar__titles min-w-0">
               <p className="caption-up">{eyebrow}</p>
-              <h1 className="display-sm mt-1.5">{title}</h1>
+              <h1 className="display-sm mt-1">{title}</h1>
             </div>
           </div>
           <Link href="/" className="admin-topbar__link shrink-0">
-            مشاهده سایت
+            <span className="admin-topbar__link-text">مشاهده سایت</span>
             <span aria-hidden>←</span>
           </Link>
         </header>
-
-        <div className="border-b border-[var(--ops-line)] bg-[rgba(247,249,252,0.7)] px-4 py-3 lg:hidden">
-          <div className="flex gap-2 overflow-x-auto pb-0.5" aria-label="منوی موبایل پنل">
-            {flatItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`admin-chip ${isActive(item.href) ? 'is-active' : ''}`}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-        </div>
 
         <div className="admin-main">{children}</div>
       </div>

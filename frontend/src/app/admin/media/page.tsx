@@ -19,6 +19,7 @@ import {
   IconVideo,
 } from '@/components/admin/AdminIcons';
 import { useAdminList } from '@/hooks/useAdminList';
+import { useAdminModalLock } from '@/hooks/useAdminModalLock';
 import {
   compressMediaAsset,
   deleteMediaAsset,
@@ -160,6 +161,8 @@ export default function AdminMediaLibraryPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [previewItem]);
 
+  useAdminModalLock(Boolean(previewItem));
+
   const folderOptions = useMemo(
     () => folders.map((name) => ({ value: name, label: name })),
     [folders],
@@ -269,7 +272,11 @@ export default function AdminMediaLibraryPage() {
     try {
       await compressMediaAsset(token, selected.id, compressForm);
       setCompressOpen(false);
-      setMessage(compressForm.mode === 'replace' ? 'تصویر جایگزین شد.' : 'کپی فشرده ساخته شد.');
+      setMessage(
+        compressForm.mode === 'replace'
+          ? 'فایل جایگزین شد و ارجاع‌های محصولات/پروژه‌ها به‌روز شد.'
+          : 'کپی فشرده ساخته شد.',
+      );
       await load();
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'فشرده‌سازی انجام نشد.');
@@ -506,7 +513,20 @@ export default function AdminMediaLibraryPage() {
             const src = resolveMediaUrl(item.absoluteUrl || item.url);
             const video = isVideoMedia(item.mimeType);
             return (
-              <article key={item.id} className="media-library__card">
+              <article
+                key={item.id}
+                className="media-library__card"
+                role="button"
+                tabIndex={0}
+                aria-label={item.title || item.originalName}
+                onClick={() => setPreviewItem(item)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    setPreviewItem(item);
+                  }
+                }}
+              >
                 <div className="media-library__thumb">
                   {video ? (
                     <video src={src} muted playsInline preload="metadata" controls={false} />
@@ -515,7 +535,11 @@ export default function AdminMediaLibraryPage() {
                     <img src={src} alt={item.altText || item.originalName} loading="lazy" />
                   )}
                   {video ? <span className="media-library__badge">ویدیو</span> : null}
-                  <div className="media-library__card-actions">
+                  <div
+                    className="media-library__card-actions"
+                    onClick={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => event.stopPropagation()}
+                  >
                     {!inTrash ? (
                       <>
                         <IconAction label="مشاهده کامل" tone="ghost" onClick={() => setPreviewItem(item)}>
@@ -570,14 +594,26 @@ export default function AdminMediaLibraryPage() {
           onClick={() => setPreviewItem(null)}
         >
           <div className="media-library__lightbox-panel" onClick={(event) => event.stopPropagation()}>
-            <IconAction
-              label="بستن"
-              tone="ghost"
-              className="media-library__lightbox-close"
-              onClick={() => setPreviewItem(null)}
-            >
-              <IconClear />
-            </IconAction>
+            <div className="media-library__lightbox-head">
+              <div className="media-library__lightbox-meta text-start">
+                <strong>{previewItem.title || previewItem.originalName}</strong>
+                <small>
+                  {formatBytes(previewItem.fileSize)}
+                  {previewItem.width && previewItem.height
+                    ? ` · ${previewItem.width}×${previewItem.height}`
+                    : ''}
+                  {previewItem.altText ? ` · ${previewItem.altText}` : ''}
+                </small>
+              </div>
+              <IconAction
+                label="بستن"
+                tone="ghost"
+                className="media-library__lightbox-close"
+                onClick={() => setPreviewItem(null)}
+              >
+                <IconClear />
+              </IconAction>
+            </div>
             <div className="media-library__lightbox-media">
               {isVideoMedia(previewItem.mimeType) ? (
                 <video
@@ -594,15 +630,66 @@ export default function AdminMediaLibraryPage() {
                 />
               )}
             </div>
-            <div className="media-library__lightbox-meta">
-              <strong>{previewItem.title || previewItem.originalName}</strong>
-              <small>
-                {formatBytes(previewItem.fileSize)}
-                {previewItem.width && previewItem.height
-                  ? ` · ${previewItem.width}×${previewItem.height}`
-                  : ''}
-                {previewItem.altText ? ` · ${previewItem.altText}` : ''}
-              </small>
+            <div className="media-library__lightbox-actions">
+              {!inTrash ? (
+                <>
+                  <IconAction
+                    label="تنظیمات سئو"
+                    tone="ghost"
+                    onClick={() => {
+                      setPreviewItem(null);
+                      openSeo(previewItem);
+                    }}
+                  >
+                    <IconSeo />
+                  </IconAction>
+                  {!isVideoMedia(previewItem.mimeType) ? (
+                    <IconAction
+                      label="کاهش حجم"
+                      tone="ghost"
+                      onClick={() => {
+                        setPreviewItem(null);
+                        openCompress(previewItem);
+                      }}
+                    >
+                      <IconCompress />
+                    </IconAction>
+                  ) : null}
+                  <IconAction
+                    label="حذف"
+                    tone="danger"
+                    onClick={() => {
+                      setPreviewItem(null);
+                      setPendingDelete(previewItem);
+                    }}
+                  >
+                    <IconTrash />
+                  </IconAction>
+                </>
+              ) : (
+                <>
+                  <IconAction
+                    label="بازیابی"
+                    tone="ghost"
+                    onClick={() => {
+                      setPreviewItem(null);
+                      void restoreItem(previewItem);
+                    }}
+                  >
+                    <IconRestore />
+                  </IconAction>
+                  <IconAction
+                    label="حذف دائم"
+                    tone="danger"
+                    onClick={() => {
+                      setPreviewItem(null);
+                      setPendingPurge(previewItem);
+                    }}
+                  >
+                    <IconTrash />
+                  </IconAction>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -638,6 +725,13 @@ export default function AdminMediaLibraryPage() {
         submitLabel="ذخیره سئو"
       >
         <div className="admin-form-grid two">
+          <label className="block text-start sm:col-span-2">
+            <span className="ops-login__label">آدرس عمومی فایل</span>
+            <input className="ops-field" dir="ltr" value={selected?.url ?? ''} readOnly />
+            <p className="mt-1 text-xs text-[var(--ops-muted)]" dir="ltr">
+              {selected?.mimeType ?? ''} · {selected?.relativePath ?? ''}
+            </p>
+          </label>
           <label className="block text-start">
             <span className="ops-login__label">نام فایل</span>
             <input
@@ -711,6 +805,11 @@ export default function AdminMediaLibraryPage() {
               <option value="copy">ذخیره کپی</option>
               <option value="replace">جایگزینی فایل فعلی</option>
             </select>
+            {compressForm.mode === 'replace' ? (
+              <p className="mt-2 text-xs text-[var(--ops-muted)]">
+                با تبدیل به WebP، فایل قبلی حذف می‌شود و همه ارجاع‌ها (محصول، گالری، پروژه، …) و نام سئو به مسیر جدید به‌روز می‌شوند.
+              </p>
+            ) : null}
           </label>
           <label className="block text-start">
             <span className="ops-login__label">کیفیت (۱–۱۰۰)</span>
