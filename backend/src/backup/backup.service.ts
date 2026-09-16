@@ -25,7 +25,7 @@ import {
   sortDatasetsForRestore,
 } from './backup.datasets';
 import { normalizeDatasetSelection } from './dto/backup.dto';
-import { ensureDir, resolveMediaRoot, safeJoinMedia } from '../media/media-paths';
+import { ensureDir, normalizeMediaList, resolveMediaRoot, safeJoinMedia, toRelativeMediaPath } from '../media/media-paths';
 
 const FORMAT = 'mohammadiig-backup';
 const VERSION = 1;
@@ -334,7 +334,7 @@ export class BackupService {
           const repo = queryRunner.manager.getRepository(tableDef.entity);
 
           for (const raw of rows) {
-            const row = this.deserializeRow(raw);
+            const row = this.sanitizeRestoredMediaFields(this.deserializeRow(raw));
             const id = String(row.id ?? '');
             if (!id) {
               stats.skipped += 1;
@@ -517,6 +517,31 @@ export class BackupService {
     for (const key of ['createdAt', 'updatedAt', 'deletedAt', 'lastLoginAt']) {
       if (out[key] === undefined) continue;
       // keep string dates; TypeORM accepts ISO strings for date columns in most drivers
+    }
+    return out;
+  }
+
+  /** Strip absolute hosts from media columns so restored backups stay portable. */
+  private sanitizeRestoredMediaFields(row: Record<string, unknown>): Record<string, unknown> {
+    const out: Record<string, unknown> = { ...row };
+    for (const key of ['url', 'thumbnailImageUrl', 'coverImageUrl', 'imageUrl', 'fileUrl'] as const) {
+      if (typeof out[key] === 'string') {
+        out[key] = toRelativeMediaPath(out[key] as string) || out[key];
+      }
+    }
+    for (const key of ['gallery'] as const) {
+      if (Array.isArray(out[key])) {
+        out[key] = normalizeMediaList(out[key] as Array<string | null | undefined>);
+      } else if (typeof out[key] === 'string' && (out[key] as string).trim()) {
+        try {
+          const parsed = JSON.parse(out[key] as string) as unknown;
+          if (Array.isArray(parsed)) {
+            out[key] = normalizeMediaList(parsed as Array<string | null | undefined>);
+          }
+        } catch {
+          /* leave as-is */
+        }
+      }
     }
     return out;
   }

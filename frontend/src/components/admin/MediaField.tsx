@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { IconAction, IconClear } from '@/components/admin/AdminIcons';
 import { MediaPicker } from '@/components/admin/MediaPicker';
-import { isVideoMedia, resolveMediaUrl } from '@/lib/media';
+import { isVideoMedia, resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
 
 type SingleProps = {
   multiple?: false;
@@ -61,12 +61,18 @@ export function MediaField(props: MediaFieldProps) {
   }
 
   function applySelection(selected: string[]) {
+    const normalized = selected.map((item) => toRelativeMediaPath(item)).filter(Boolean);
     if (multiple) {
-      const merged = Array.from(new Set([...props.value, ...selected.map((item) => item.trim()).filter(Boolean)]));
+      const merged = Array.from(new Set([...props.value.map((item) => toRelativeMediaPath(item)).filter(Boolean), ...normalized]));
       props.onChange(merged);
       return;
     }
-    props.onChange(selected[0] ?? '');
+    props.onChange(normalized[0] ?? '');
+  }
+
+  function commitTypedUrl(raw: string) {
+    if (multiple) return;
+    props.onChange(toRelativeMediaPath(raw));
   }
 
   return (
@@ -85,6 +91,7 @@ export function MediaField(props: MediaFieldProps) {
           placeholder={placeholder}
           value={props.value}
           onChange={(e) => props.onChange(e.target.value)}
+          onBlur={(e) => commitTypedUrl(e.target.value)}
         />
       ) : null}
 

@@ -15,6 +15,7 @@ import {
   deleteAdminAttachment,
   fetchAdminAttachments,
 } from '@/lib/api-client';
+import { resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
 import { adminToast } from '@/lib/admin-toast';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -61,6 +62,7 @@ export default function AdminAttachmentsPage() {
     try {
       const created = await createAdminAttachment(token, {
         ...form,
+        fileUrl: toRelativeMediaPath(form.fileUrl) || form.fileUrl.trim(),
         fileType: form.fileType || undefined,
       });
       setAttachments((current) => [created, ...current]);
@@ -116,11 +118,13 @@ export default function AdminAttachmentsPage() {
         isEmpty={list.filtered.length === 0}
         emptyText="فایلی با این جستجو پیدا نشد."
       >
-        {list.filtered.map((attachment) => (
+        {list.filtered.map((attachment) => {
+          const fileHref = resolveMediaUrl(attachment.fileUrl) || attachment.fileUrl;
+          return (
           <DataRow key={attachment.id}>
             <td className="text-start">
               <a
-                href={attachment.fileUrl}
+                href={fileHref}
                 target="_blank"
                 rel="noreferrer"
                 className="font-medium text-[var(--ops-accent-strong)] underline-offset-4 hover:underline"
@@ -142,7 +146,7 @@ export default function AdminAttachmentsPage() {
             <td>
               <RowActions>
                 <a
-                  href={attachment.fileUrl}
+                  href={fileHref}
                   target="_blank"
                   rel="noreferrer"
                   className="admin-icon-btn"
@@ -157,7 +161,8 @@ export default function AdminAttachmentsPage() {
               </RowActions>
             </td>
           </DataRow>
-        ))}
+          );
+        })}
       </DataTable>
 
       <AdminModal

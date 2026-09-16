@@ -17,6 +17,12 @@ import { IsNull, Repository } from 'typeorm';
 import AdmZip from 'adm-zip';
 import sharp from 'sharp';
 import { AuthUser } from '../auth/jwt.strategy';
+import { AttachmentEntity } from '../attachments/attachment.entity';
+import { PortfolioWorkEntity } from '../portfolio/portfolio-work.entity';
+import { ProductEntity } from '../products/product.entity';
+import { SparePartEntity } from '../products/spare-part.entity';
+import { ProjectEntity } from '../projects/project.entity';
+import { ServiceEntity } from '../services/service.entity';
 import {
   CompressMediaDto,
   ListMediaQueryDto,
@@ -83,6 +89,10 @@ export class MediaService implements OnModuleInit {
     ensureDir(trashDir(this.mediaRoot));
     ensureDir(backupsDir(this.mediaRoot));
     console.log(`[Media] root=${this.mediaRoot}`);
+    // Fix product/portfolio refs left on old .png after compress→webp replace.
+    void this.repairStemMismatches().then((n) => {
+      if (n > 0) console.log(`[Media] repaired ${n} stale media reference(s)`);
+    });
   }
 
   getRoot(): string {
@@ -365,13 +375,14 @@ export class MediaService implements OnModuleInit {
     return { ok: true };
   }
 
-  async compress(id: string, dto: CompressMediaDto): Promise<MediaAssetView> {
+  async compress(id: string, dto: CompressMediaDto): Promise<MediaAssetView & { referencesUpdated?: number }> {
     const entity = await this.media.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('تصویر در کتابخانه پیدا نشد');
     if (isVideoMime(entity.mimeType) || entity.mimeType === 'image/svg+xml' || entity.mimeType === 'image/gif') {
       throw new BadRequestException('فشرده‌سازی برای این نوع فایل پشتیبانی نمی‌شود');
     }
 
+    const mode = dto.mode ?? 'copy';
     const settings = clampSettings({
       ...this.getSettings(),
       quality: dto.quality,
@@ -384,29 +395,45 @@ export class MediaService implements OnModuleInit {
     const sourcePath = safeJoinMedia(this.getRoot(), entity.relativePath);
     if (!existsSync(sourcePath)) throw new BadRequestException('فایل تصویر روی دیسک موجود نیست');
     const sourceBuffer = await fs.readFile(sourcePath);
-    const compressed = await this.compressBuffer(sourceBuffer, settings);
-    const mode = dto.mode ?? 'copy';
+    const compressed = await this.compressBuffer(sourceBuffer, settings, entity.mimeType);
 
     if (mode === 'replace') {
+      const previousUrl = toRelativeMediaPath(entity.url) || publicMediaUrl(entity.relativePath);
+      const previousRelative = entity.relativePath;
+      const previousNeedles = this.mediaNeedlesForStem(previousUrl, previousRelative);
+
       const newRelative =
-        extname(entity.relativePath).toLowerCase() === compressed.ext
+        extname(entity.relativePath).toLowerCase() === compressed.ext.toLowerCase()
           ? entity.relativePath
           : entity.relativePath.replace(/\.[^.]+$/, compressed.ext);
+      const nextUrl = publicMediaUrl(newRelative);
       const dest = safeJoinMedia(this.getRoot(), newRelative);
       ensureDir(dirname(dest));
       await fs.writeFile(dest, compressed.buffer);
-      if (newRelative !== entity.relativePath && existsSync(sourcePath)) {
+
+      if (newRelative !== previousRelative && existsSync(sourcePath)) {
         await fs.unlink(sourcePath).catch(() => undefined);
       }
+
       entity.relativePath = newRelative;
       entity.storedName = basename(newRelative);
-      entity.url = publicMediaUrl(newRelative);
+      entity.url = nextUrl;
       entity.mimeType = compressed.mimeType;
       entity.fileSize = compressed.buffer.length;
       entity.width = compressed.width;
       entity.height = compressed.height;
       entity.checksum = createHash('sha256').update(compressed.buffer).digest('hex');
-      return this.toView(await this.media.save(entity));
+      entity.originalName = this.withExtension(entity.originalName || entity.storedName, compressed.ext);
+
+      const saved = await this.media.save(entity);
+      let referencesUpdated = 0;
+      if (previousUrl !== nextUrl || previousRelative !== newRelative) {
+        referencesUpdated = await this.rewriteMediaReferences(previousNeedles, nextUrl);
+        console.log(
+          `[Media] compress replace ${previousUrl} → ${nextUrl} (referencesUpdated=${referencesUpdated})`,
+        );
+      }
+      return Object.assign(this.toView(saved), { referencesUpdated });
     }
 
     const copyId = randomUUID();
@@ -529,7 +556,7 @@ export class MediaService implements OnModuleInit {
           originalName: item.originalName ?? existing.originalName,
           storedName: item.storedName ?? existing.storedName,
           relativePath: item.relativePath,
-          url: item.url ?? publicMediaUrl(item.relativePath),
+          url: toRelativeMediaPath(item.url) || publicMediaUrl(item.relativePath),
           mimeType: item.mimeType ?? existing.mimeType,
           fileSize: item.fileSize ?? existing.fileSize,
           width: item.width ?? existing.width,
@@ -551,7 +578,7 @@ export class MediaService implements OnModuleInit {
             originalName: item.originalName || basename(item.relativePath),
             storedName: item.storedName || basename(item.relativePath),
             relativePath: item.relativePath,
-            url: item.url || publicMediaUrl(item.relativePath),
+            url: toRelativeMediaPath(item.url) || publicMediaUrl(item.relativePath),
             mimeType: item.mimeType || 'image/jpeg',
             fileSize: item.fileSize || entry.header.size,
             width: item.width ?? null,
@@ -580,7 +607,8 @@ export class MediaService implements OnModuleInit {
     const asset = await this.findOne(id);
     const url = asset.url;
     const absolute = asset.absoluteUrl;
-    const needles = Array.from(new Set([url, absolute].filter(Boolean)));
+    const needles = this.mediaNeedlesFor(url, asset.relativePath);
+    if (absolute) needles.push(absolute);
     const references: Array<{ table: string; field: string; id: string; label: string }> = [];
 
     const productRows = await this.media.manager
@@ -589,7 +617,7 @@ export class MediaService implements OnModuleInit {
       .from('products', 'p')
       .getRawMany<{ id: string; label: string; thumb: string | null; gallery: string | null }>();
     for (const row of productRows) {
-      if (needles.includes(row.thumb ?? '')) {
+      if (this.urlsMatch(row.thumb, needles)) {
         references.push({ table: 'products', field: 'thumbnail_image_url', id: row.id, label: row.label });
       }
       if (this.jsonIncludesUrl(row.gallery, needles)) {
@@ -599,12 +627,27 @@ export class MediaService implements OnModuleInit {
 
     const spareRows = await this.media.manager
       .createQueryBuilder()
-      .select(['s.id AS id', 's.name_fa AS label'])
+      .select(['s.id AS id', 's.name_fa AS label', 's.image_url AS imageUrl'])
       .from('spare_parts', 's')
-      .where('s.image_url IN (:...needles)', { needles })
-      .getRawMany<{ id: string; label: string }>();
+      .getRawMany<{ id: string; label: string; imageUrl: string | null }>();
     for (const row of spareRows) {
-      references.push({ table: 'spare_parts', field: 'image_url', id: row.id, label: row.label });
+      if (this.urlsMatch(row.imageUrl, needles)) {
+        references.push({ table: 'spare_parts', field: 'image_url', id: row.id, label: row.label });
+      }
+    }
+
+    const serviceRows = await this.media.manager
+      .createQueryBuilder()
+      .select(['s.id AS id', 's.name_fa AS label', 's.cover_image_url AS cover', 's.gallery AS gallery'])
+      .from('services', 's')
+      .getRawMany<{ id: string; label: string; cover: string | null; gallery: string | null }>();
+    for (const row of serviceRows) {
+      if (this.urlsMatch(row.cover, needles)) {
+        references.push({ table: 'services', field: 'cover_image_url', id: row.id, label: row.label });
+      }
+      if (this.jsonIncludesUrl(row.gallery, needles)) {
+        references.push({ table: 'services', field: 'gallery', id: row.id, label: row.label });
+      }
     }
 
     const portfolioRows = await this.media.manager
@@ -613,7 +656,7 @@ export class MediaService implements OnModuleInit {
       .from('portfolio_works', 'w')
       .getRawMany<{ id: string; label: string; cover: string | null; gallery: string | null }>();
     for (const row of portfolioRows) {
-      if (needles.includes(row.cover ?? '')) {
+      if (this.urlsMatch(row.cover, needles)) {
         references.push({ table: 'portfolio_works', field: 'cover_image_url', id: row.id, label: row.label });
       }
       if (this.jsonIncludesUrl(row.gallery, needles)) {
@@ -627,7 +670,7 @@ export class MediaService implements OnModuleInit {
       .from('projects', 'p')
       .getRawMany<{ id: string; label: string; cover: string | null; gallery: string | null }>();
     for (const row of projectRows) {
-      if (needles.includes(row.cover ?? '')) {
+      if (this.urlsMatch(row.cover, needles)) {
         references.push({ table: 'projects', field: 'cover_image_url', id: row.id, label: row.label });
       }
       if (this.jsonIncludesUrl(row.gallery, needles)) {
@@ -638,12 +681,356 @@ export class MediaService implements OnModuleInit {
     return { url, references };
   }
 
+  private mediaNeedlesFor(urlOrPath: string | null | undefined, relativePath?: string | null): string[] {
+    const set = new Set<string>();
+    const raw = String(urlOrPath ?? '').trim();
+    const relative = toRelativeMediaPath(raw);
+    if (raw) set.add(raw);
+    if (relative) set.add(relative);
+    if (relativePath) {
+      const cleaned = relativePath.replace(/\\/g, '/').replace(/^\/+/, '');
+      set.add(cleaned);
+      set.add(publicMediaUrl(cleaned));
+    }
+    return [...set].filter(Boolean);
+  }
+
+  /** All extension variants of the same media stem (uuid.png, uuid.webp, …). */
+  private mediaNeedlesForStem(urlOrPath: string | null | undefined, relativePath?: string | null): string[] {
+    const base = this.mediaNeedlesFor(urlOrPath, relativePath);
+    const set = new Set(base);
+    const seed =
+      toRelativeMediaPath(urlOrPath) ||
+      (relativePath ? publicMediaUrl(relativePath.replace(/\\/g, '/')) : '');
+    if (!seed.startsWith('/media/')) return [...set];
+
+    const withoutPrefix = seed.slice('/media/'.length);
+    const currentExt = extname(withoutPrefix);
+    const stem = currentExt ? withoutPrefix.slice(0, -currentExt.length) : withoutPrefix;
+    for (const ext of ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif']) {
+      set.add(`/media/${stem}${ext}`);
+      set.add(`${stem}${ext}`);
+    }
+    return [...set].filter(Boolean);
+  }
+
+  private withExtension(name: string, ext: string): string {
+    const normalizedExt = ext.startsWith('.') ? ext : `.${ext}`;
+    const current = extname(name || '');
+    if (!name) return `image${normalizedExt}`;
+    if (!current) return `${name}${normalizedExt}`;
+    return `${name.slice(0, -current.length)}${normalizedExt}`;
+  }
+
+  private urlsMatch(stored: string | null | undefined, needles: string[]): boolean {
+    if (!stored) return false;
+    if (needles.includes(stored)) return true;
+    const rel = toRelativeMediaPath(stored);
+    if (!rel) return false;
+    return needles.some((needle) => needle === rel || toRelativeMediaPath(needle) === rel);
+  }
+
+  private rewriteJsonUrlList(raw: string | string[] | null | undefined, needles: string[], nextUrl: string): string | null {
+    if (raw == null) return null;
+    try {
+      const parsed = typeof raw === 'string' ? (JSON.parse(raw) as unknown) : raw;
+      if (!Array.isArray(parsed)) return null;
+      let changed = false;
+      const next = parsed.map((item) => {
+        const value = String(item ?? '');
+        if (this.urlsMatch(value, needles)) {
+          changed = true;
+          return nextUrl;
+        }
+        return value;
+      });
+      return changed ? JSON.stringify(next) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  /** After compress-replace (e.g. .png → .webp), keep products/portfolio/projects in sync. */
+  private async rewriteMediaReferences(needles: string[], nextUrl: string): Promise<number> {
+    const uniqueNeedles = Array.from(
+      new Set(needles.map((n) => toRelativeMediaPath(n) || n).filter(Boolean)),
+    );
+    if (!uniqueNeedles.length || !nextUrl) return 0;
+    if (uniqueNeedles.every((n) => n === nextUrl)) return 0;
+
+    let updated = 0;
+    const manager = this.media.manager;
+
+    const productRows = await manager
+      .createQueryBuilder()
+      .select(['p.id AS id', 'p.thumbnail_image_url AS thumb', 'p.gallery AS gallery'])
+      .from('products', 'p')
+      .getRawMany<{ id: string; thumb: string | null; gallery: string | string[] | null }>();
+    for (const row of productRows) {
+      let thumb = row.thumb;
+      let dirty = false;
+      if (this.urlsMatch(thumb, uniqueNeedles)) {
+        thumb = nextUrl;
+        dirty = true;
+      }
+      const galleryList = this.parseUrlList(row.gallery);
+      const nextGallery = galleryList.map((item) =>
+        this.urlsMatch(item, uniqueNeedles) ? nextUrl : item,
+      );
+      const galleryChanged = JSON.stringify(nextGallery) !== JSON.stringify(galleryList);
+      if (galleryChanged) dirty = true;
+      if (dirty) {
+        await manager
+          .createQueryBuilder()
+          .update(ProductEntity)
+          .set({ thumbnailImageUrl: thumb, gallery: nextGallery })
+          .where('id = :id', { id: row.id })
+          .execute();
+        updated += 1;
+      }
+    }
+
+    const spareRows = await manager
+      .createQueryBuilder()
+      .select(['s.id AS id', 's.image_url AS imageUrl'])
+      .from('spare_parts', 's')
+      .getRawMany<{ id: string; imageUrl: string | null }>();
+    for (const row of spareRows) {
+      if (!this.urlsMatch(row.imageUrl, uniqueNeedles)) continue;
+      await manager
+        .createQueryBuilder()
+        .update(SparePartEntity)
+        .set({ imageUrl: nextUrl })
+        .where('id = :id', { id: row.id })
+        .execute();
+      updated += 1;
+    }
+
+    const serviceRows = await manager
+      .createQueryBuilder()
+      .select(['s.id AS id', 's.cover_image_url AS cover', 's.gallery AS gallery'])
+      .from('services', 's')
+      .getRawMany<{ id: string; cover: string | null; gallery: string | string[] | null }>();
+    for (const row of serviceRows) {
+      let cover = row.cover;
+      let dirty = false;
+      if (this.urlsMatch(cover, uniqueNeedles)) {
+        cover = nextUrl;
+        dirty = true;
+      }
+      const galleryList = this.parseUrlList(row.gallery);
+      const nextGallery = galleryList.map((item) =>
+        this.urlsMatch(item, uniqueNeedles) ? nextUrl : item,
+      );
+      if (JSON.stringify(nextGallery) !== JSON.stringify(galleryList)) dirty = true;
+      if (dirty) {
+        await manager
+          .createQueryBuilder()
+          .update(ServiceEntity)
+          .set({ coverImageUrl: cover, gallery: nextGallery })
+          .where('id = :id', { id: row.id })
+          .execute();
+        updated += 1;
+      }
+    }
+
+    const portfolioRows = await manager
+      .createQueryBuilder()
+      .select(['w.id AS id', 'w.cover_image_url AS cover', 'w.gallery AS gallery'])
+      .from('portfolio_works', 'w')
+      .getRawMany<{ id: string; cover: string | null; gallery: string | string[] | null }>();
+    for (const row of portfolioRows) {
+      let cover = row.cover;
+      let dirty = false;
+      if (this.urlsMatch(cover, uniqueNeedles)) {
+        cover = nextUrl;
+        dirty = true;
+      }
+      const galleryList = this.parseUrlList(row.gallery);
+      const nextGallery = galleryList.map((item) =>
+        this.urlsMatch(item, uniqueNeedles) ? nextUrl : item,
+      );
+      if (JSON.stringify(nextGallery) !== JSON.stringify(galleryList)) dirty = true;
+      if (dirty) {
+        await manager
+          .createQueryBuilder()
+          .update(PortfolioWorkEntity)
+          .set({ coverImageUrl: cover, gallery: nextGallery })
+          .where('id = :id', { id: row.id })
+          .execute();
+        updated += 1;
+      }
+    }
+
+    const projectRows = await manager
+      .createQueryBuilder()
+      .select(['p.id AS id', 'p.cover_image_url AS cover', 'p.gallery AS gallery'])
+      .from('projects', 'p')
+      .getRawMany<{ id: string; cover: string | null; gallery: string | string[] | null }>();
+    for (const row of projectRows) {
+      let cover = row.cover;
+      let dirty = false;
+      if (this.urlsMatch(cover, uniqueNeedles)) {
+        cover = nextUrl;
+        dirty = true;
+      }
+      const galleryList = this.parseUrlList(row.gallery);
+      const nextGallery = galleryList.map((item) =>
+        this.urlsMatch(item, uniqueNeedles) ? nextUrl : item,
+      );
+      if (JSON.stringify(nextGallery) !== JSON.stringify(galleryList)) dirty = true;
+      if (dirty) {
+        await manager
+          .createQueryBuilder()
+          .update(ProjectEntity)
+          .set({ coverImageUrl: cover, gallery: nextGallery })
+          .where('id = :id', { id: row.id })
+          .execute();
+        updated += 1;
+      }
+    }
+
+    const attachmentRows = await manager
+      .createQueryBuilder()
+      .select(['a.id AS id', 'a.file_url AS fileUrl'])
+      .from('attachments', 'a')
+      .getRawMany<{ id: string; fileUrl: string | null }>();
+    for (const row of attachmentRows) {
+      if (!this.urlsMatch(row.fileUrl, uniqueNeedles)) continue;
+      await manager
+        .createQueryBuilder()
+        .update(AttachmentEntity)
+        .set({ fileUrl: nextUrl })
+        .where('id = :id', { id: row.id })
+        .execute();
+      updated += 1;
+    }
+
+    return updated;
+  }
+
+  private parseUrlList(raw: string | string[] | null | undefined): string[] {
+    if (Array.isArray(raw)) {
+      return raw.map((item) => String(item ?? '').trim()).filter(Boolean);
+    }
+    if (typeof raw !== 'string' || !raw.trim()) return [];
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (!Array.isArray(parsed)) return [];
+      return parsed.map((item) => String(item ?? '').trim()).filter(Boolean);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Repair refs that still point at uuid.png while the library file is uuid.webp
+   * (leftover from compress-replace before URL-stable replace).
+   */
+  private async repairStemMismatches(): Promise<number> {
+    const assets = await this.media.find({ withDeleted: false });
+    let total = 0;
+    const altExts = ['.png', '.jpg', '.jpeg', '.webp', '.gif', '.avif'];
+
+    for (const asset of assets) {
+      const correct = toRelativeMediaPath(asset.url) || publicMediaUrl(asset.relativePath);
+      if (!correct.startsWith('/media/')) continue;
+      const stem = asset.relativePath.replace(/\\/g, '/').replace(/\.[^.]+$/, '');
+      if (!stem) continue;
+
+      const staleNeedles: string[] = [];
+      for (const ext of altExts) {
+        const candidate = `/media/${stem}${ext}`;
+        if (candidate === correct) continue;
+        staleNeedles.push(candidate);
+        staleNeedles.push(`${stem}${ext}`);
+      }
+      if (!staleNeedles.length) continue;
+      total += await this.rewriteMediaReferences(staleNeedles, correct);
+    }
+
+    // Also: product points to missing file → point to existing sibling extension on disk.
+    total += await this.repairMissingFileRefs();
+    return total;
+  }
+
+  private async repairMissingFileRefs(): Promise<number> {
+    const altExts = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'];
+    let updated = 0;
+    const manager = this.media.manager;
+    const productRows = await manager
+      .createQueryBuilder()
+      .select(['p.id AS id', 'p.thumbnail_image_url AS thumb', 'p.gallery AS gallery'])
+      .from('products', 'p')
+      .getRawMany<{ id: string; thumb: string | null; gallery: string | null }>();
+
+    for (const row of productRows) {
+      let thumb = row.thumb;
+      let galleryRaw = row.gallery;
+      let dirty = false;
+
+      const fixOne = (url: string | null | undefined): string | null => {
+        const relative = toRelativeMediaPath(url);
+        if (!relative.startsWith('/media/')) return url ?? null;
+        const relPath = relative.slice('/media/'.length);
+        const abs = safeJoinMedia(this.getRoot(), relPath);
+        if (existsSync(abs)) return relative;
+        const currentExt = extname(relPath).toLowerCase();
+        const stem = currentExt ? relPath.slice(0, -currentExt.length) : relPath;
+        for (const ext of altExts) {
+          if (ext === currentExt) continue;
+          const candidateRel = `${stem}${ext}`;
+          if (existsSync(safeJoinMedia(this.getRoot(), candidateRel))) {
+            dirty = true;
+            return publicMediaUrl(candidateRel);
+          }
+        }
+        return relative;
+      };
+
+      const nextThumb = fixOne(thumb);
+      if (nextThumb !== thumb) {
+        thumb = nextThumb;
+        dirty = true;
+      }
+
+      try {
+        const parsed =
+          typeof galleryRaw === 'string' ? (JSON.parse(galleryRaw) as unknown) : galleryRaw;
+        if (Array.isArray(parsed)) {
+          const nextGallery = parsed.map((item) => fixOne(String(item ?? ''))).filter(Boolean) as string[];
+          if (JSON.stringify(nextGallery) !== JSON.stringify(parsed)) {
+            galleryRaw = JSON.stringify(nextGallery);
+            dirty = true;
+          }
+        }
+      } catch {
+        /* ignore */
+      }
+
+      if (dirty) {
+        const galleryList = this.parseUrlList(galleryRaw);
+        await manager
+          .createQueryBuilder()
+          .update(ProductEntity)
+          .set({
+            thumbnailImageUrl: thumb,
+            gallery: galleryList,
+          })
+          .where('id = :id', { id: row.id })
+          .execute();
+        updated += 1;
+      }
+    }
+    return updated;
+  }
+
   private jsonIncludesUrl(raw: string | null, needles: string[]): boolean {
     if (!raw) return false;
     try {
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
       if (!Array.isArray(parsed)) return needles.some((n) => String(raw).includes(n));
-      return parsed.some((item) => needles.includes(String(item)));
+      return parsed.some((item) => this.urlsMatch(String(item), needles));
     } catch {
       return needles.some((n) => String(raw).includes(n));
     }
@@ -652,6 +1039,7 @@ export class MediaService implements OnModuleInit {
   private async compressBuffer(
     buffer: Buffer,
     settings: MediaCompressionSettings,
+    sourceMime?: string,
   ): Promise<{ buffer: Buffer; mimeType: string; ext: string; width: number | null; height: number | null }> {
     let image = sharp(buffer, { failOn: 'none' }).rotate();
     image = image.resize({
@@ -660,7 +1048,6 @@ export class MediaService implements OnModuleInit {
       fit: 'inside',
       withoutEnlargement: true,
     });
-    // sharp strips most metadata by default; keep orientation already applied via rotate()
     if (!settings.stripMetadata) {
       image = image.withMetadata();
     }
@@ -669,21 +1056,29 @@ export class MediaService implements OnModuleInit {
     let mimeType: string;
     let ext: string;
 
-    if (settings.convertToWebp) {
+    const source = (sourceMime || '').toLowerCase();
+    const preferWebp = settings.convertToWebp;
+
+    if (preferWebp) {
       out = await image.webp({ quality: settings.quality, effort: 4 }).toBuffer();
       mimeType = 'image/webp';
       ext = '.webp';
+    } else if (source.includes('png')) {
+      out = await image.png({ compressionLevel: 9 }).toBuffer();
+      mimeType = 'image/png';
+      ext = '.png';
+    } else if (source.includes('webp')) {
+      out = await image.webp({ quality: settings.quality, effort: 4 }).toBuffer();
+      mimeType = 'image/webp';
+      ext = '.webp';
+    } else if (source.includes('avif')) {
+      out = await image.avif({ quality: settings.quality }).toBuffer();
+      mimeType = 'image/avif';
+      ext = '.avif';
     } else {
-      const meta = await sharp(buffer, { failOn: 'none' }).metadata();
-      if (meta.format === 'png') {
-        out = await image.png({ compressionLevel: 9 }).toBuffer();
-        mimeType = 'image/png';
-        ext = '.png';
-      } else {
-        out = await image.jpeg({ quality: settings.quality, mozjpeg: true }).toBuffer();
-        mimeType = 'image/jpeg';
-        ext = '.jpg';
-      }
+      out = await image.jpeg({ quality: settings.quality, mozjpeg: true }).toBuffer();
+      mimeType = 'image/jpeg';
+      ext = '.jpg';
     }
 
     const outMeta = await sharp(out, { failOn: 'none' }).metadata();

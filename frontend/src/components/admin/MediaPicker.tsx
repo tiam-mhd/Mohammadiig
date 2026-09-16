@@ -19,7 +19,7 @@ function pickStoredUrl(asset: MediaAsset): string {
 }
 
 function pickDisplayUrl(asset: MediaAsset): string {
-  // Browser <img> must hit the API origin, not the Next.js site origin.
+  // Same-origin `/media/...` via Next rewrite — never bake localhost/API hosts into src.
   return resolveMediaUrl(asset.url || asset.absoluteUrl);
 }
 

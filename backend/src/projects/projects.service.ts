@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { AuthUser } from '../auth/jwt.strategy';
+import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
 import { ProjectEntity } from './project.entity';
 import { ManageOpsProjectDto } from './dto/manage-ops-project.dto';
 
@@ -62,6 +63,11 @@ export class ProjectsService implements OnModuleInit {
     return trimmed ? trimmed : null;
   }
 
+  private mediaOrNull(value?: string | null): string | null {
+    const relative = toRelativeMediaPath(value);
+    return relative || null;
+  }
+
   private async uniqueCode(): Promise<string> {
     return `OPS-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
   }
@@ -115,8 +121,8 @@ export class ProjectsService implements OnModuleInit {
         migInvestmentPercentage: dto.migInvestmentPercentage ?? 0,
         profitSharingPercentage: dto.profitSharingPercentage ?? 0,
         status: dto.status ?? 'planning',
-        coverImageUrl: this.emptyToNull(dto.coverImageUrl),
-        gallery: (dto.gallery ?? []).map((item) => item.trim()).filter(Boolean),
+        coverImageUrl: this.mediaOrNull(dto.coverImageUrl),
+        gallery: normalizeMediaList(dto.gallery),
         highlights: (dto.highlights ?? []).map((item) => item.trim()).filter(Boolean),
         documents: [],
         isPublished: dto.isPublished ?? false,
@@ -152,8 +158,8 @@ export class ProjectsService implements OnModuleInit {
     if (dto.migInvestmentPercentage !== undefined) project.migInvestmentPercentage = dto.migInvestmentPercentage;
     if (dto.profitSharingPercentage !== undefined) project.profitSharingPercentage = dto.profitSharingPercentage;
     if (dto.status !== undefined) project.status = dto.status;
-    project.coverImageUrl = this.emptyToNull(dto.coverImageUrl);
-    project.gallery = (dto.gallery ?? []).map((item) => item.trim()).filter(Boolean);
+    project.coverImageUrl = this.mediaOrNull(dto.coverImageUrl);
+    project.gallery = normalizeMediaList(dto.gallery);
     project.highlights = (dto.highlights ?? []).map((item) => item.trim()).filter(Boolean);
     if (dto.isPublished !== undefined) project.isPublished = dto.isPublished;
 

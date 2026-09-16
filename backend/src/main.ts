@@ -1,13 +1,46 @@
 import 'reflect-metadata';
 import 'dotenv/config';
+import { existsSync } from 'node:fs';
+import { extname, join } from 'node:path';
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { resolveMediaRoot } from './media/media-paths';
+
+const MEDIA_ALT_EXTS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'];
+
+/** If /media/uuid.png is gone after compress→webp, serve uuid.webp (and vice versa). */
+function mediaExtensionFallback(mediaRoot: string) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const rawPath = decodeURIComponent((req.path || '').replace(/^\/+/, ''));
+    if (!rawPath || rawPath.includes('..')) {
+      next();
+      return;
+    }
+    const absolute = join(mediaRoot, rawPath);
+    if (existsSync(absolute)) {
+      next();
+      return;
+    }
+    const currentExt = extname(absolute).toLowerCase();
+    const stem = currentExt ? absolute.slice(0, -currentExt.length) : absolute;
+    for (const ext of MEDIA_ALT_EXTS) {
+      if (ext === currentExt) continue;
+      const candidate = `${stem}${ext}`;
+      if (existsSync(candidate)) {
+        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        res.sendFile(candidate);
+        return;
+      }
+    }
+    next();
+  };
+}
 
 /** Expand one FRONTEND_URL into http/https + www/non-www variants. */
 function expandFrontendOrigins(raw: string): string[] {
@@ -59,13 +92,17 @@ async function bootstrap(): Promise<void> {
   const frontendOrigins = expandFrontendOrigins(process.env.FRONTEND_URL ?? 'http://localhost:3000');
   const mediaRoot = resolveMediaRoot();
 
-  // Serve uploaded media outside /api so URLs stay stable: /media/YYYY/MM/file.ext
+  // Serve uploaded media outside /api: /media/YYYY/MM/file.ext
+  // No `immutable` — replace/compress overwrites bytes at the same URL.
   app.useStaticAssets(mediaRoot, {
     prefix: '/media/',
+    fallthrough: true,
     setHeaders: (res) => {
-      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
     },
   });
+  // Stale product refs after old compress-replace (.png → .webp) still resolve.
+  app.use('/media', mediaExtensionFallback(mediaRoot));
 
   app.setGlobalPrefix('api');
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
