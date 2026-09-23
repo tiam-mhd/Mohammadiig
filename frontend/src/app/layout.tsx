@@ -71,12 +71,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       dir="rtl"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${bugattiDisplay.variable} ${bugattiText.variable} ${bugattiMono.variable} ${displayFa.variable} ${ui.variable} h-full antialiased`}
+      className={`${bugattiDisplay.variable} ${bugattiText.variable} ${bugattiMono.variable} ${displayFa.variable} ${ui.variable} dark h-full antialiased`}
     >
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var p=location.pathname;if(p==="/auth"||p.indexOf("/auth/")===0||p==="/admin"||p.indexOf("/admin/")===0)return;if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;document.documentElement.setAttribute("data-splash","pending");}catch(e){}})();`,
+            __html: `(function(){try{var p=location.pathname;if(p==="/admin"||p.indexOf("/admin/")===0){document.documentElement.classList.remove("dark");return;}var mode="dark";try{var raw=localStorage.getItem("theme-store");if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.state&&parsed.state.mode)mode=parsed.state.mode;}}catch(e){}var dark=mode==="dark"||(mode==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",dark);document.documentElement.style.colorScheme=dark?"dark":"light";if(p==="/auth"||p.indexOf("/auth/")===0)return;if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;document.documentElement.setAttribute("data-splash","pending");}catch(e){}})();`,
           }}
         />
         <link rel="preload" as="image" href="/logo-pieces/piece-left.webp" type="image/webp" />
@@ -87,6 +87,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" as="image" href="/logo-pieces/piece-bottom-right.webp" type="image/webp" />
         <link rel="preload" as="image" href="/Logo-Gold.webp" type="image/webp" />
         <link rel="preload" as="image" href="/Background.webp" type="image/webp" />
+        <link rel="preload" as="image" href="/Background-Light.webp" type="image/webp" />
       </head>
       <body className="flex min-h-full flex-col bg-canvas text-ink">
         <ThemeProvider>

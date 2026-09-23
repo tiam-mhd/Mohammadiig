@@ -11,6 +11,7 @@ import rateLimit from 'express-rate-limit';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { resolveMediaRoot } from './media/media-paths';
+import { HttpExceptionFilter } from './common/http-exception.filter';
 
 const MEDIA_ALT_EXTS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'];
 
@@ -48,6 +49,7 @@ function expandFrontendOrigins(raw: string): string[] {
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean);
+  if (process.env.NODE_ENV === 'production') return [...new Set(seeds)];
   const origins = new Set<string>();
 
   for (const seed of seeds) {
@@ -111,7 +113,11 @@ async function bootstrap(): Promise<void> {
       crossOriginResourcePolicy: { policy: 'cross-origin' },
     }),
   );
-  app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
+  app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false,
+    message: { statusCode: 429, message: 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد تلاش کنید.' } }));
+  app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false,
+    skip: request => request.method === 'GET',
+    message: { statusCode: 429, message: 'تعداد درخواست‌های ورود بیش از حد مجاز است. کمی بعد تلاش کنید.' } }));
   app.enableCors({
     // Always reflect the request origin when allowed.
     // Never pass a single hard-coded string — that forces one ACAO value and breaks http/www mismatches.
@@ -130,14 +136,16 @@ async function bootstrap(): Promise<void> {
     },
     credentials: true,
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Mig-Csrf'],
   });
   console.log(`[CORS] allowed origins: ${frontendOrigins.join(', ')} (+ local dev hosts)`);
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('MIG Industrial Group API')
-    .setDescription('MIG product catalog and B2B platform API')
+    .setTitle('رابط برنامه‌نویسی گروه صنعتی محمدی')
+    .setDescription('کاتالوگ محصولات و سامانه تجارت سازمانی؛ نشست مرورگر با Cookie امن و سربرگ X-Mig-Csrf: 1 برای عملیات تغییردهنده')
+    .addCookieAuth('mig_session')
     .setVersion('0.1.0')
     .addTag('products')
     .build();

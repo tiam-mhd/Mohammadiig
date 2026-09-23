@@ -52,7 +52,7 @@ export default function ProjectDetailPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/projects" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+        <Link href="/projects" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
           ← همه پروژه‌ها
         </Link>
 
@@ -83,19 +83,19 @@ export default function ProjectDetailPage() {
         <dl className="mt-12 grid max-w-3xl grid-cols-1 gap-6 border-t border-hairline pt-10 text-start sm:grid-cols-2">
           {location ? (
             <div>
-              <dt className="caption-up text-white/45">لوکیشن</dt>
+              <dt className="caption-up text-ink/45">لوکیشن</dt>
               <dd className="mt-2 font-ui text-sm text-ink">{location}</dd>
             </div>
           ) : null}
           {project.clientDisplayName ? (
             <div>
-              <dt className="caption-up text-white/45">طرف مقابل</dt>
+              <dt className="caption-up text-ink/45">طرف مقابل</dt>
               <dd className="mt-2 font-ui text-sm text-ink">{project.clientDisplayName}</dd>
             </div>
           ) : null}
           {project.startDate ? (
             <div>
-              <dt className="caption-up text-white/45">شروع</dt>
+              <dt className="caption-up text-ink/45">شروع</dt>
               <dd className="mt-2 font-ui text-sm text-ink" dir="ltr">
                 {project.startDate}
               </dd>
@@ -103,7 +103,7 @@ export default function ProjectDetailPage() {
           ) : null}
           {project.completionDate || project.expectedCompletionDate ? (
             <div>
-              <dt className="caption-up text-white/45">اتمام</dt>
+              <dt className="caption-up text-ink/45">اتمام</dt>
               <dd className="mt-2 font-ui text-sm text-ink" dir="ltr">
                 {project.completionDate || project.expectedCompletionDate}
               </dd>
@@ -111,7 +111,7 @@ export default function ProjectDetailPage() {
           ) : null}
           {project.migInvestmentPercentage > 0 ? (
             <div>
-              <dt className="caption-up text-white/45">سهم سرمایه‌گذاری MIG</dt>
+              <dt className="caption-up text-ink/45">سهم سرمایه‌گذاری MIG</dt>
               <dd className="mt-2 font-ui text-sm text-ink">
                 {project.migInvestmentPercentage.toLocaleString('fa-IR')}٪
               </dd>
@@ -119,7 +119,7 @@ export default function ProjectDetailPage() {
           ) : null}
           {project.profitSharingPercentage > 0 ? (
             <div>
-              <dt className="caption-up text-white/45">سهم سود</dt>
+              <dt className="caption-up text-ink/45">سهم سود</dt>
               <dd className="mt-2 font-ui text-sm text-ink">
                 {project.profitSharingPercentage.toLocaleString('fa-IR')}٪
               </dd>

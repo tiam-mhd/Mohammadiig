@@ -11,7 +11,8 @@
     "start:dev": "npm run build && node dist/main.js",
     "migration:run": "npm run build && typeorm migration:run -d dist/data-source.js",
     "migration:revert": "npm run build && typeorm migration:revert -d dist/data-source.js",
-    "test": "echo \"No tests configured yet\""
+    "check:env": "npm run build && node scripts/check-environment.cjs",
+    "test": "npm run build && node --test test/*.test.cjs"
   },
   "keywords": [],
   "author": "",

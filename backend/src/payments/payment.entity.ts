@@ -12,6 +12,7 @@ export class PaymentEntity {
   @Column({ name: 'payment_status', type: 'varchar', length: 50, default: 'pending' }) paymentStatus!: string;
   @Column({ type: 'text', nullable: true }) notes!: string | null;
   @Column({ name: 'processed_by', type: 'varchar', length: 100, nullable: true }) processedBy!: string | null;
+  @Column({ name: 'processed_at', type: 'varchar', length: 40, nullable: true }) processedAt!: string | null;
   @CreateDateColumn({ name: 'payment_date' }) paymentDate!: Date;
   @CreateDateColumn({ name: 'created_at' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' }) updatedAt!: Date;

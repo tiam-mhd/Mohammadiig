@@ -5,70 +5,45 @@ import { GlassButton } from '@/components/GlassButton';
 import { ProductCard } from '@/components/ProductCard';
 import { fetchCategories, fetchProducts, Product, ProductCategory } from '@/lib/api-client';
 
-const fallbackProducts: Product[] = [
-  {
-    id: '1',
-    slug: 'bumper-car-signature',
-    name: 'ماشین برخوردی / سری امضا',
-    description: 'بدنه مهندسی‌شده، ایمنی بالا و آماده برای بهره‌برداری حرفه‌ای.',
-    price: 45000000,
-    currency: 'IRR',
-    category: 'تجهیزات',
-    image:
-      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1000&q=75',
-    isFeatured: true,
-  },
-  {
-    id: '2',
-    slug: 'junior-play',
-    name: 'ماشین کودک',
-    description: 'نسخه ایمن و پرانرژی برای فضاهای خانوادگی.',
-    price: 15000000,
-    currency: 'IRR',
-    category: 'خانواده',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fm=webp&fit=crop&w=800&q=75',
-    isFeatured: true,
-  },
-  {
-    id: '3',
-    slug: 'mig-care-spare-parts',
-    name: 'قطعات و پشتیبانی',
-    description: 'قطعات اصلی و پشتیبانی فنی برای عملکرد بلندمدت مجموعه.',
-    price: 8500000,
-    currency: 'IRR',
-    category: 'پس از فروش',
-    image:
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fm=webp&fit=crop&w=800&q=75',
-    isFeatured: true,
-  },
-];
-
 export function ProductsCatalog() {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
+  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
-    Promise.all([fetchProducts(), fetchCategories()])
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) {
+        setIsLoading(true);
+        setErrorMessage('');
+      }
+    });
+    Promise.all([fetchProducts({ category: selectedCategory || undefined }), fetchCategories()])
       .then(([productResponse, categoryResponse]) => {
-        if (productResponse.data?.length) setProducts(productResponse.data);
-        setCategories(categoryResponse);
+        if (!cancelled) {
+          setProducts(productResponse.data ?? []);
+          setCategories(categoryResponse);
+        }
       })
-      .catch(() => undefined)
-      .finally(() => setIsLoading(false));
-  }, []);
+      .catch((error) => {
+        if (!cancelled) {
+          setProducts([]);
+          setErrorMessage(error instanceof Error ? error.message : 'دریافت محصولات انجام نشد.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedCategory]);
 
   const visibleProducts = useMemo(() => {
-    if (!selectedCategory) return products;
-    return products.filter((product) => {
-      const selected = categories.find((category) => category.id === selectedCategory);
-      if (!selected) return product.category.toLowerCase() === selectedCategory;
-      const needles = [selected.id, selected.slug, selected.nameEn, selected.nameEn.toUpperCase()];
-      return needles.some((needle) => needle.toLowerCase() === product.category.toLowerCase());
-    });
-  }, [categories, products, selectedCategory]);
+    return products;
+  }, [products]);
 
   return (
     <div className="products-page">
@@ -113,13 +88,24 @@ export function ProductsCatalog() {
           </p>
         </div>
 
-        <div className="products-grid">
-          {visibleProducts.map((product) => (
-            <ProductCard key={product.id} {...product} href={`/products/${product.slug}`} />
-          ))}
-        </div>
+        {errorMessage ? (
+          <div className="products-empty" role="alert">
+            <p>{errorMessage}</p>
+            <button type="button" className="products-empty__reset" onClick={() => setSelectedCategory('')}>
+              تلاش دوباره
+            </button>
+          </div>
+        ) : null}
 
-        {visibleProducts.length === 0 ? (
+        {!errorMessage && !isLoading ? (
+          <div className="products-grid">
+            {visibleProducts.map((product) => (
+              <ProductCard key={product.id} {...product} href={`/products/${product.slug}`} />
+            ))}
+          </div>
+        ) : null}
+
+        {!errorMessage && !isLoading && visibleProducts.length === 0 ? (
           <div className="products-empty">
             <p>محصولی در این دسته پیدا نشد.</p>
             <button type="button" className="products-empty__reset" onClick={() => setSelectedCategory('')}>

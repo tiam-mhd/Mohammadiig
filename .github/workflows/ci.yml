@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  verify:
+    name: Build, test and security checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: mig_test
+          POSTGRES_PASSWORD: mig_test
+          POSTGRES_DB: mig_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U mig_test -d mig_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      NODE_ENV: test
+      DB_DRIVER: postgres
+      DATABASE_URL: postgresql://mig_test:mig_test@127.0.0.1:5432/mig_test
+      TEST_DATABASE_URL: postgresql://mig_test:mig_test@127.0.0.1:5432/mig_test
+      JWT_SECRET: ci-jwt-secret-with-at-least-thirty-two-characters
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: ci-admin-password-with-at-least-12-chars
+      FRONTEND_URL: http://localhost:3000
+      PARSGREEN_API_KEY: ci-sms-provider-key
+      PARSGREEN_DRY_RUN: "true"
+      PARSGREEN_DEBUG: "false"
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001/api
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Verify lock files
+        run: |
+          test -f package-lock.json
+          test -f backend/package-lock.json
+          test -f frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Install frontend dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript check and unit/integration tests
+        run: npm run test
+
+      - name: Build backend
+        run: npm run build:backend
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Run migrations on test database
+        run: npm --prefix backend run migration:run
+
+      - name: Environment variable security check
+        run: npm run check:env
+
+      - name: Dependency security audit
+        run: npm run audit:ci

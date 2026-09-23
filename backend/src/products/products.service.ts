@@ -61,6 +61,7 @@ export class ProductsService implements OnModuleInit {
   ) {}
 
   async onModuleInit(): Promise<void> {
+    if (process.env.NODE_ENV === 'production') return;
     await this.categoriesService.seed();
     const count = await this.repository.count();
     if (count === 0) {

@@ -50,7 +50,7 @@ export default function PortfolioDetailPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/portfolio" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+        <Link href="/portfolio" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
           ← همه نمونه‌کارها
         </Link>
 
@@ -79,25 +79,25 @@ export default function PortfolioDetailPage() {
         <dl className="mt-12 grid max-w-3xl grid-cols-1 gap-6 border-t border-hairline pt-10 text-start sm:grid-cols-2">
           {work.clientName ? (
             <div>
-              <dt className="caption-up text-white/45">مشتری</dt>
+              <dt className="caption-up text-ink/45">مشتری</dt>
               <dd className="mt-2 font-ui text-sm text-ink">{work.clientName}</dd>
             </div>
           ) : null}
           {location ? (
             <div>
-              <dt className="caption-up text-white/45">لوکیشن</dt>
+              <dt className="caption-up text-ink/45">لوکیشن</dt>
               <dd className="mt-2 font-ui text-sm text-ink">{location}</dd>
             </div>
           ) : null}
           {work.areaOrCapacity ? (
             <div>
-              <dt className="caption-up text-white/45">ظرفیت / مقیاس</dt>
+              <dt className="caption-up text-ink/45">ظرفیت / مقیاس</dt>
               <dd className="mt-2 font-ui text-sm text-ink">{work.areaOrCapacity}</dd>
             </div>
           ) : null}
           {work.priceNegotiable || (work.priceBase != null && work.priceBase > 0) ? (
             <div>
-              <dt className="caption-up text-white/45">قیمت</dt>
+              <dt className="caption-up text-ink/45">قیمت</dt>
               <dd className="mt-2 font-ui text-sm text-ink">
                 {work.priceNegotiable
                   ? 'توافقی'
@@ -107,7 +107,7 @@ export default function PortfolioDetailPage() {
           ) : null}
           {work.startDate || work.endDate ? (
             <div>
-              <dt className="caption-up text-white/45">بازه اجرا</dt>
+              <dt className="caption-up text-ink/45">بازه اجرا</dt>
               <dd className="mt-2 font-ui text-sm text-ink" dir="ltr">
                 {[work.startDate, work.endDate].filter(Boolean).join(' — ')}
               </dd>

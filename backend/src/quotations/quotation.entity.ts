@@ -21,6 +21,8 @@ export class QuotationEntity {
   @Column({ type: 'varchar', length: 50, default: 'draft' }) status!: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired';
   @Column({ name: 'terms_and_conditions', type: 'text', nullable: true }) termsAndConditions!: string | null;
   @Column({ type: 'text', nullable: true }) notes!: string | null;
+  @Column({ name: 'accepted_at', type: 'varchar', length: 40, nullable: true }) acceptedAt!: string | null;
+  @Column({ name: 'accepted_by', type: 'varchar', length: 100, nullable: true }) acceptedBy!: string | null;
   @CreateDateColumn({ name: 'created_at' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' }) updatedAt!: Date;
   @DeleteDateColumn({ name: 'deleted_at', nullable: true }) deletedAt!: Date | null;

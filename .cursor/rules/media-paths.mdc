@@ -1,0 +1,43 @@
+---
+description: قرارداد یکپارچه مسیر رسانه (آپلود، ذخیره، نمایش) در بک‌اند و فرانت‌اند
+alwaysApply: true
+---
+
+# Media Paths Contract
+
+## قانون طلایی
+
+1. **در DB / state فقط مسیر نسبی** ذخیره کن: `/media/YYYY/MM/file.ext`
+2. **هرگز** `http://localhost:...` یا دامنهٔ API را در DB یا فرم persist نکن
+3. **نمایش** فقط با `resolveMediaUrl()` از `@/lib/media` — خروجی معمولاً همان `/media/...` است
+4. Next.js با rewrite، `/api/*` و `/media/*` را به Nest پروکسی می‌کند (`frontend/next.config.ts`)
+5. در مرورگر هرگز `localhost:3001` صدا — از `/api` و `/media` نسبی استفاده کن (موبایل/LAN)
+
+## بک‌اند
+
+- آپلود فقط از `MediaService.upload` → `publicMediaUrl(relativePath)`
+- قبل از ذخیره: `toRelativeMediaPath()` یا `normalizeMediaList()` از `backend/src/media/media-paths.ts`
+- فیلدها: products gallery/thumb، spare_parts.image_url، portfolio/projects cover+gallery، services cover+gallery، attachments.file_url، media_assets.url
+- `MEDIA_PUBLIC_BASE_URL` را خالی بگذار مگر نیاز مطلق (ایمیل)
+- فایل فیزیکی زیر `MEDIA_ROOT` پایدار
+
+## فرانت‌اند
+
+```tsx
+// ❌ BAD
+<img src={`${apiOrigin}${url}`} />
+<img src={product.image} />
+
+// ✅ GOOD
+import { resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
+<img src={resolveMediaUrl(product.image)} />
+```
+
+- انتخاب رسانه: `MediaField` / `MediaPicker`
+- لینک پیوست: `resolveMediaUrl(fileUrl)`
+
+## فیچر جدید با رسانه
+
+1. ستون DB + normalize هنگام create/update
+2. UI با `MediaField` + `resolveMediaUrl`
+3. CDN خارجی مجاز است و دست‌نخورده می‌ماند

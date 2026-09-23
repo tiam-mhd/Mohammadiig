@@ -27,18 +27,17 @@ export class ParsgreenSmsService {
     const isDev = this.config.get<string>('NODE_ENV', 'development') !== 'production';
 
     if (!apiKey || dryRun) {
-      this.logger.warn(
-        `[Parsgreen] dry-run OTP → ${mobile} code=${code}${apiKey ? '' : ' (no PARSGREEN_API_KEY)'}`,
-      );
-      if (!apiKey && !isDev && !dryRun) {
+      if (!isDev) {
         throw new ServiceUnavailableException('سرویس پیامک پیکربندی نشده است.');
       }
+      this.logger.warn('[Parsgreen] ارسال آزمایشی پیامک؛ کد و شماره در گزارش ثبت نمی‌شوند.');
       return;
     }
 
     let response: Response;
     try {
       response = await fetch(this.endpoint, {
+        signal: AbortSignal.timeout(10000),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -61,19 +60,19 @@ export class ParsgreenSmsService {
     try {
       payload = JSON.parse(rawText) as ParsgreenSendOtpResponse;
     } catch {
-      this.logger.error(`[Parsgreen] non-JSON response status=${response.status} body=${rawText.slice(0, 300)}`);
+      this.logger.error(`[Parsgreen] non-JSON response status=${response.status}`);
       throw new ServiceUnavailableException('پاسخ نامعتبر از سرویس پیامک دریافت شد.');
     }
 
     if (!response.ok || payload.R_Success !== true) {
       this.logger.error(
-        `[Parsgreen] send failed status=${response.status} code=${payload.R_Code} error=${payload.R_Error ?? payload.R_Message}`,
+        `[Parsgreen] send failed status=${response.status} code=${payload.R_Code}`,
       );
       throw new ServiceUnavailableException(
-        payload.R_Message || payload.R_Error || 'ارسال کد تأیید انجام نشد.',
+        'ارسال کد تأیید انجام نشد. دوباره تلاش کنید.',
       );
     }
 
-    this.logger.log(`[Parsgreen] OTP queued for ${mobile}`);
+    this.logger.log('[Parsgreen] پیامک تأیید برای ارسال ثبت شد.');
   }
 }

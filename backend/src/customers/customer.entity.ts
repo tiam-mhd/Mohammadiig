@@ -1,4 +1,5 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import type { CustomerStatus } from './customer-status';
 
 @Entity({ name: 'customers' })
 export class CustomerEntity {
@@ -17,6 +18,12 @@ export class CustomerEntity {
   @Column({ name: 'credit_limit', type: 'integer', default: 0 }) creditLimit!: number;
   @Column({ type: 'varchar', length: 3, default: 'IRR' }) currency!: string;
   @Column({ name: 'is_verified', type: 'boolean', default: false }) isVerified!: boolean;
+  @Column({ type: 'varchar', length: 30, default: 'active' }) status!: CustomerStatus;
+  @Column({ name: 'status_reason', type: 'varchar', length: 1000, nullable: true }) statusReason!: string | null;
+  @Column({ name: 'status_changed_at', type: 'varchar', length: 40, nullable: true }) statusChangedAt!: string | null;
+  @Column({ name: 'status_changed_by', type: 'varchar', length: 100, nullable: true }) statusChangedBy!: string | null;
+  /** Irreversible anonymization marker. Anonymous accounting references are never listed as customers. */
+  @Column({ name: 'purged_at', type: 'varchar', length: 40, nullable: true }) purgedAt!: string | null;
   @Column({ type: 'text', nullable: true }) notes!: string | null;
   @CreateDateColumn({ name: 'created_at' }) createdAt!: Date;
   @UpdateDateColumn({ name: 'updated_at' }) updatedAt!: Date;

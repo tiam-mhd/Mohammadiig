@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ProductExtensionsService } from './product-extensions.service';
 import { ManageSparePartDto, PatchSparePartDto } from './dto/manage-spare-part.dto';
@@ -13,9 +13,21 @@ export class SparePartsController {
   constructor(private readonly extensionsService: ProductExtensionsService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List active spare parts' })
-  findAll(): Promise<SparePartEntity[]> {
-    return this.extensionsService.findSpareParts();
+  @ApiOperation({ summary: 'List active spare parts (optional filters)' })
+  findAll(
+    @Query('q') q?: string,
+    @Query('category') category?: string,
+    @Query('inStock') inStock?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
+  ): Promise<SparePartEntity[]> {
+    return this.extensionsService.findSpareParts({
+      q,
+      category,
+      inStock: inStock === '1' || inStock === 'true',
+      minPrice: minPrice != null && minPrice !== '' ? Number(minPrice) : undefined,
+      maxPrice: maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
+    });
   }
 
   @Get('admin/all')
@@ -34,6 +46,12 @@ export class SparePartsController {
   @ApiOperation({ summary: 'Get one spare part for admin editor' })
   adminOne(@Param('id') id: string): Promise<SparePartEntity> {
     return this.extensionsService.findSparePartForAdmin(id);
+  }
+
+  @Get(':slugOrId')
+  @ApiOperation({ summary: 'Get one public spare part by slug or id' })
+  findOne(@Param('slugOrId') slugOrId: string): Promise<SparePartEntity> {
+    return this.extensionsService.findSparePartPublic(slugOrId);
   }
 
   @Post()

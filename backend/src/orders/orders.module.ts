@@ -10,10 +10,27 @@ import { InvoiceEntity } from '../invoices/invoice.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { RolesGuard } from '../auth/roles.guard';
+import { SparePartEntity } from '../products/spare-part.entity';
+import { UserEntity } from '../auth/user.entity';
+import { PaymentEntity } from '../payments/payment.entity';
 
 @Module({
-  imports: [PassportModule, TypeOrmModule.forFeature([OrderEntity, OrderItemEntity, OrderCustomizationEntity, QuotationEntity, CustomerEntity, InvoiceEntity])],
+  imports: [
+    PassportModule,
+    TypeOrmModule.forFeature([
+      OrderEntity,
+      OrderItemEntity,
+      OrderCustomizationEntity,
+      QuotationEntity,
+      CustomerEntity,
+      InvoiceEntity,
+      SparePartEntity,
+      UserEntity,
+      PaymentEntity,
+    ]),
+  ],
   controllers: [OrdersController],
   providers: [OrdersService, RolesGuard],
+  exports: [OrdersService],
 })
 export class OrdersModule {}

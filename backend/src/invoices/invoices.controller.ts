@@ -7,6 +7,8 @@ import { InvoiceEntity } from './invoice.entity';
 import { InvoicesService } from './invoices.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { UpdateInvoiceStatusDto } from './dto/update-invoice-status.dto';
+import { InvoicePaymentStatus } from './invoice-status';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -19,7 +21,43 @@ export class InvoicesController {
 
   @Get('mine')
   @ApiOperation({ summary: 'List current customer invoices' })
-  mine(@Req() request: AuthenticatedRequest): Promise<InvoiceEntity[]> { return this.invoicesService.findMine(request.user); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List invoices for operations staff' }) all(): Promise<InvoiceEntity[]> { return this.invoicesService.findAll(); }
-  @Patch(':id/status') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Update invoice payment status' }) updateStatus(@Param('id') id: string, @Body('status') status: string): Promise<InvoiceEntity> { return this.invoicesService.updateStatus(id, status); }
+  mine(@Req() request: AuthenticatedRequest): Promise<InvoiceEntity[]> {
+    return this.invoicesService.findMine(request.user);
+  }
+
+  @Get('mine/:idOrNumber')
+  @ApiOperation({ summary: 'Get one customer invoice with full snapshot' })
+  mineOne(
+    @Req() request: AuthenticatedRequest,
+    @Param('idOrNumber') idOrNumber: string,
+  ): Promise<InvoiceEntity> {
+    return this.invoicesService.findOneMine(request.user, idOrNumber);
+  }
+
+  @Get('admin/all')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'List invoices for operations staff' })
+  all(): Promise<InvoiceEntity[]> {
+    return this.invoicesService.findAll();
+  }
+
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get one invoice for admin' })
+  adminOne(@Param('id') id: string): Promise<InvoiceEntity> {
+    return this.invoicesService.findOneAdmin(id);
+  }
+
+  @Patch(':id/status')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Update invoice payment status' })
+  updateStatus(
+    @Param('id') id: string,
+    @Body() dto: UpdateInvoiceStatusDto,
+  ): Promise<InvoiceEntity> {
+    return this.invoicesService.updateStatus(id, dto.status as InvoicePaymentStatus);
+  }
 }

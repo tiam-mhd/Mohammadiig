@@ -285,7 +285,7 @@ export function AdminShell({
 }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { accessToken, user, clearSession } = useAuthStore();
+  const { accessToken, user, clearSession, hasHydrated } = useAuthStore();
   const [mounted, setMounted] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -300,11 +300,11 @@ export function AdminShell({
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !hasHydrated) return;
     if (!accessToken || user?.role !== 'admin') {
       router.replace('/admin/login');
     }
-  }, [mounted, accessToken, user, router]);
+  }, [mounted, hasHydrated, accessToken, user, router]);
 
   useEffect(() => {
     setMobileNavOpen(false);
@@ -341,7 +341,7 @@ export function AdminShell({
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  if (!mounted || !accessToken || user?.role !== 'admin') {
+  if (!mounted || !hasHydrated || !accessToken || user?.role !== 'admin') {
     return (
       <div className="ops-gate">
         <div className="ops-gate__card">

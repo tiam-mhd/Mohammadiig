@@ -11,6 +11,9 @@ import { JwtStrategy } from './jwt.strategy';
 import { OtpChallengeEntity } from './otp-challenge.entity';
 import { UserEntity } from './user.entity';
 import { RolesGuard } from './roles.guard';
+import { SessionService } from './session.service';
+import { SessionController } from './session.controller';
+import { SessionInterceptor } from './session.interceptor';
 
 @Global()
 @Module({
@@ -20,13 +23,13 @@ import { RolesGuard } from './roles.guard';
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'mig-development-secret'),
+        secret: config.get<string>('JWT_SECRET', 'mig-development-secret-change-in-production-32'),
         signOptions: { expiresIn: '1d' },
       }),
     }),
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, RolesGuard, ParsgreenSmsService],
-  exports: [AuthService, JwtStrategy, JwtModule, RolesGuard],
+  controllers: [AuthController, SessionController],
+  providers: [AuthService, JwtStrategy, RolesGuard, ParsgreenSmsService, SessionService, SessionInterceptor],
+  exports: [AuthService, JwtStrategy, JwtModule, RolesGuard, SessionService],
 })
 export class AuthModule {}

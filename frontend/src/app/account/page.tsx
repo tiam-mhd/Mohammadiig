@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -8,9 +8,11 @@ import {
   convertQuotation,
   fetchMyInvoices,
   fetchMyOrders,
+  fetchMyPayments,
   fetchMyQuotations,
   InvoiceSummary,
   OrderSummary,
+  PaymentAdminSummary,
   QuotationSummary,
   submitPayment,
 } from '@/lib/api-client';
@@ -22,7 +24,9 @@ export default function AccountPage() {
   const [quotations, setQuotations] = useState<QuotationSummary[]>([]);
   const [orders, setOrders] = useState<OrderSummary[]>([]);
   const [invoices, setInvoices] = useState<InvoiceSummary[]>([]);
+  const [payments, setPayments] = useState<PaymentAdminSummary[]>([]);
   const [message, setMessage] = useState('');
+  const [payingInvoiceId, setPayingInvoiceId] = useState('');
 
   useEffect(() => {
     if (!accessToken) return;
@@ -30,11 +34,13 @@ export default function AccountPage() {
       fetchMyQuotations(accessToken),
       fetchMyOrders(accessToken),
       fetchMyInvoices(accessToken),
+      fetchMyPayments(accessToken),
     ])
-      .then(([quotationItems, orderItems, invoiceItems]) => {
+      .then(([quotationItems, orderItems, invoiceItems, paymentItems]) => {
         setQuotations(quotationItems);
         setOrders(orderItems);
         setInvoices(invoiceItems);
+        setPayments(paymentItems);
       })
       .catch(() => setMessage('دریافت اطلاعات حساب انجام نشد.'));
   }, [accessToken]);
@@ -62,16 +68,20 @@ export default function AccountPage() {
 
   async function pay(invoice: InvoiceSummary) {
     if (!accessToken) return;
+    setPayingInvoiceId(invoice.id);
     try {
       await submitPayment(accessToken, invoice.id, invoice.totalAfterTax);
-      setInvoices(
-        invoices.map((item) =>
-          item.id === invoice.id ? { ...item, paymentStatus: 'pending' } : item,
-        ),
-      );
-      setMessage('درخواست پرداخت ثبت شد و پس از بررسی تایید می‌شود.');
+      const [invoiceItems, paymentItems] = await Promise.all([
+        fetchMyInvoices(accessToken),
+        fetchMyPayments(accessToken),
+      ]);
+      setInvoices(invoiceItems);
+      setPayments(paymentItems);
+      setMessage('درخواست پرداخت ثبت شد و در انتظار بررسی است.');
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'خطایی رخ داد.');
+    } finally {
+      setPayingInvoiceId('');
     }
   }
 
@@ -110,9 +120,17 @@ export default function AccountPage() {
               پیش‌فاکتورها، سفارش‌ها و پرداخت‌های شما.
             </p>
           </div>
-          <Link href="/quote-request" className="btn-pill shrink-0">
-            درخواست جدید
-          </Link>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/spare-parts" className="btn-pill shrink-0">
+              قطعات یدکی
+            </Link>
+            <Link href="/cart" className="btn-pill btn-pill--ghost shrink-0">
+              سبد خرید
+            </Link>
+            <Link href="/quote-request" className="btn-pill btn-pill--ghost shrink-0">
+              درخواست جدید
+            </Link>
+          </div>
         </div>
 
         {message ? <p className="field-message mt-8">{message}</p> : null}
@@ -120,7 +138,7 @@ export default function AccountPage() {
         <section className="mt-12 md:mt-14">
           <div className="mb-2 flex items-end justify-between gap-4">
             <h2 className="display-sm text-ink">پیش‌فاکتورها</h2>
-            <span className="caption-up text-white/45">
+            <span className="caption-up text-ink/45">
               {quotations.length.toLocaleString('fa-IR')} مورد
             </span>
           </div>
@@ -150,7 +168,7 @@ export default function AccountPage() {
               </div>
             ))}
             {quotations.length === 0 ? (
-              <p className="border border-dashed border-white/20 py-14 text-center font-ui text-sm text-muted">
+              <p className="border border-dashed border-ink/20 py-14 text-center font-ui text-sm text-muted">
                 هنوز پیش‌فاکتوری ثبت نشده است.
               </p>
             ) : null}
@@ -161,19 +179,20 @@ export default function AccountPage() {
           <h2 className="display-sm mb-2 text-ink">سفارش‌ها</h2>
           <div className="border-t border-hairline">
             {orders.map((order) => (
-              <div
+              <Link
                 key={order.id}
-                className="flex items-center justify-between gap-5 border-b border-hairline py-6"
+                href={`/account/orders/${encodeURIComponent(order.id)}`}
+                className="flex items-center justify-between gap-5 border-b border-hairline py-6 transition-opacity hover:opacity-80"
               >
                 <div className="text-start">
                   <p className="caption-up">{labelOf(ORDER_STATUS, order.status)}</p>
                   <h3 className="mt-2 font-ui text-base text-ink">{order.orderNumber}</h3>
                 </div>
                 <span className="font-ui text-sm text-ink">{formatMoney(order.totalAmount)}</span>
-              </div>
+              </Link>
             ))}
             {orders.length === 0 ? (
-              <p className="border border-dashed border-white/20 py-10 text-center font-ui text-sm text-muted">
+              <p className="border border-dashed border-ink/20 py-10 text-center font-ui text-sm text-muted">
                 هنوز سفارشی ثبت نشده است.
               </p>
             ) : null}
@@ -183,25 +202,46 @@ export default function AccountPage() {
         <section className="mt-14 md:mt-16">
           <h2 className="display-sm mb-2 text-ink">فاکتورها</h2>
           <div className="border-t border-hairline">
-            {invoices.map((invoice) => (
-              <div
-                key={invoice.id}
-                className="flex flex-col justify-between gap-5 border-b border-hairline py-6 sm:flex-row sm:items-center"
-              >
-                <div className="text-start">
-                  <p className="caption-up">{labelOf(PAYMENT_STATUS, invoice.paymentStatus)}</p>
-                  <h3 className="mt-2 font-ui text-base text-ink">{invoice.invoiceNumber}</h3>
-                  <p className="mt-1 font-ui text-sm text-muted">{formatMoney(invoice.totalAfterTax)}</p>
+            {invoices.map((invoice) => {
+              const hasPendingPayment = payments.some(
+                (payment) => payment.invoiceId === invoice.id && payment.paymentStatus === 'pending',
+              );
+              return (
+                <div
+                  key={invoice.id}
+                  className="flex flex-col justify-between gap-5 border-b border-hairline py-6 sm:flex-row sm:items-center"
+                >
+                  <Link
+                    href={`/account/invoices/${encodeURIComponent(invoice.id)}`}
+                    className="text-start transition-opacity hover:opacity-80"
+                  >
+                    <p className="caption-up">{labelOf(PAYMENT_STATUS, invoice.paymentStatus)}</p>
+                    <h3 className="mt-2 font-ui text-base text-ink">{invoice.invoiceNumber}</h3>
+                    <p className="mt-1 font-ui text-sm text-muted">{formatMoney(invoice.totalAfterTax)}</p>
+                  </Link>
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href={`/account/invoices/${encodeURIComponent(invoice.id)}`}
+                      className="caption-up text-muted hover:text-ink"
+                    >
+                      جزئیات
+                    </Link>
+                    {invoice.paymentStatus === 'pending' ? (
+                      <Button
+                        size="sm"
+                        onClick={() => pay(invoice)}
+                        isLoading={payingInvoiceId === invoice.id}
+                        disabled={payingInvoiceId === invoice.id || hasPendingPayment}
+                      >
+                        {hasPendingPayment ? 'پرداخت در انتظار بررسی' : 'ثبت پرداخت'}
+                      </Button>
+                    ) : null}
+                  </div>
                 </div>
-                {invoice.paymentStatus === 'pending' ? (
-                  <Button size="sm" onClick={() => pay(invoice)}>
-                    ثبت پرداخت
-                  </Button>
-                ) : null}
-              </div>
-            ))}
+              );
+            })}
             {invoices.length === 0 ? (
-              <p className="border border-dashed border-white/20 py-10 text-center font-ui text-sm text-muted">
+              <p className="border border-dashed border-ink/20 py-10 text-center font-ui text-sm text-muted">
                 هنوز فاکتوری صادر نشده است.
               </p>
             ) : null}

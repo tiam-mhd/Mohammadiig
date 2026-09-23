@@ -6,6 +6,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OrdersService } from './orders.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { SparePartsCheckoutDto } from './dto/spare-parts-checkout.dto';
+import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -22,10 +24,22 @@ export class OrdersController {
     return this.ordersService.convertQuotation(request.user, quotationId);
   }
 
+  @Post('spare-parts/checkout')
+  @ApiOperation({ summary: 'Checkout spare parts cart into order + invoice (+ optional test payment)' })
+  checkoutSpareParts(@Req() request: AuthenticatedRequest, @Body() dto: SparePartsCheckoutDto) {
+    return this.ordersService.checkoutSpareParts(request.user, dto);
+  }
+
   @Get('mine')
   @ApiOperation({ summary: 'List current customer orders' })
   mine(@Req() request: AuthenticatedRequest) {
     return this.ordersService.findMine(request.user);
+  }
+
+  @Get('mine/:idOrNumber')
+  @ApiOperation({ summary: 'Get customer order detail with line items' })
+  mineOne(@Req() request: AuthenticatedRequest, @Param('idOrNumber') idOrNumber: string) {
+    return this.ordersService.findOneMine(request.user, idOrNumber);
   }
 
   @Get(':idOrNumber/track')
@@ -38,11 +52,31 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List orders for operations staff' })
-  all() { return this.ordersService.findAll(); }
+  all() {
+    return this.ordersService.findAll();
+  }
+
+  @Get('admin/detailed')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'List orders with line items and invoices' })
+  allDetailed() {
+    return this.ordersService.findAllDetailed();
+  }
+
+  @Get('admin/:id')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Get one order with line items' })
+  adminOne(@Param('id') id: string) {
+    return this.ordersService.findOneAdmin(id);
+  }
 
   @Patch(':id/status')
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update order status' })
-  updateStatus(@Param('id') id: string, @Body('status') status: string) { return this.ordersService.updateStatus(id, status); }
+  updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
+    return this.ordersService.updateStatus(id, dto.status);
+  }
 }

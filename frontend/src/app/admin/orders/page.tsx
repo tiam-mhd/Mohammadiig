@@ -1,8 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback } from 'react';
 import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
-import { formatMoney, ORDER_STATUS, PAYMENT_STATUS, labelOf } from '@/lib/admin-labels';
+import { formatMoney, ORDER_STATUS, ORDER_TYPE, PAYMENT_STATUS, labelOf } from '@/lib/admin-labels';
 import { fetchAdminOrders, OrderAdminSummary, updateOrderStatus } from '@/lib/api-client';
 
 const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({ value, label }));
@@ -10,7 +11,7 @@ const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({ va
 export default function AdminOrdersPage() {
   const searchText = useCallback(
     (item: OrderAdminSummary) =>
-      `${item.orderNumber} ${item.customerId} ${item.status} ${item.paymentStatus} ${ORDER_STATUS[item.status] ?? ''}`,
+      `${item.orderNumber} ${item.customerId} ${item.status} ${item.paymentStatus} ${item.orderType ?? ''} ${ORDER_STATUS[item.status] ?? ''}`,
     [],
   );
 
@@ -19,11 +20,22 @@ export default function AdminOrdersPage() {
       eyebrow="عملیات"
       title="سفارش‌ها"
       resourceLabel="سفارش"
-      headers={['شماره سفارش', 'شناسه مشتری', 'مبلغ', 'وضعیت پرداخت']}
+      headers={['شماره سفارش', 'نوع', 'شناسه مشتری', 'مبلغ', 'وضعیت پرداخت']}
       columns={[
         {
           header: 'شماره',
-          cell: (item) => <strong className="font-medium text-[var(--ops-ink)]">{item.orderNumber}</strong>,
+          cell: (item) => (
+            <Link
+              href={`/admin/orders/${item.id}`}
+              className="font-medium text-[var(--ops-accent)] hover:underline"
+            >
+              {item.orderNumber}
+            </Link>
+          ),
+        },
+        {
+          header: 'نوع',
+          cell: (item) => labelOf(ORDER_TYPE, item.orderType),
         },
         {
           header: 'مشتری',

@@ -1,3 +1,14 @@
+// Browser credentials travel only in the same-origin HttpOnly session cookie.
+async function fetch(input: string, init?: RequestInit): Promise<Response> {
+  if (typeof window === 'undefined') return globalThis.fetch(input, init);
+  const headers = new Headers(init?.headers);
+  headers.delete('Authorization');
+  headers.set('X-Mig-Csrf', '1');
+  const response = await globalThis.fetch(input, { ...init, headers, credentials: 'same-origin' });
+  if (response.status === 401 && !input.includes('/auth/')) window.dispatchEvent(new Event('mig-session-expired'));
+  return response;
+}
+
 function normalizeApiBase(raw: string): string {
   const trimmed = raw.trim().replace(/\/+$/, '');
   if (!trimmed) return '';
@@ -27,8 +38,7 @@ export function getApiUrl(): string {
     normalizeApiBase(process.env.API_INTERNAL_URL ?? '') || 'http://127.0.0.1:3001/api';
 
   if (typeof window !== 'undefined') {
-    if (!configured || isLoopbackApiBase(configured)) return '/api';
-    return configured;
+    return '/api';
   }
 
   if (configured && !isLoopbackApiBase(configured)) return configured;
@@ -68,6 +78,13 @@ async function readApiErrorMessage(response: Response, fallback: string): Promis
         }
         if (message.includes('priceBase must be an integer number')) {
           return 'قیمت پایه باید عدد صحیح باشد.';
+        }
+        if (
+          message === 'Invalid or expired token' ||
+          /invalid or expired token/i.test(message) ||
+          message === 'Authentication required'
+        ) {
+          return 'نشست منقضی یا نامعتبر است. دوباره وارد شوید.';
         }
         if (message.startsWith('property ') && message.endsWith(' should not exist')) {
           return fallback;
@@ -211,8 +228,145 @@ export interface QuotationSummary {
   createdAt?: string;
 }
 
-export interface OrderSummary { id: string; orderNumber: string; totalAmount: number; status: string; paymentStatus: string; }
-export interface InvoiceSummary { id: string; invoiceNumber: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; currency: string; }
+export interface OrderSummary {
+  id: string;
+  orderNumber: string;
+  customerId?: string;
+  totalAmount: number;
+  status: string;
+  paymentStatus: string;
+  orderType?: string;
+  currency?: string;
+  createdAt?: string;
+}
+
+export interface InvoiceLineItem {
+  itemType: string;
+  sparePartId?: string | null;
+  productId?: string | null;
+  title: string;
+  sku: string;
+  imageUrl?: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  currency: string;
+}
+
+export interface InvoicePartySnapshot {
+  customerId: string;
+  userId?: string;
+  companyName?: string | null;
+  contactPerson?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  city?: string | null;
+  country?: string | null;
+  address?: string | null;
+  industry?: string | null;
+  registrationNumber?: string | null;
+}
+
+export interface InvoiceSummary {
+  id: string;
+  invoiceNumber: string;
+  orderId: string | null;
+  totalAfterTax: number;
+  totalBeforeTax?: number;
+  taxAmount?: number;
+  paymentStatus: string;
+  currency: string;
+  dueDate?: string;
+  notes?: string | null;
+  lineItemsJson?: InvoiceLineItem[];
+  customerSnapshotJson?: InvoicePartySnapshot;
+  shippingSnapshotJson?: Record<string, string>;
+  billingSnapshotJson?: Record<string, string>;
+  paymentMethod?: string | null;
+  paidAt?: string | null;
+  createdAt?: string;
+}
+
+export interface OrderItemSummary {
+  id: string;
+  orderId: string;
+  itemType: string;
+  productId: string;
+  sparePartId: string | null;
+  titleSnapshot: string | null;
+  skuSnapshot: string | null;
+  imageSnapshot: string | null;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  currency: string;
+}
+
+export interface OrderDetail extends OrderSummary {
+  shippingAddress?: Record<string, string>;
+  billingAddress?: Record<string, string>;
+  subtotal?: number;
+  taxAmount?: number;
+  shippingCost?: number;
+  discountAmount?: number;
+  notes?: string | null;
+  items: OrderItemSummary[];
+  invoice?: InvoiceSummary | null;
+}
+
+export interface SparePartsCheckoutPayload {
+  items: Array<{ sparePartId: string; quantity: number }>;
+  shippingAddress: {
+    fullName: string;
+    phone: string;
+    city: string;
+    address: string;
+    postalCode?: string;
+    province?: string;
+  };
+  billingAddress?: SparePartsCheckoutPayload['shippingAddress'];
+  notes?: string;
+  payWithTestGateway?: boolean;
+}
+
+export interface SparePartsCheckoutResult {
+  order: OrderSummary;
+  invoice: InvoiceSummary;
+  payment?: { id: string; paymentStatus: string; transactionId: string | null } | null;
+}
+
+export interface Customer360 {
+  customer: Omit<CustomerAdminSummary, 'isActive'> & {
+    userId: string;
+    address?: string | null;
+    city?: string | null;
+    industry?: string | null;
+    companyRegistrationNumber?: string | null;
+    notes?: string | null;
+  };
+  user: {
+    id: string;
+    email: string | null;
+    phone: string | null;
+    firstName: string | null;
+    lastName: string | null;
+    companyName: string | null;
+    role: string;
+    createdAt: string;
+    lastLoginAt: string | null;
+  } | null;
+  orders: OrderDetail[];
+  invoices: InvoiceSummary[];
+  payments: PaymentAdminSummary[];
+  quotations: QuotationAdminSummary[];
+  stats: {
+    ordersCount: number;
+    invoicesCount: number;
+    paidTotal: number;
+    unpaidTotal: number;
+    sparePartsOrdersCount: number;
+  };
+}
 export interface ServiceSummary {
   id: string;
   nameFa: string;
@@ -298,8 +452,10 @@ export interface ProductSpecification { id: string; productId: string; specifica
 export interface SparePart {
   id: string;
   partNumber: string;
+  slug?: string | null;
   nameFa: string;
   nameEn?: string;
+  shortDescription?: string | null;
   description: string;
   category: string;
   compatibleProducts: string[];
@@ -310,6 +466,12 @@ export interface SparePart {
   reorderLevel?: number;
   warrantyMonths: number;
   imageUrl: string | null;
+  gallery?: string[];
+  brand?: string | null;
+  oemCode?: string | null;
+  weightGrams?: number | null;
+  dimensions?: string | null;
+  specs?: Array<{ key: string; value: string; unit?: string }>;
   isActive?: boolean;
 }
 
@@ -323,7 +485,7 @@ export interface SparePartCategory {
   isActive: boolean;
 }
 export interface ProjectPhaseSummary { id: string; phaseNumber: number; phaseNameFa: string; description: string; startDate: string; endDate: string; status: string; }
-export interface CustomerAdminSummary { id: string; companyName: string; contactPerson: string | null; phone: string | null; country: string | null; isVerified: boolean; paymentTerms: string; createdAt: string; }
+export interface CustomerAdminSummary { id: string; companyName: string | null; contactPerson: string | null; phone: string | null; country: string | null; isVerified: boolean; isActive: boolean; status: import('./customer-status').CustomerStatus; statusReason: string | null; statusChangedAt: string | null; deletedAt: string | null; paymentTerms: string; createdAt: string; }
 export interface QuotationAdminSummary {
   id: string;
   quotationNumber: string;
@@ -340,7 +502,16 @@ export interface QuotationAdminSummary {
   createdAt: string;
   updatedAt?: string;
 }
-export interface OrderAdminSummary { id: string; orderNumber: string; customerId: string; totalAmount: number; status: string; paymentStatus: string; createdAt: string; }
+export interface OrderAdminSummary {
+  id: string;
+  orderNumber: string;
+  customerId: string;
+  totalAmount: number;
+  status: string;
+  paymentStatus: string;
+  createdAt: string;
+  orderType?: string;
+}
 export interface InvoiceAdminSummary { id: string; invoiceNumber: string; customerId: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; dueDate: string; }
 export interface PaymentAdminSummary { id: string; invoiceId: string; orderId: string | null; amount: number; paymentMethod: string; paymentStatus: string; transactionId: string | null; }
 export interface ServiceAdminSummary {
@@ -648,28 +819,112 @@ export async function fetchMyOrders(accessToken: string): Promise<OrderSummary[]
   return response.json() as Promise<OrderSummary[]>;
 }
 
+export async function fetchMyOrder(accessToken: string, idOrNumber: string): Promise<OrderDetail> {
+  const response = await fetch(`${getApiUrl()}/orders/mine/${encodeURIComponent(idOrNumber)}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('دریافت جزئیات سفارش انجام نشد.');
+  return response.json() as Promise<OrderDetail>;
+}
+
 export async function fetchMyInvoices(accessToken: string): Promise<InvoiceSummary[]> {
   const response = await fetch(`${getApiUrl()}/invoices/mine`, { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }, cache: 'no-store' });
   if (!response.ok) throw new Error('دریافت فاکتورها انجام نشد.');
   return response.json() as Promise<InvoiceSummary[]>;
 }
 
+export async function fetchMyInvoice(accessToken: string, idOrNumber: string): Promise<InvoiceSummary> {
+  const response = await fetch(`${getApiUrl()}/invoices/mine/${encodeURIComponent(idOrNumber)}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('دریافت فاکتور انجام نشد.');
+  return response.json() as Promise<InvoiceSummary>;
+}
+
+export async function fetchMyPayments(accessToken: string): Promise<PaymentAdminSummary[]> {
+  const response = await fetch(`${getApiUrl()}/payments/mine`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت پرداخت‌ها انجام نشد.'));
+  return response.json() as Promise<PaymentAdminSummary[]>;
+}
+
 export async function submitPayment(accessToken: string, invoiceId: string, amount: number): Promise<{ paymentStatus: string }> {
   const response = await fetch(`${getApiUrl()}/payments/${invoiceId}/pay`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify({ amount, paymentMethod: 'bank_transfer' }) });
-  if (!response.ok) throw new Error('ثبت پرداخت انجام نشد.');
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'ثبت پرداخت انجام نشد.'));
   return response.json() as Promise<{ paymentStatus: string }>;
+}
+
+export async function submitTestPayment(
+  accessToken: string,
+  invoiceId: string,
+): Promise<{ payment: { paymentStatus: string; transactionId: string | null }; invoice: InvoiceSummary }> {
+  const response = await fetch(`${getApiUrl()}/payments/${invoiceId}/pay-test`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, 'پرداخت آزمایشی انجام نشد.'));
+  }
+  return response.json() as Promise<{
+    payment: { paymentStatus: string; transactionId: string | null };
+    invoice: InvoiceSummary;
+  }>;
+}
+
+export async function checkoutSpareParts(
+  accessToken: string,
+  payload: SparePartsCheckoutPayload,
+): Promise<SparePartsCheckoutResult> {
+  const response = await fetch(`${getApiUrl()}/orders/spare-parts/checkout`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error(await readApiErrorMessage(response, 'ثبت سفارش قطعات انجام نشد.'));
+  }
+  return response.json() as Promise<SparePartsCheckoutResult>;
+}
+
+export async function fetchSpareParts(params?: {
+  q?: string;
+  category?: string;
+  inStock?: boolean;
+  minPrice?: number;
+  maxPrice?: number;
+}): Promise<SparePart[]> {
+  const search = new URLSearchParams();
+  if (params?.q) search.set('q', params.q);
+  if (params?.category) search.set('category', params.category);
+  if (params?.inStock) search.set('inStock', '1');
+  if (params?.minPrice != null) search.set('minPrice', String(params.minPrice));
+  if (params?.maxPrice != null) search.set('maxPrice', String(params.maxPrice));
+  const qs = search.toString();
+  const response = await fetch(`${getApiUrl()}/spare-parts${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت قطعات یدکی انجام نشد.');
+  return response.json() as Promise<SparePart[]>;
+}
+
+export async function fetchSparePart(slugOrId: string): Promise<SparePart> {
+  const response = await fetch(`${getApiUrl()}/spare-parts/${encodeURIComponent(slugOrId)}`, {
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error('دریافت قطعه انجام نشد.');
+  return response.json() as Promise<SparePart>;
 }
 
 export async function fetchServices(): Promise<ServiceSummary[]> {
   const response = await fetch(`${getApiUrl()}/services`, { cache: 'no-store' });
   if (!response.ok) throw new Error('دریافت خدمات انجام نشد.');
   return response.json() as Promise<ServiceSummary[]>;
-}
-
-export async function fetchSpareParts(): Promise<SparePart[]> {
-  const response = await fetch(`${getApiUrl()}/spare-parts`, { cache: 'no-store' });
-  if (!response.ok) throw new Error('دریافت قطعات یدکی انجام نشد.');
-  return response.json() as Promise<SparePart[]>;
 }
 
 export function fetchAdminSpareParts(accessToken: string): Promise<SparePart[]> {
@@ -682,9 +937,11 @@ export function fetchAdminSparePart(accessToken: string, id: string): Promise<Sp
 
 export type ManageSparePartPayload = {
   partNumber?: string;
+  slug?: string;
   nameFa?: string;
   nameEn?: string;
   description?: string;
+  shortDescription?: string;
   category?: string;
   compatibleProducts?: string[];
   price?: number;
@@ -692,6 +949,12 @@ export type ManageSparePartPayload = {
   stockQuantity?: number;
   reorderLevel?: number;
   imageUrl?: string;
+  gallery?: string[];
+  brand?: string;
+  oemCode?: string;
+  weightGrams?: number;
+  dimensions?: string;
+  specs?: Array<{ key: string; value: string; unit?: string }>;
   warrantyMonths?: number;
   isActive?: boolean;
 };
@@ -949,11 +1212,29 @@ async function adminRequest<T>(accessToken: string, path: string, init?: Request
   return JSON.parse(text) as T;
 }
 
-export function fetchAdminCustomers(accessToken: string): Promise<CustomerAdminSummary[]> { return adminRequest(accessToken, '/customers/admin/all'); }
+export function fetchAdminCustomers(accessToken: string, status: 'current' | 'deleted' = 'current'): Promise<CustomerAdminSummary[]> { return adminRequest(accessToken, `/customers/admin/all?status=${status}`); }
+
+export function updateCustomerStatus(accessToken: string, id: string, status: { isVerified: boolean; status: import('./customer-status').CustomerStatus; reason?: string }): Promise<CustomerAdminSummary> {
+  return adminRequest(accessToken, `/customers/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) });
+}
+export function fetchAdminCustomer360(accessToken: string, id: string): Promise<Customer360> {
+  return adminRequest(accessToken, `/customers/admin/${id}/360`);
+}
 export function updateCustomerVerified(accessToken: string, id: string, isVerified: boolean): Promise<CustomerAdminSummary> { return adminRequest(accessToken, `/customers/admin/${id}/verify`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isVerified }) }); }
 export async function deleteAdminCustomer(accessToken: string, id: string): Promise<void> { await adminRequest(accessToken, `/customers/admin/${id}`, { method: 'DELETE' }); }
+export async function permanentlyDeleteAdminCustomer(accessToken: string, id: string, confirmation: string): Promise<void> {
+  await adminRequest(accessToken, `/customers/admin/${id}/permanent`, {
+    method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ confirmation }),
+  });
+}
 export function fetchAdminQuotations(accessToken: string): Promise<QuotationAdminSummary[]> { return adminRequest(accessToken, '/quotations/admin/all'); }
 export function fetchAdminOrders(accessToken: string): Promise<OrderAdminSummary[]> { return adminRequest(accessToken, '/orders/admin/all'); }
+export function fetchAdminOrder(accessToken: string, id: string): Promise<OrderDetail> {
+  return adminRequest(accessToken, `/orders/admin/${id}`);
+}
+export function fetchAdminOrdersDetailed(accessToken: string): Promise<OrderDetail[]> {
+  return adminRequest(accessToken, '/orders/admin/detailed');
+}
 export function updateQuotationStatus(accessToken: string, id: string, status: string): Promise<QuotationAdminSummary> { return adminRequest(accessToken, `/quotations/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function updateOrderStatus(accessToken: string, id: string, status: string): Promise<OrderAdminSummary> { return adminRequest(accessToken, `/orders/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminProjects(accessToken: string): Promise<OpsProject[]> {
@@ -1031,6 +1312,9 @@ export async function deleteAdminPortfolio(accessToken: string, id: string): Pro
 }
 
 export function fetchAdminInvoices(accessToken: string): Promise<InvoiceAdminSummary[]> { return adminRequest(accessToken, '/invoices/admin/all'); }
+export function fetchAdminInvoice(accessToken: string, id: string): Promise<InvoiceSummary> {
+  return adminRequest(accessToken, `/invoices/admin/${id}`);
+}
 export function updateInvoiceStatus(accessToken: string, id: string, status: string): Promise<InvoiceAdminSummary> { return adminRequest(accessToken, `/invoices/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminPayments(accessToken: string): Promise<PaymentAdminSummary[]> { return adminRequest(accessToken, '/payments/admin/all'); }
 export function updatePaymentStatus(accessToken: string, id: string, status: string): Promise<PaymentAdminSummary> { return adminRequest(accessToken, `/payments/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }

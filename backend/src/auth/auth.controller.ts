@@ -1,4 +1,5 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import { Body, Controller, HttpCode, Post, UseInterceptors } from '@nestjs/common';
+import { SessionInterceptor } from './session.interceptor';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import {
   CompletePasswordLoginDto,
@@ -15,6 +16,7 @@ import { AuthResponse, AuthService, OtpSendResponse, OtpVerifyResponse } from '.
 
 @ApiTags('auth')
 @Controller('auth')
+@UseInterceptors(SessionInterceptor)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

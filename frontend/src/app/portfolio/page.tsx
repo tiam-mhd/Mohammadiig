@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -24,7 +24,7 @@ export default function PortfolioPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+        <Link href="/" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
           ← بازگشت به صفحه اول
         </Link>
 
@@ -62,14 +62,14 @@ export default function PortfolioPage() {
                 <h2 className="display-sm mt-3 text-ink">{work.titleFa}</h2>
                 <p className="body-lead mt-3 text-sm">{work.summaryFa}</p>
                 {work.priceNegotiable || (work.priceBase != null && work.priceBase > 0) ? (
-                  <p className="caption-up mt-3 text-white/55">
+                  <p className="caption-up mt-3 text-ink/55">
                     {work.priceNegotiable
                       ? 'قیمت توافقی'
                       : `از ${work.priceBase!.toLocaleString('fa-IR')} ریال`}
                   </p>
                 ) : null}
                 {work.clientName ? (
-                  <p className="caption-up mt-4 text-white/45">مشتری: {work.clientName}</p>
+                  <p className="caption-up mt-4 text-ink/45">مشتری: {work.clientName}</p>
                 ) : null}
                 </div>
               </div>
@@ -81,13 +81,13 @@ export default function PortfolioPage() {
           })}
 
           {loaded && works.length === 0 ? (
-            <p className="border border-dashed border-white/20 py-16 text-center font-ui text-sm text-muted">
+            <p className="border border-dashed border-ink/20 py-16 text-center font-ui text-sm text-muted">
               هنوز نمونه‌کاری منتشر نشده است.
             </p>
           ) : null}
 
           {!loaded ? (
-            <p className="border border-dashed border-white/20 py-16 text-center font-ui text-sm text-muted">
+            <p className="border border-dashed border-ink/20 py-16 text-center font-ui text-sm text-muted">
               در حال دریافت نمونه‌کارها…
             </p>
           ) : null}

@@ -7,6 +7,7 @@ import { RequestQuotationDto } from './dto/request-quotation.dto';
 import { QuotationsService } from './quotations.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { UpdateQuotationStatusDto } from './dto/update-quotation-status.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -48,9 +49,10 @@ export class QuotationsController {
   @Roles('admin')
   @ApiOperation({ summary: 'به‌روزرسانی وضعیت پیش‌فاکتور' })
   updateStatus(
+    @Req() request: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body('status') status: 'draft' | 'sent' | 'accepted' | 'rejected' | 'expired',
+    @Body() dto: UpdateQuotationStatusDto,
   ) {
-    return this.quotationsService.updateStatus(id, status);
+    return this.quotationsService.updateStatus(id, dto.status, { userId: request.user.userId, ipAddress: request.ip, userAgent: request.get('user-agent') });
   }
 }

@@ -7,14 +7,39 @@ import {
   IsString,
   Length,
   Min,
+  ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+
+export class SparePartSpecDto {
+  @ApiProperty()
+  @IsString()
+  @Length(1, 100)
+  key!: string;
+
+  @ApiProperty()
+  @IsString()
+  @Length(1, 500)
+  value!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 50)
+  unit?: string;
+}
 
 export class ManageSparePartDto {
   @ApiProperty({ example: 'MIG-SP-MOTOR-A' })
   @IsString()
   @Length(2, 50)
   partNumber!: string;
+
+  @ApiPropertyOptional({ example: 'mig-sp-motor-a' })
+  @IsOptional()
+  @IsString()
+  @Length(2, 160)
+  slug?: string;
 
   @ApiProperty({ example: 'موتور محرک سری A' })
   @IsString()
@@ -30,6 +55,12 @@ export class ManageSparePartDto {
   @IsString()
   @Length(2, 2000)
   description!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 500)
+  shortDescription?: string;
 
   @ApiProperty({ example: 'motors' })
   @IsString()
@@ -72,6 +103,44 @@ export class ManageSparePartDto {
   @IsString()
   @Length(0, 500)
   imageUrl?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  gallery?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  brand?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 100)
+  oemCode?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  weightGrams?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @Length(0, 120)
+  dimensions?: string;
+
+  @ApiPropertyOptional({ type: [SparePartSpecDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => SparePartSpecDto)
+  specs?: SparePartSpecDto[];
 
   @ApiPropertyOptional({ example: 12 })
   @IsOptional()

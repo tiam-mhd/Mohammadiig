@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -7,6 +7,7 @@ import { CustomerEntity } from './customer.entity';
 import { CustomersService } from './customers.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CustomerListQueryDto, PermanentlyDeleteCustomerDto, UpdateCustomerStatusDto } from './dto/customer-admin.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -19,7 +20,7 @@ export class CustomersController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get current B2B customer profile' })
-  me(@Req() request: AuthenticatedRequest): Promise<CustomerEntity> {
+  me(@Req() request: AuthenticatedRequest): Promise<Omit<CustomerEntity, 'statusReason' | 'statusChangedBy'>> {
     return this.customersService.findByUserId(request.user.userId);
   }
 
@@ -27,7 +28,34 @@ export class CustomersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all B2B customers for operations staff' })
-  all(): Promise<CustomerEntity[]> { return this.customersService.findAll(); }
+  all(@Query() query: CustomerListQueryDto): Promise<CustomerEntity[]> {
+    return this.customersService.findAll(query.status);
+  }
+
+  @Patch('admin/:id/status')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Set customer verification and account access; deleted customers are read-only' })
+  updateStatus(@Param('id') id: string, @Body() body: UpdateCustomerStatusDto, @Req() request: AuthenticatedRequest) {
+    return this.customersService.updateStatus(id, body, request.user.userId);
+  }
+
+  @Delete('admin/:id/permanent')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Permanently erase a soft-deleted customer identity, preserving anonymous financial records' })
+  async permanentlyRemove(@Param('id') id: string, @Body() body: PermanentlyDeleteCustomerDto, @Req() request: AuthenticatedRequest): Promise<{ ok: true }> {
+    await this.customersService.permanentlyRemove(id, request.user.userId);
+    return { ok: true };
+  }
+
+  @Get('admin/:id/360')
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Full 360° customer profile with orders, invoices, payments' })
+  customer360(@Param('id') id: string) {
+    return this.customersService.get360(id);
+  }
 
   @Patch('admin/:id/verify')
   @UseGuards(RolesGuard)

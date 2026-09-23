@@ -14,12 +14,16 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { MenuThemeToggle } from '@/components/MenuThemeToggle';
+import { CartBagIcon } from '@/components/icons/CartBagIcon';
+import { useCartStore } from '@/store/cart.store';
 
 const menuItems = [
   { href: '/products', label: 'محصولات' },
   { href: '/portfolio', label: 'نمونه‌کارها' },
   { href: '/projects', label: 'بهره‌برداری' },
   { href: '/services', label: 'خدمات' },
+  { href: '/spare-parts', label: 'قطعات یدکی' },
   { href: '/quote-request', label: 'استعلام' },
 ];
 
@@ -40,25 +44,6 @@ function IconMenu({ open }: { open: boolean }) {
           <path d="M6 16h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
         </>
       )}
-    </svg>
-  );
-}
-
-function IconShop() {
-  return (
-    <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 9V8a4 4 0 0 1 8 0v1"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M7.2 9h9.6a1.5 1.5 0 0 1 1.49 1.66l-.55 5.2A2.2 2.2 0 0 1 15.56 18H8.44a2.2 2.2 0 0 1-2.18-2.14l-.55-5.2A1.5 1.5 0 0 1 7.2 9Z"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinejoin="round"
-      />
     </svg>
   );
 }
@@ -120,6 +105,15 @@ function GlassBubble({
 export const Header: React.FC = () => {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [cartReady, setCartReady] = useState(false);
+  const cartLines = useCartStore((s) => s.lines);
+  const cartCount = cartReady
+    ? cartLines.reduce((sum, line) => sum + line.quantity, 0)
+    : 0;
+
+  useEffect(() => {
+    setCartReady(true);
+  }, []);
 
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : '';
@@ -169,11 +163,16 @@ export const Header: React.FC = () => {
 
           <GlassBubble
             as="button"
-            className="site-header__orb"
-            aria-label="فروشگاه"
-            onClick={() => router.push('/quote-request')}
+            className="site-header__orb site-header__orb--cart"
+            aria-label="سبد خرید"
+            onClick={() => router.push('/cart')}
           >
-            <IconShop />
+            <CartBagIcon />
+            {cartCount > 0 ? (
+              <span className="sp-cart-badge" aria-hidden>
+                {cartCount > 99 ? '۹۹+' : cartCount.toLocaleString('fa-IR')}
+              </span>
+            ) : null}
           </GlassBubble>
         </div>
       </header>
@@ -186,7 +185,7 @@ export const Header: React.FC = () => {
       >
         <div className="menu-overlay__aurora" aria-hidden />
         <div className="menu-overlay__veil" aria-hidden />
-        <nav className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 pt-[max(5rem,12vh)] sm:gap-7 md:gap-8">
+        <nav className="relative z-10 flex h-full flex-col items-center justify-center gap-5 px-6 pt-[max(5rem,12vh)] pb-[max(6.5rem,env(safe-area-inset-bottom))] sm:gap-7 md:gap-8">
           {menuItems.map((item, i) => (
             <Link
               key={item.href}
@@ -208,6 +207,16 @@ export const Header: React.FC = () => {
             </Link>
           ))}
         </nav>
+        <div
+          className="menu-overlay__foot"
+          style={{
+            opacity: open ? 1 : 0,
+            transition: 'opacity 700ms cubic-bezier(0.22, 0.61, 0.36, 1)',
+            transitionDelay: open ? '420ms' : '0ms',
+          }}
+        >
+          <MenuThemeToggle />
+        </div>
       </div>
     </>
   );

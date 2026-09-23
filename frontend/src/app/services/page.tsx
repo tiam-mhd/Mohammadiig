@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
@@ -55,7 +55,7 @@ export default function ServicesPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+        <Link href="/" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
           ← بازگشت به صفحه اول
         </Link>
 
@@ -74,7 +74,7 @@ export default function ServicesPage() {
             const price = priceLabel(service);
             return (
               <article key={service.id} className="text-start">
-                <p className="caption-up text-white/50">
+                <p className="caption-up text-ink/50">
                   {(index + 1).toLocaleString('fa-IR').padStart(2, '۰')}
                 </p>
                 {coverSrc ? (

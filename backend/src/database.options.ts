@@ -39,6 +39,14 @@ import { NormalizeMediaUrls1710000016000 } from './database/migrations/171000001
 import { NormalizeSparePartMediaUrls1710000017000 } from './database/migrations/1710000017000-normalize-spare-part-media-urls';
 import { PriceNegotiableAndServiceMedia1710000018000 } from './database/migrations/1710000018000-price-negotiable-and-service-media';
 import { SparePartPriceNegotiable1710000019000 } from './database/migrations/1710000019000-spare-part-price-negotiable';
+import { SparePartsCommerce1710000020000 } from './database/migrations/1710000020000-spare-parts-commerce';
+import { CustomerLifecycle1710000021000 } from './database/migrations/1710000021000-customer-lifecycle';
+import { UniqueQuotationOrder1710000022000 } from './database/migrations/1710000022000-unique-quotation-order';
+import { PaymentIntegrityAudit1710000023000 } from './database/migrations/1710000023000-payment-integrity-audit';
+import { AuditEntity } from './audit/audit.entity';
+import { SessionEntity } from './auth/session.entity';
+import { AuthSessions1710000024000 } from './database/migrations/1710000024000-auth-sessions';
+import { QuotationAcceptance1710000025000 } from './database/migrations/1710000025000-quotation-acceptance';
 import { MediaAssetEntity } from './media/media.entity';
 import { OtpChallengeEntity } from './auth/otp-challenge.entity';
 
@@ -63,9 +71,17 @@ const migrations = [
   NormalizeSparePartMediaUrls1710000017000,
   PriceNegotiableAndServiceMedia1710000018000,
   SparePartPriceNegotiable1710000019000,
+  SparePartsCommerce1710000020000,
+  CustomerLifecycle1710000021000,
+  UniqueQuotationOrder1710000022000,
+  PaymentIntegrityAudit1710000023000,
+  AuthSessions1710000024000,
+  QuotationAcceptance1710000025000,
 ];
 
 const entities = [
+  AuditEntity,
+  SessionEntity,
   ProductEntity,
   CategoryEntity,
   UserEntity,

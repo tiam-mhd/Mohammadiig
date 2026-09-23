@@ -1,6 +1,6 @@
 /**
  * Theme Store - Zustand
- * Manages application theme state (light/dark mode, colors)
+ * Public site light/dark preference (persisted).
  */
 
 import { create } from 'zustand';
@@ -15,35 +15,47 @@ interface ThemeStore {
   toggleTheme: () => void;
 }
 
+function applyDomTheme(mode: ThemeMode): boolean {
+  if (typeof document === 'undefined') return mode !== 'light';
+  const dark =
+    mode === 'dark' ||
+    (mode === 'system' &&
+      typeof window !== 'undefined' &&
+      window.matchMedia('(prefers-color-scheme: dark)').matches);
+  const html = document.documentElement;
+  html.classList.toggle('dark', dark);
+  html.style.colorScheme = dark ? 'dark' : 'light';
+  return dark;
+}
+
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      mode: 'light',
-      isDark: false,
+      mode: 'dark',
+      isDark: true,
 
       setMode: (mode: ThemeMode) => {
-        set({ mode });
-
-        // Apply theme to document
-        const html = document.documentElement;
-        if (mode === 'dark' || (mode === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-          html.classList.add('dark');
-          set({ isDark: true });
-        } else {
-          html.classList.remove('dark');
-          set({ isDark: false });
-        }
+        const isDark = applyDomTheme(mode);
+        set({ mode, isDark });
       },
 
       toggleTheme: () => {
-        const currentMode = get().mode;
-        const newMode = currentMode === 'light' ? 'dark' : 'light';
-        get().setMode(newMode);
+        const next = get().isDark || get().mode === 'dark' ? 'light' : 'dark';
+        get().setMode(next);
       },
     }),
     {
       name: 'theme-store',
       partialize: (state) => ({ mode: state.mode }),
+      onRehydrateStorage: () => (state) => {
+        if (!state) return;
+        // Skip ops routes — ThemeProvider owns those
+        if (typeof window !== 'undefined') {
+          const p = window.location.pathname;
+          if (p === '/admin' || p.startsWith('/admin/')) return;
+        }
+        state.setMode(state.mode);
+      },
     }
   )
 );

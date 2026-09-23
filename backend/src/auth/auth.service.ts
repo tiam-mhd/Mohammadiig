@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
@@ -13,7 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import { compare, hash } from 'bcryptjs';
 import { createHash, randomInt, randomUUID } from 'node:crypto';
-import { Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, MoreThan, Repository } from 'typeorm';
 import {
   CompletePasswordLoginDto,
   CompleteRegistrationDto,
@@ -27,9 +28,13 @@ import {
 } from './dto/auth.dto';
 import { UserEntity } from './user.entity';
 import { CustomerEntity } from '../customers/customer.entity';
+import { ensureCustomerProfile } from '../customers/customer-profile';
+import { assertCustomerAccess } from '../customers/customer-status';
+import { AuthUser } from './jwt.strategy';
 import { OtpChallengeEntity, OtpPurpose } from './otp-challenge.entity';
 import { ParsgreenSmsService } from '../sms/parsgreen-sms.service';
 import { maskMobile, normalizeIranMobile } from './phone.util';
+import { SessionService } from './session.service';
 
 export interface AuthResponse {
   accessToken: string;
@@ -78,6 +83,7 @@ export class AuthService implements OnModuleInit {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly sms: ParsgreenSmsService,
+    private readonly sessions: SessionService,
   ) {
     this.otpTtlSec = Number(this.config.get('OTP_TTL_SECONDS') ?? 120);
     this.resendCooldownSec = Number(this.config.get('OTP_RESEND_SECONDS') ?? 60);
@@ -91,6 +97,10 @@ export class AuthService implements OnModuleInit {
   }
 
   async ensureDefaultAdmin(): Promise<void> {
+    if (this.config.get<string>('NODE_ENV', 'development') !== 'development' &&
+        (!this.config.get<string>('ADMIN_EMAIL')?.trim() || !this.config.get<string>('ADMIN_PASSWORD'))) {
+      throw new Error('تنظیم ایمیل و رمز مدیر الزامی است.');
+    }
     const email = this.config.get<string>('ADMIN_EMAIL', 'admin@mohammadiig.ir').trim().toLowerCase();
     const password = this.config.get<string>('ADMIN_PASSWORD', 'MigAdmin2026!');
     const firstName = this.config.get<string>('ADMIN_FIRST_NAME', 'MIG');
@@ -169,7 +179,8 @@ export class AuthService implements OnModuleInit {
     const phone = normalizeIranMobile(dto.phone);
     if (!phone) throw new BadRequestException('شماره موبایل معتبر نیست. مثال: 09121234567');
 
-    const existing = await this.users.findOne({ where: { phone } });
+    // Deleted accounts still reserve their phone number; login never restores them.
+    const existing = await this.users.findOne({ where: { phone }, withDeleted: true });
 
     let purpose: OtpPurpose;
     let meta: Record<string, unknown> | null = null;
@@ -180,9 +191,10 @@ export class AuthService implements OnModuleInit {
         purpose = 'register';
         break;
       case 'login':
-        if (!existing || !existing.isActive) {
+        if (!existing) {
           throw new UnauthorizedException('حسابی با این شماره یافت نشد. ابتدا ثبت‌نام کنید.');
         }
+        await this.validateSession({ userId: existing.id });
         if (existing.role === 'admin') {
           throw new BadRequestException('حساب مدیریت از این صفحه وارد نمی‌شود.');
         }
@@ -190,7 +202,7 @@ export class AuthService implements OnModuleInit {
         meta = { userId: existing.id, twoFactorEnabled: existing.twoFactorEnabled };
         break;
       case 'forgot_password':
-        if (!existing || !existing.isActive) {
+        if (!existing || existing.deletedAt) {
           throw new UnauthorizedException('حسابی با این شماره یافت نشد.');
         }
         if (!existing.passwordHash && !existing.twoFactorEnabled) {
@@ -200,7 +212,7 @@ export class AuthService implements OnModuleInit {
         meta = { userId: existing.id };
         break;
       case 'change_mobile':
-        if (!existing || !existing.isActive) {
+        if (!existing || !existing.isActive || existing.deletedAt) {
           throw new UnauthorizedException('حسابی با این شماره یافت نشد.');
         }
         purpose = 'change_mobile_old';
@@ -215,7 +227,7 @@ export class AuthService implements OnModuleInit {
 
   async resendOtp(dto: ResendOtpDto): Promise<OtpSendResponse> {
     const challenge = await this.otps.findOne({ where: { id: dto.challengeId } });
-    if (!challenge || challenge.consumedAt) {
+    if (!challenge || challenge.consumedAt || Date.parse(challenge.expiresAt) <= Date.now()) {
       throw new BadRequestException('درخواست کد معتبر نیست. دوباره شروع کنید.');
     }
     const now = Date.now();
@@ -223,9 +235,7 @@ export class AuthService implements OnModuleInit {
       const wait = Math.ceil((Date.parse(challenge.resendAvailableAt) - now) / 1000);
       throw new HttpException(`ارسال مجدد تا ${wait} ثانیه دیگر امکان‌پذیر نیست.`, HttpStatus.TOO_MANY_REQUESTS);
     }
-    // Invalidate previous challenge and issue a fresh one with same purpose/meta.
-    challenge.consumedAt = new Date().toISOString();
-    await this.otps.save(challenge);
+    // The send transaction invalidates the old code only if the new send succeeds.
     const meta = challenge.meta ? (JSON.parse(challenge.meta) as Record<string, unknown>) : null;
     return this.createAndSendChallenge(challenge.phone, challenge.purpose, meta);
   }
@@ -238,27 +248,30 @@ export class AuthService implements OnModuleInit {
     }
 
     const ok = this.hashOtp(code, challenge.id) === challenge.codeHash;
-    challenge.attempts += 1;
+    const attempt = await this.otps.createQueryBuilder().update()
+      .set({ attempts: () => 'attempts + 1' })
+      .where('id = :id AND consumed_at IS NULL AND expires_at > :now AND attempts < max_attempts',
+        { id: challenge.id, now: new Date().toISOString() }).execute();
+    if (!attempt.affected) throw new UnauthorizedException('کد منقضی، مصرف‌شده یا تعداد تلاش نامعتبر است.');
     if (!ok) {
-      await this.otps.save(challenge);
-      const left = challenge.maxAttempts - challenge.attempts;
-      throw new UnauthorizedException(
-        left > 0 ? `کد نادرست است. ${left} تلاش باقی مانده.` : 'کد نادرست است. دوباره کد بگیرید.',
-      );
+      throw new UnauthorizedException('کد نادرست است یا تعداد تلاش مجاز به پایان رسیده است.');
     }
 
     challenge.consumedAt = new Date().toISOString();
     const stepToken = this.newToken();
     challenge.stepToken = stepToken;
     challenge.stepTokenExpiresAt = this.isoAfter(this.stepTokenTtlSec);
-    await this.otps.save(challenge);
+    const consumed = await this.otps.update({ id: challenge.id, consumedAt: IsNull(), expiresAt: MoreThan(new Date().toISOString()) },
+      { consumedAt: challenge.consumedAt, stepToken, stepTokenExpiresAt: challenge.stepTokenExpiresAt });
+    if (!consumed.affected) throw new UnauthorizedException('کد قبلاً مصرف شده یا منقضی شده است.');
 
     const meta = challenge.meta ? (JSON.parse(challenge.meta) as Record<string, unknown>) : {};
 
     switch (challenge.purpose) {
       case 'login': {
-        const user = await this.users.findOne({ where: { id: String(meta.userId) } });
-        if (!user || !user.isActive) throw new UnauthorizedException('حساب کاربری فعال نیست.');
+        const user = await this.users.findOne({ where: { id: String(meta.userId) }, withDeleted: true });
+        if (!user) throw new UnauthorizedException('حساب کاربری یافت نشد.');
+        await this.validateSession({ userId: user.id });
         if (user.twoFactorEnabled) {
           return { nextStep: 'password', passwordToken: stepToken, expiresIn: this.stepTokenTtlSec };
         }
@@ -336,8 +349,8 @@ export class AuthService implements OnModuleInit {
   async completePasswordLogin(dto: CompletePasswordLoginDto): Promise<AuthResponse> {
     const challenge = await this.requireStepToken(dto.passwordToken, 'login');
     const meta = challenge.meta ? (JSON.parse(challenge.meta) as Record<string, unknown>) : {};
-    const user = await this.users.findOne({ where: { id: String(meta.userId) } });
-    if (!user?.passwordHash || !user.isActive || !(await compare(dto.password, user.passwordHash))) {
+    const user = await this.users.findOne({ where: { id: String(meta.userId) }, withDeleted: true });
+    if (!user?.passwordHash || !(await compare(dto.password, user.passwordHash))) {
       throw new UnauthorizedException('رمز عبور نادرست است.');
     }
     challenge.stepToken = null;
@@ -349,8 +362,8 @@ export class AuthService implements OnModuleInit {
   async resetPassword(dto: ResetPasswordDto): Promise<AuthResponse> {
     const challenge = await this.requireStepToken(dto.resetToken, 'forgot_password');
     const meta = challenge.meta ? (JSON.parse(challenge.meta) as Record<string, unknown>) : {};
-    const user = await this.users.findOne({ where: { id: String(meta.userId) } });
-    if (!user || !user.isActive) throw new UnauthorizedException('حساب کاربری فعال نیست.');
+    const user = await this.users.findOne({ where: { id: String(meta.userId) }, withDeleted: true });
+    if (!user) throw new UnauthorizedException('حساب کاربری یافت نشد.');
     user.passwordHash = await hash(dto.newPassword, 12);
     // Setting a password enables 2FA login path if they already had it, or they can enable later.
     await this.users.save(user);
@@ -389,21 +402,35 @@ export class AuthService implements OnModuleInit {
     purpose: OtpPurpose,
     meta: Record<string, unknown> | null,
   ): Promise<OtpSendResponse> {
-    const lastOpen = await this.otps.find({
-      where: { phone, purpose },
+    return this.otps.manager.transaction(async (manager) => {
+    if (manager.connection.options.type === 'postgres') {
+      await manager.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`otp:${phone}`]);
+    }
+    const otps = manager.getRepository(OtpChallengeEntity);
+    const lastOpen = await otps.find({
+      where: { phone },
       order: { createdAt: 'DESC' },
       take: 1,
     });
     const last = lastOpen[0];
-    if (last && !last.consumedAt && Date.now() < Date.parse(last.resendAvailableAt)) {
+    if (last && Date.now() < Date.parse(last.resendAvailableAt)) {
       const wait = Math.ceil((Date.parse(last.resendAvailableAt) - Date.now()) / 1000);
       throw new HttpException(`لطفاً ${wait} ثانیه صبر کنید و دوباره تلاش کنید.`, HttpStatus.TOO_MANY_REQUESTS);
     }
 
+    if (await otps.countBy({ phone, createdAt: MoreThan(new Date(Date.now() - 3600000)) }) >= 10) {
+      throw new HttpException('تعداد درخواست کد بیش از حد مجاز است. بعداً تلاش کنید.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+    const cutoff = new Date(Date.now() - 86400000).toISOString();
+    await otps.delete([
+      { expiresAt: LessThanOrEqual(cutoff), stepTokenExpiresAt: IsNull() },
+      { expiresAt: LessThanOrEqual(cutoff), stepTokenExpiresAt: LessThanOrEqual(cutoff) },
+    ]);
+    await otps.update({ phone, consumedAt: IsNull() }, { consumedAt: new Date().toISOString() });
     const challengeId = randomUUID();
     const code = this.generateOtpCode();
     const now = Date.now();
-    const challenge = await this.otps.save({
+    const challenge = await otps.save({
       id: challengeId,
       phone,
       purpose,
@@ -428,11 +455,12 @@ export class AuthService implements OnModuleInit {
       purpose,
     };
 
-    if (this.config.get('PARSGREEN_DEBUG') === 'true') {
+    if (this.config.get('NODE_ENV', 'development') !== 'production' && this.config.get('PARSGREEN_DEBUG') === 'true') {
       response.debugCode = code;
     }
 
     return response;
+    });
   }
 
   private async requireActiveChallenge(challengeId: string): Promise<OtpChallengeEntity> {
@@ -453,23 +481,47 @@ export class AuthService implements OnModuleInit {
     if (!challenge?.stepTokenExpiresAt || Date.now() > Date.parse(challenge.stepTokenExpiresAt)) {
       throw new BadRequestException('نشست تأیید منقضی شده است. دوباره شروع کنید.');
     }
+    const claimed = await this.otps.update({ id: challenge.id, stepToken: token, stepTokenExpiresAt: MoreThan(new Date().toISOString()) },
+      { stepToken: null, stepTokenExpiresAt: null });
+    if (!claimed.affected) throw new BadRequestException('نشست تأیید قبلاً مصرف شده است. دوباره شروع کنید.');
+    challenge.stepToken = null;
+    challenge.stepTokenExpiresAt = null;
     return challenge;
   }
 
   private async issueLogin(user: UserEntity): Promise<AuthResponse> {
-    user.lastLoginAt = new Date().toISOString();
-    await this.users.save(user);
-    return this.createResponse(user);
+    await this.validateSession({ userId: user.id });
+    const current = await this.users.findOneByOrFail({ id: user.id });
+    if (current.role === 'customer') await ensureCustomerProfile(this.customers, current);
+    current.lastLoginAt = new Date().toISOString();
+    await this.users.update(current.id, { lastLoginAt: current.lastLoginAt });
+    return this.createResponse(current);
   }
 
-  private createResponse(user: UserEntity): AuthResponse {
-    return {
-      accessToken: this.jwtService.sign({
+  /** Validate current database state so previously issued tokens cannot bypass a block/delete. */
+  async validateSession(payload: Pick<AuthUser, 'userId'>): Promise<AuthUser> {
+    if (!payload || typeof payload.userId !== 'string' || !payload.userId) {
+      throw new UnauthorizedException('نشست نامعتبر است. دوباره وارد شوید.');
+    }
+    const user = await this.users.findOne({ where: { id: payload.userId } });
+    if (!user) throw new UnauthorizedException('حساب کاربری در دسترس نیست.');
+    const customer = await this.customers.findOne({ where: { userId: user.id }, withDeleted: true });
+    assertCustomerAccess(customer);
+    if (!user.isActive) throw new ForbiddenException('حساب شما غیرفعال است. با پشتیبانی تماس بگیرید.');
+    return { userId: user.id, email: user.email, phone: user.phone, role: user.role };
+  }
+
+  private async createResponse(user: UserEntity): Promise<AuthResponse> {
+    const accessToken = this.jwtService.sign({
+        jti: randomUUID(),
         userId: user.id,
         email: user.email,
         phone: user.phone,
         role: user.role,
-      }),
+      });
+    await this.sessions.register(accessToken, user.id);
+    return {
+      accessToken,
       user: {
         id: user.id,
         email: user.email,

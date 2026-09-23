@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { Reveal } from './Reveal';
@@ -28,7 +28,7 @@ export function ModelBand({ image, name, tagline, href, index }: ModelBandProps)
       <div className="content-shell section-copy relative z-10 flex w-full flex-col items-start justify-end text-start">
         <Reveal className="w-full max-w-md">
           <p className="caption-up text-white/65">{index}</p>
-          <h3 className="display-feature mt-3">{name}</h3>
+          <h3 className="display-feature mt-3 text-white">{name}</h3>
           <p className="body-lead mt-3 text-white/85">{tagline}</p>
           <Link href={href} className="btn-pill mt-8">
             جزئیات محصول

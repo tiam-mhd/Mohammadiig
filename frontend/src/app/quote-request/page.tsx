@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -42,21 +42,15 @@ export default function QuoteRequestPage() {
     null,
   );
 
-  // Never stay stuck on the loading screen: wait for auth hydrate, with a short fallback.
+  // Wait for the server session check before presenting authenticated actions.
   useEffect(() => {
     setProductParam(readProductParam());
 
-    if (hasHydrated || useAuthStore.persist.hasHydrated()) {
+    if (hasHydrated) {
       setReady(true);
       return;
     }
 
-    const unsub = useAuthStore.persist.onFinishHydration(() => setReady(true));
-    const fallback = window.setTimeout(() => setReady(true), 100);
-    return () => {
-      unsub();
-      window.clearTimeout(fallback);
-    };
   }, [hasHydrated]);
 
   const authReturnPath = useMemo(() => {
@@ -197,7 +191,7 @@ export default function QuoteRequestPage() {
             >
               ورود یا ثبت‌نام
             </Link>
-            <Link href="/products" className="caption-up text-white/70 transition-opacity hover:opacity-100">
+            <Link href="/products" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
               فعلاً محصولات را ببینم
             </Link>
           </div>
@@ -304,7 +298,7 @@ export default function QuoteRequestPage() {
                         )}
                       </div>
                       <div className="quote-product__body">
-                        <p className="caption-up text-white/45">{product.category || 'محصول'}</p>
+                        <p className="caption-up text-ink/45">{product.category || 'محصول'}</p>
                         <h3 className="quote-product__title">{product.name}</h3>
                         <p className="quote-product__price">
                           {product.priceNegotiable

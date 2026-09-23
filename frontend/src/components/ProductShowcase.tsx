@@ -4,60 +4,30 @@ import { useEffect, useState } from 'react';
 import { fetchProducts, Product } from '@/lib/api-client';
 import { ProductCard } from './ProductCard';
 
-const fallbackProducts: Product[] = [
-  {
-    id: '1',
-    slug: 'bumper-car-signature',
-    name: 'ماشین برخوردی / سری امضا',
-    description: 'بدنه مهندسی‌شده، ایمنی بالا و آماده برای بهره‌برداری حرفه‌ای.',
-    price: 45000000,
-    currency: 'IRR',
-    category: 'تجهیزات',
-    image:
-      'https://images.unsplash.com/photo-1565610222536-ef125c59da2e?auto=format&fm=webp&fit=crop&w=1000&q=75',
-    isFeatured: true,
-  },
-  {
-    id: '2',
-    slug: 'junior-play',
-    name: 'جونیور / پلی',
-    description: 'نسخه ایمن و پرانرژی برای فضاهای خانوادگی.',
-    price: 15000000,
-    currency: 'IRR',
-    category: 'خانواده',
-    image:
-      'https://images.unsplash.com/photo-1531058020387-3be344556be6?auto=format&fm=webp&fit=crop&w=800&q=75',
-    isFeatured: true,
-  },
-  {
-    id: '3',
-    slug: 'mig-care-spare-parts',
-    name: 'مراقبت MIG / قطعات',
-    description: 'قطعات اصلی و پشتیبانی فنی برای عملکرد بلندمدت.',
-    price: 8500000,
-    currency: 'IRR',
-    category: 'پس از فروش',
-    image:
-      'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fm=webp&fit=crop&w=800&q=75',
-    isFeatured: true,
-  },
-];
-
 export function ProductShowcase() {
-  const [products, setProducts] = useState<Product[]>(fallbackProducts);
-  const [isConnected, setIsConnected] = useState(false);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
+    queueMicrotask(() => {
+      if (isMounted) {
+        setIsLoading(true);
+        setErrorMessage('');
+      }
+    });
     fetchProducts()
       .then((response) => {
         if (isMounted) {
-          setProducts(response.data);
-          setIsConnected(true);
+          setProducts(response.data ?? []);
         }
       })
-      .catch(() => {
-        if (isMounted) setIsConnected(false);
+      .catch((error) => {
+        if (isMounted) setErrorMessage(error instanceof Error ? error.message : 'دریافت محصولات انجام نشد.');
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
       });
 
     return () => {
@@ -70,18 +40,24 @@ export function ProductShowcase() {
       <p className="caption-up mb-10">
         <span
           className={`ml-2 inline-block h-1.5 w-1.5 rounded-full ${
-            isConnected ? 'bg-success' : 'bg-muted'
+            errorMessage ? 'bg-muted' : 'bg-success'
           }`}
         />
-        {isConnected ? 'کاتالوگ زنده' : 'کاتالوگ منتخب'}
+        {isLoading ? 'در حال دریافت محصولات' : errorMessage ? 'خطا در دریافت محصولات' : 'کاتالوگ زنده'}
       </p>
-      <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-x-10 md:gap-y-16">
-        {products.map((product, index) => (
-          <div key={product.id} className={index === 0 ? 'md:col-span-2' : ''}>
-            <ProductCard {...product} slug={product.slug} />
-          </div>
-        ))}
-      </div>
+      {errorMessage ? <p className="font-ui text-sm text-muted">{errorMessage}</p> : null}
+      {!isLoading && !errorMessage && products.length === 0 ? (
+        <p className="font-ui text-sm text-muted">در حال حاضر محصولی برای نمایش وجود ندارد.</p>
+      ) : null}
+      {!errorMessage ? (
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-x-10 md:gap-y-16">
+          {products.map((product, index) => (
+            <div key={product.id} className={index === 0 ? 'md:col-span-2' : ''}>
+              <ProductCard {...product} slug={product.slug} />
+            </div>
+          ))}
+        </div>
+      ) : null}
     </>
   );
 }

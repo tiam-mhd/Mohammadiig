@@ -1,12 +1,14 @@
-import { Column, CreateDateColumn, DeleteDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { Column, CreateDateColumn, DeleteDateColumn, Entity, Index, PrimaryColumn, UpdateDateColumn } from 'typeorm';
+import { OrderStatus } from './order-status';
 
 @Entity({ name: 'orders' })
+@Index('uq_orders_reference_quotation', ['referenceQuotationId'], { unique: true })
 export class OrderEntity {
   @PrimaryColumn('text') id!: string;
   @Column({ name: 'order_number', type: 'varchar', length: 50, unique: true }) orderNumber!: string;
   @Column({ name: 'customer_id', type: 'varchar', length: 100 }) customerId!: string;
   @Column({ name: 'created_by', type: 'varchar', length: 100 }) createdBy!: string;
-  @Column({ type: 'varchar', length: 50, default: 'pending' }) status!: string;
+  @Column({ type: 'varchar', length: 50, default: OrderStatus.Pending }) status!: OrderStatus | string;
   @Column({ name: 'order_type', type: 'varchar', length: 50, default: 'custom' }) orderType!: string;
   @Column({ name: 'shipping_address', type: 'simple-json', default: '{}' }) shippingAddress!: Record<string, string>;
   @Column({ name: 'billing_address', type: 'simple-json', default: '{}' }) billingAddress!: Record<string, string>;

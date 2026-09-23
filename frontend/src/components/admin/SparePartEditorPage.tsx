@@ -21,6 +21,7 @@ type EditorForm = {
   partNumber: string;
   nameFa: string;
   nameEn: string;
+  shortDescription: string;
   description: string;
   category: string;
   compatibleProductsText: string;
@@ -29,6 +30,12 @@ type EditorForm = {
   stockQuantity: string;
   reorderLevel: string;
   imageUrl: string;
+  gallery: string[];
+  brand: string;
+  oemCode: string;
+  weightGrams: string;
+  dimensions: string;
+  specsText: string;
   warrantyMonths: string;
   isActive: boolean;
 };
@@ -37,6 +44,7 @@ const emptyForm: EditorForm = {
   partNumber: '',
   nameFa: '',
   nameEn: '',
+  shortDescription: '',
   description: '',
   category: '',
   compatibleProductsText: '',
@@ -45,6 +53,12 @@ const emptyForm: EditorForm = {
   stockQuantity: '0',
   reorderLevel: '5',
   imageUrl: '',
+  gallery: [],
+  brand: '',
+  oemCode: '',
+  weightGrams: '',
+  dimensions: '',
+  specsText: '',
   warrantyMonths: '12',
   isActive: false,
 };
@@ -56,11 +70,37 @@ function parseCompatibleIds(value: string) {
     .filter(Boolean);
 }
 
+function specsToText(specs: SparePart['specs']) {
+  if (!specs?.length) return '';
+  return specs
+    .map((spec) => {
+      const unit = spec.unit?.trim();
+      return unit ? `${spec.key} | ${spec.value} | ${unit}` : `${spec.key} | ${spec.value}`;
+    })
+    .join('\n');
+}
+
+function parseSpecsText(value: string) {
+  return value
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const parts = line.split('|').map((part) => part.trim());
+      const key = parts[0] ?? '';
+      const specValue = parts[1] ?? '';
+      const unit = parts[2] || undefined;
+      return { key, value: specValue, unit };
+    })
+    .filter((spec) => spec.key && spec.value);
+}
+
 function partToForm(part: SparePart): EditorForm {
   return {
     partNumber: part.partNumber,
     nameFa: part.nameFa,
     nameEn: part.nameEn ?? '',
+    shortDescription: part.shortDescription ?? '',
     description: part.description,
     category: part.category,
     compatibleProductsText: (part.compatibleProducts ?? []).join(', '),
@@ -69,6 +109,12 @@ function partToForm(part: SparePart): EditorForm {
     stockQuantity: String(part.stockQuantity ?? 0),
     reorderLevel: String(part.reorderLevel ?? 5),
     imageUrl: part.imageUrl ?? '',
+    gallery: part.gallery ?? [],
+    brand: part.brand ?? '',
+    oemCode: part.oemCode ?? '',
+    weightGrams: part.weightGrams != null ? String(part.weightGrams) : '',
+    dimensions: part.dimensions ?? '',
+    specsText: specsToText(part.specs),
     warrantyMonths: String(part.warrantyMonths ?? 12),
     isActive: part.isActive ?? true,
   };
@@ -104,7 +150,11 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
   const [saving, setSaving] = useState(false);
 
   const categoryOptions = useMemo(
-    () => categories.map((category) => ({ value: category.id, label: category.nameFa })),
+    () =>
+      categories.map((category) => ({
+        value: category.slug || category.id,
+        label: category.nameFa,
+      })),
     [categories],
   );
 
@@ -153,6 +203,8 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
     const partNumber = form.partNumber.trim();
     const description = form.description.trim();
     const category = form.category.trim();
+    const gallery = form.gallery.filter(Boolean);
+    const imageUrl = form.imageUrl.trim() || gallery[0] || undefined;
 
     if (partNumber.length < 2) {
       adminToast.error('شماره قطعه الزامی است.');
@@ -182,14 +234,21 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
         partNumber,
         nameFa,
         nameEn,
+        shortDescription: form.shortDescription.trim() || undefined,
         description,
         category,
         compatibleProducts: parseCompatibleIds(form.compatibleProductsText),
-        price: form.priceNegotiable ? Number(form.price || 0) : Number(form.price || 0),
+        price: Number(form.price || 0),
         priceNegotiable: form.priceNegotiable,
         stockQuantity: Number(form.stockQuantity || 0),
         reorderLevel: Number(form.reorderLevel || 0),
-        imageUrl: form.imageUrl || undefined,
+        imageUrl,
+        gallery,
+        brand: form.brand.trim() || undefined,
+        oemCode: form.oemCode.trim() || undefined,
+        weightGrams: form.weightGrams.trim() ? Number(form.weightGrams) : undefined,
+        dimensions: form.dimensions.trim() || undefined,
+        specs: parseSpecsText(form.specsText),
         warrantyMonths: Number(form.warrantyMonths || 0),
         isActive,
       };
@@ -280,6 +339,16 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               />
             </label>
             <label className="mt-4 block text-start">
+              <span className="ops-login__label">توضیح کوتاه</span>
+              <input
+                className="ops-field"
+                maxLength={300}
+                placeholder="خلاصهٔ کوتاه برای کارت و فهرست…"
+                value={form.shortDescription}
+                onChange={(event) => setForm({ ...form, shortDescription: event.target.value })}
+              />
+            </label>
+            <label className="mt-4 block text-start">
               <span className="ops-login__label">توضیح</span>
               <textarea
                 className="ops-field admin-editor__body"
@@ -300,12 +369,77 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
             </label>
           </Metabox>
 
+          <Metabox title="مشخصات فنی و برند">
+            <div className="admin-form-grid two">
+              <label className="block text-start">
+                <span className="ops-login__label">برند</span>
+                <input
+                  className="ops-field"
+                  value={form.brand}
+                  onChange={(event) => setForm({ ...form, brand: event.target.value })}
+                />
+              </label>
+              <label className="block text-start">
+                <span className="ops-login__label">کد OEM</span>
+                <input
+                  className="ops-field"
+                  dir="ltr"
+                  value={form.oemCode}
+                  onChange={(event) => setForm({ ...form, oemCode: event.target.value })}
+                />
+              </label>
+              <label className="block text-start">
+                <span className="ops-login__label">وزن (گرم)</span>
+                <input
+                  type="number"
+                  min={0}
+                  className="ops-field"
+                  dir="ltr"
+                  value={form.weightGrams}
+                  onChange={(event) => setForm({ ...form, weightGrams: event.target.value })}
+                />
+              </label>
+              <label className="block text-start">
+                <span className="ops-login__label">ابعاد</span>
+                <input
+                  className="ops-field"
+                  dir="ltr"
+                  placeholder="مثلاً 120×80×40 mm"
+                  value={form.dimensions}
+                  onChange={(event) => setForm({ ...form, dimensions: event.target.value })}
+                />
+              </label>
+            </div>
+            <label className="mt-4 block text-start">
+              <span className="ops-login__label">مشخصات (هر خط: کلید | مقدار | واحد)</span>
+              <textarea
+                className="ops-field admin-editor__body"
+                dir="ltr"
+                rows={6}
+                placeholder={'Material | Steel\nVoltage | 220 | V'}
+                value={form.specsText}
+                onChange={(event) => setForm({ ...form, specsText: event.target.value })}
+              />
+            </label>
+          </Metabox>
+
           <Metabox title="رسانه">
             <MediaField
-              label="تصویر قطعه"
+              label="تصویر اصلی"
               value={form.imageUrl}
               onChange={(imageUrl) => setForm({ ...form, imageUrl })}
             />
+            <div className="mt-4">
+              <MediaField
+                label="گالری (چندتصویری)"
+                multiple
+                value={form.gallery}
+                onChange={(gallery) => setForm({ ...form, gallery })}
+              />
+            </div>
+            <p className="admin-editor__hint mt-3">
+              اگر تصویر اصلی خالی باشد، اولین تصویر گالری به‌عنوان تصویر اصلی ذخیره می‌شود.
+            </p>
           </Metabox>
 
           <Metabox title="ردیابی موجودی">

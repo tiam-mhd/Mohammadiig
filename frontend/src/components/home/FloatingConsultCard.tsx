@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -28,12 +28,12 @@ export function FloatingConsultCard() {
       >
         ×
       </button>
-      <p className="font-ui text-[13px] leading-7 text-white/90">
+      <p className="font-ui text-[13px] leading-7 text-ink/90">
         برای پروژه جدیدتان نیاز به مشاوره دارید؟
       </p>
       <Link
         href="/quote-request"
-        className="caption-up mt-3 inline-block text-white/90 transition-opacity duration-500 hover:opacity-55"
+        className="caption-up mt-3 inline-block text-ink/90 transition-opacity duration-500 hover:opacity-55"
       >
         همین حالا پیام بدهید ←
       </Link>

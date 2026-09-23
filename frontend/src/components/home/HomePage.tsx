@@ -24,10 +24,22 @@ import {
   type ServiceSummary,
 } from '@/lib/api-client';
 import { resolveMediaUrl } from '@/lib/media';
+import { useTheme } from '@/hooks/useTheme';
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const FALLBACK_SCENE = '/Background.webp';
+const BG_DARK = '/Background.webp';
+const BG_LIGHT = '/Background-Light.webp';
+const BG_CTA_DARK = '/Background-cta.webp';
+const BG_CTA_LIGHT = '/Background-cta-Light.webp';
+
+function useSceneBackgrounds() {
+  const { isDark } = useTheme();
+  return {
+    scene: isDark ? BG_DARK : BG_LIGHT,
+    cta: isDark ? BG_CTA_DARK : BG_CTA_LIGHT,
+  };
+}
 
 function productImage(product: Product | undefined): string {
   if (!product) return '';
@@ -75,6 +87,7 @@ function HomeHero() {
   const reduce = useReducedMotion();
   const heroRef = useRef<HTMLElement>(null);
   const afterSplash = useAfterSplash(true);
+  const { scene } = useSceneBackgrounds();
   const { scrollYProgress } = useScroll({
     target: heroRef,
     offset: ['start start', 'end start'],
@@ -93,7 +106,7 @@ function HomeHero() {
         style={reduce ? undefined : { y: mediaY, scale: mediaScale }}
       >
         <motion.img
-          src="/Background.webp"
+          src={scene}
           alt="ماشین برخوردی گروه صنعتی محمدی"
           fetchPriority="high"
           decoding="async"
@@ -138,7 +151,7 @@ function HomeHero() {
             animate={afterSplash ? { opacity: 1, y: 0 } : { opacity: 0, y: 22 }}
             transition={{ duration: 0.95, delay: 0.42, ease }}
           >
-            تجهیزات شهربازی، ساخته‌شده برای کار واقعی
+            طراحی، مشاوره، تولید و سرمایه گذاری
           </motion.p>
 
           <motion.p
@@ -179,6 +192,7 @@ export function HomePage() {
   const rootRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
   const reduce = useReducedMotion();
+  const { scene: fallbackScene, cta: ctaBackground } = useSceneBackgrounds();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [services, setServices] = useState<ServiceSummary[]>([]);
@@ -230,11 +244,11 @@ export function HomePage() {
     portfolio.find((w) => w.isFeatured) ?? portfolio[0] ?? null;
   const proofImage =
     resolveMediaUrl(proofWork?.coverImageUrl || proofWork?.gallery?.[0]) ||
-    FALLBACK_SCENE;
+    fallbackScene;
   const pillarsScene =
     featuredImage ||
     resolveMediaUrl(proofWork?.coverImageUrl) ||
-    FALLBACK_SCENE;
+    fallbackScene;
 
   useGSAP(
     () => {
@@ -420,10 +434,9 @@ export function HomePage() {
               <div className="home-legacy__goldline" aria-hidden />
             </div>
             <div className="home-legacy__copy" data-reveal>
-              <h2 className="home-legacy__title">بیش از چهل سال در صنعت تفریح</h2>
+              <h2 className="home-legacy__title">بیش از چهل سال در صنعت تفریحات و شهربازی</h2>
               <p className="home-legacy__body">
-                از کارگاه تا سالن شهربازی؛ تجربه واقعی ساخت، نصب، بهره‌برداری و نگهداری دستگاه‌ها —
-                برای مجموعه‌هایی که باید هر روز کار کنند.
+                از کارخانه تا شهربازی؛ تجربه واقعی تولید، نصب، بهره‌برداری و نگهداری دستگاه‌ها —
               </p>
               <GlassButton href="/portfolio">نمونه‌کارها</GlassButton>
             </div>
@@ -582,7 +595,7 @@ export function HomePage() {
         {/* Close */}
         <section className="home-close">
           <div className="home-close__media">
-            <img src="/Background-cta.webp" alt="" loading="lazy" decoding="async" />
+            <img src={ctaBackground} alt="" loading="lazy" decoding="async" />
             <div className="home-close__scrim" />
           </div>
           <div className="content-shell home-close__content">

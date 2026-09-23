@@ -37,6 +37,11 @@ export const PAYMENT_STATUS: Record<string, string> = {
   cancelled: 'لغوشده',
 };
 
+export const ORDER_TYPE: Record<string, string> = {
+  spare_parts: 'قطعات یدکی',
+  custom: 'سفارشی',
+};
+
 export const PROJECT_STATUS: Record<string, string> = {
   planning: 'برنامه‌ریزی',
   in_progress: 'در حال اجرا',
@@ -112,10 +117,16 @@ export const OWNER_TYPE: Record<string, string> = {
 export const PAYMENT_METHOD: Record<string, string> = {
   card: 'کارت بانکی',
   transfer: 'حواله',
+  bank_transfer: 'حواله بانکی',
+  credit_card: 'کارت اعتباری',
   cash: 'نقدی',
+  check: 'چک',
   cheque: 'چک',
   online: 'پرداخت آنلاین',
   gateway: 'درگاه پرداخت',
+  test_gateway: 'درگاه آزمایشی',
+  cryptocurrency: 'رمزارز',
+  other: 'سایر',
 };
 
 export function labelOf(map: Record<string, string>, value: string | null | undefined, fallback = '—') {

@@ -7,6 +7,8 @@ import { CustomerEntity } from '../customers/customer.entity';
 import { ProductEntity } from '../products/product.entity';
 import { RequestQuotationDto } from './dto/request-quotation.dto';
 import { QuotationEntity, QuotationItem } from './quotation.entity';
+import { AuditActor, AuditService } from '../audit/audit.service';
+import { OrderEntity } from '../orders/order.entity';
 
 export type QuotationAdminView = QuotationEntity & {
   customerCompanyName: string | null;
@@ -28,7 +30,10 @@ export class QuotationsService {
       throw new NotFoundException('پروفایل مشتری پیدا نشد. لطفاً دوباره وارد شوید یا ثبت‌نام کنید.');
     }
 
-    const cleanedItems = dto.items.filter((item) => item.quantity > 0);
+    if (dto.items.some(item => !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > 999)) {
+      throw new BadRequestException('تعداد هر محصول باید عدد صحیح بین ۱ و ۹۹۹ باشد.');
+    }
+    const cleanedItems = dto.items;
     if (cleanedItems.length === 0) {
       throw new BadRequestException('حداقل یک محصول با تعداد بیشتر از صفر انتخاب کنید.');
     }
@@ -59,7 +64,7 @@ export class QuotationsService {
 
     const quotation = this.quotations.create({
       id: randomUUID(),
-      quotationNumber: `QT-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`,
+      quotationNumber: `QT-${randomUUID()}`,
       customerId: customer.id,
       quotedBy: null,
       validUntil,
@@ -74,7 +79,11 @@ export class QuotationsService {
       notes: this.buildNotes(dto, customer),
     });
 
-    return this.quotations.save(quotation);
+    return this.quotations.manager.transaction(async manager => {
+      const saved = await manager.getRepository(QuotationEntity).save(quotation);
+      await AuditService.record(manager, user, 'quotation.created', 'quotation', saved.id, null, { status: saved.status, totalAmount: saved.totalAmount });
+      return saved;
+    });
   }
 
   findMine(user: AuthUser): Promise<QuotationEntity[]> {
@@ -88,16 +97,25 @@ export class QuotationsService {
   }
 
   async accept(user: AuthUser, quotationId: string): Promise<QuotationEntity> {
-    const customer = await this.customers.findOne({ where: { userId: user.userId } });
-    const quotation = await this.quotations.findOne({ where: { id: quotationId } });
+    return this.quotations.manager.transaction(async manager => {
+    const customer = await manager.getRepository(CustomerEntity).findOne({ where: { userId: user.userId } });
+    const quotation = await manager.getRepository(QuotationEntity).findOne({ where: { id: quotationId },
+      ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}) });
     if (!customer || !quotation || quotation.customerId !== customer.id) {
       throw new NotFoundException('پیش‌فاکتور پیدا نشد.');
     }
-    if (quotation.status !== 'draft' && quotation.status !== 'sent') {
+    if (quotation.status !== 'sent' || await manager.getRepository(OrderEntity).existsBy({ referenceQuotationId: quotationId })) {
       throw new ConflictException('این پیش‌فاکتور دیگر قابل پذیرش نیست.');
     }
+    if (new Date(quotation.validUntil).getTime() <= Date.now()) throw new ConflictException('اعتبار این پیش‌فاکتور به پایان رسیده است.');
     quotation.status = 'accepted';
-    return this.quotations.save(quotation);
+    quotation.acceptedAt = new Date().toISOString();
+    quotation.acceptedBy = user.userId;
+    const saved = await manager.getRepository(QuotationEntity).save(quotation);
+    await AuditService.record(manager, user, 'quotation.accepted', 'quotation', saved.id, { status: 'sent' },
+      { status: saved.status, acceptedAt: saved.acceptedAt, acceptedBy: saved.acceptedBy });
+    return saved;
+    });
   }
 
   async findAll(): Promise<QuotationAdminView[]> {
@@ -118,8 +136,10 @@ export class QuotationsService {
     });
   }
 
-  async updateStatus(id: string, status: QuotationEntity['status']): Promise<QuotationAdminView> {
-    const quotation = await this.quotations.findOne({ where: { id } });
+  async updateStatus(id: string, status: QuotationEntity['status'], actor: AuditActor): Promise<QuotationAdminView> {
+    return this.quotations.manager.transaction(async manager => {
+    const quotation = await manager.getRepository(QuotationEntity).findOne({ where: { id },
+      ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}) });
     if (!quotation) throw new NotFoundException('پیش‌فاکتور پیدا نشد.');
 
     const allowed: QuotationEntity['status'][] = ['draft', 'sent', 'accepted', 'rejected', 'expired'];
@@ -127,14 +147,20 @@ export class QuotationsService {
       throw new BadRequestException('وضعیت انتخاب‌شده معتبر نیست.');
     }
 
+    const transitions: Record<string, string[]> = { draft: ['sent', 'rejected', 'expired'], sent: ['rejected', 'expired'], accepted: [], rejected: [], expired: [] };
+    if (!(transitions[quotation.status] ?? []).includes(status)) throw new ConflictException('این تغییر وضعیت مجاز نیست؛ پذیرش باید توسط مشتری انجام شود.');
+    if (status === 'sent' && new Date(quotation.validUntil).getTime() <= Date.now()) throw new ConflictException('اعتبار پیش‌فاکتور به پایان رسیده است.');
+    const previous = quotation.status;
     quotation.status = status;
-    const saved = await this.quotations.save(quotation);
-    const customer = await this.customers.findOne({ where: { id: saved.customerId } });
+    const saved = await manager.getRepository(QuotationEntity).save(quotation);
+    await AuditService.record(manager, actor, 'quotation.status_changed', 'quotation', id, { status: previous }, { status });
+    const customer = await manager.getRepository(CustomerEntity).findOne({ where: { id: saved.customerId } });
 
     return Object.assign(saved, {
       customerCompanyName: customer?.companyName ?? null,
       customerContactPerson: customer?.contactPerson ?? null,
       customerPhone: customer?.phone ?? null,
+    });
     });
   }
 

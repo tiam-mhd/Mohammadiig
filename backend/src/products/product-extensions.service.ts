@@ -6,8 +6,9 @@ import { ProductEntity } from './product.entity';
 import { ProductVariantEntity } from './product-variant.entity';
 import { ProductSpecificationEntity } from './product-specification.entity';
 import { SparePartEntity } from './spare-part.entity';
-import { toRelativeMediaPath } from '../media/media-paths';
+import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
 import { ManageSparePartDto, PatchSparePartDto } from './dto/manage-spare-part.dto';
+import { SparePartSpec } from './spare-part.entity';
 import {
   CopyProductSpecsDto,
   ManageProductSpecificationDto,
@@ -113,9 +114,11 @@ export class ProductExtensionsService implements OnModuleInit {
         {
           id: randomUUID(),
           partNumber: 'MIG-SP-MOTOR-A',
+          slug: 'mig-sp-motor-a',
           nameEn: 'Drive Motor A',
           nameFa: 'موتور محرک سری A',
-          description: 'موتور یدکی سازگار با تجهیزات MIG.',
+          shortDescription: 'موتور محرک اصلی برای خطوط تولید MIG',
+          description: 'موتور یدکی سازگار با تجهیزات MIG با گارانتی اصالت و تست کارخانه.',
           category: 'motors',
           compatibleProducts: ['1', '2'],
           price: 3500000,
@@ -124,15 +127,26 @@ export class ProductExtensionsService implements OnModuleInit {
           stockQuantity: 24,
           reorderLevel: 5,
           imageUrl: null,
+          gallery: [],
+          brand: 'MIG',
+          oemCode: 'DRV-A-01',
+          weightGrams: 4200,
+          dimensions: '18×12×10 cm',
+          specs: [
+            { key: 'ولتاژ', value: '220', unit: 'V' },
+            { key: 'توان', value: '1.5', unit: 'kW' },
+          ],
           warrantyMonths: 12,
           isActive: true,
         },
         {
           id: randomUUID(),
           partNumber: 'MIG-SP-BATTERY-L',
+          slug: 'mig-sp-battery-l',
           nameEn: 'Lithium Battery Pack',
           nameFa: 'پک باتری لیتیومی',
-          description: 'پک باتری قابل شارژ برای استفاده مداوم.',
+          shortDescription: 'پک باتری قابل شارژ برای استفاده مداوم',
+          description: 'پک باتری لیتیومی با ظرفیت بالا برای نگهداری بدون وقفه تجهیزات.',
           category: 'electrical',
           compatibleProducts: ['1', '2'],
           price: 2500000,
@@ -141,10 +155,29 @@ export class ProductExtensionsService implements OnModuleInit {
           stockQuantity: 15,
           reorderLevel: 5,
           imageUrl: null,
+          gallery: [],
+          brand: 'MIG',
+          oemCode: 'BAT-L-02',
+          weightGrams: 1800,
+          dimensions: '25×12×8 cm',
+          specs: [
+            { key: 'ظرفیت', value: '48', unit: 'Ah' },
+            { key: 'ولتاژ', value: '24', unit: 'V' },
+          ],
           warrantyMonths: 12,
           isActive: true,
         },
       ]);
+    } else {
+      const allParts = await this.spareParts.find();
+      for (const part of allParts) {
+        if (!part.slug?.trim()) {
+          part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(part.partNumber), part.id);
+          if (!Array.isArray(part.gallery)) part.gallery = [];
+          if (!Array.isArray(part.specs)) part.specs = [];
+          await this.spareParts.save(part);
+        }
+      }
     }
   }
 
@@ -327,12 +360,88 @@ export class ProductExtensionsService implements OnModuleInit {
     await this.variants.softRemove(variant);
   }
 
-  findSpareParts(): Promise<SparePartEntity[]> {
-    return this.spareParts.find({ where: { isActive: true }, order: { createdAt: 'ASC' } });
+  private slugifyPartNumber(partNumber: string): string {
+    return partNumber
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9\u0600-\u06FF]+/gi, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 160);
+  }
+
+  private normalizeSpecs(specs: ManageSparePartDto['specs']): SparePartSpec[] {
+    if (!specs?.length) return [];
+    return specs
+      .map((item) => ({
+        key: item.key.trim(),
+        value: item.value.trim(),
+        unit: item.unit?.trim() || undefined,
+      }))
+      .filter((item) => item.key && item.value);
+  }
+
+  private async ensureUniqueSlug(base: string, excludeId?: string): Promise<string> {
+    let slug = base || `part-${Date.now().toString(36)}`;
+    let attempt = 0;
+    while (true) {
+      const candidate = attempt === 0 ? slug : `${slug}-${attempt}`;
+      const existing = await this.spareParts.findOne({ where: { slug: candidate } });
+      if (!existing || existing.id === excludeId) return candidate;
+      attempt += 1;
+    }
+  }
+
+  async findSpareParts(filters?: {
+    q?: string;
+    category?: string;
+    inStock?: boolean;
+    minPrice?: number;
+    maxPrice?: number;
+  }): Promise<SparePartEntity[]> {
+    const qb = this.spareParts
+      .createQueryBuilder('part')
+      .where('part.is_active = :active', { active: true })
+      .orderBy('part.created_at', 'ASC');
+
+    if (filters?.category?.trim()) {
+      qb.andWhere('part.category = :category', { category: filters.category.trim() });
+    }
+    if (filters?.inStock) {
+      qb.andWhere('part.stock_quantity > 0');
+    }
+    if (filters?.minPrice != null && !Number.isNaN(filters.minPrice)) {
+      qb.andWhere('part.price >= :minPrice', { minPrice: filters.minPrice });
+      qb.andWhere('part.price_negotiable = :negFalse', { negFalse: false });
+    }
+    if (filters?.maxPrice != null && !Number.isNaN(filters.maxPrice)) {
+      qb.andWhere('part.price <= :maxPrice', { maxPrice: filters.maxPrice });
+      qb.andWhere('part.price_negotiable = :negFalse2', { negFalse2: false });
+    }
+    if (filters?.q?.trim()) {
+      const q = `%${filters.q.trim()}%`;
+      qb.andWhere(
+        '(part.name_fa LIKE :q OR part.name_en LIKE :q OR part.part_number LIKE :q OR part.oem_code LIKE :q OR part.description LIKE :q)',
+        { q },
+      );
+    }
+
+    return qb.getMany();
   }
 
   findSparePartsForAdmin(): Promise<SparePartEntity[]> {
     return this.spareParts.find({ order: { createdAt: 'DESC' } });
+  }
+
+  async findSparePartPublic(slugOrId: string): Promise<SparePartEntity> {
+    const part = await this.spareParts.findOne({
+      where: [
+        { id: slugOrId, isActive: true },
+        { slug: slugOrId, isActive: true },
+        { partNumber: slugOrId.toUpperCase(), isActive: true },
+      ],
+    });
+    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    return part;
   }
 
   async findSparePartForAdmin(id: string): Promise<SparePartEntity> {
@@ -346,13 +455,21 @@ export class ProductExtensionsService implements OnModuleInit {
     const existing = await this.spareParts.findOne({ where: { partNumber } });
     if (existing) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
 
+    const gallery = normalizeMediaList(dto.gallery);
+    const imageUrl = toRelativeMediaPath(dto.imageUrl) || gallery[0] || null;
+    const slug = await this.ensureUniqueSlug(
+      (dto.slug?.trim() || this.slugifyPartNumber(partNumber)).toLowerCase(),
+    );
+
     return this.spareParts.save(
       this.spareParts.create({
         id: randomUUID(),
         partNumber,
+        slug,
         nameFa: dto.nameFa.trim(),
         nameEn: dto.nameEn.trim(),
         description: dto.description.trim(),
+        shortDescription: dto.shortDescription?.trim() || null,
         category: dto.category.trim(),
         compatibleProducts: (dto.compatibleProducts ?? []).map((id) => id.trim()).filter(Boolean),
         price: dto.price,
@@ -360,7 +477,13 @@ export class ProductExtensionsService implements OnModuleInit {
         currency: 'IRR',
         stockQuantity: dto.stockQuantity ?? 0,
         reorderLevel: dto.reorderLevel ?? 5,
-        imageUrl: toRelativeMediaPath(dto.imageUrl) || null,
+        imageUrl,
+        gallery,
+        brand: dto.brand?.trim() || null,
+        oemCode: dto.oemCode?.trim() || null,
+        weightGrams: dto.weightGrams ?? null,
+        dimensions: dto.dimensions?.trim() || null,
+        specs: this.normalizeSpecs(dto.specs),
         warrantyMonths: dto.warrantyMonths ?? 12,
         isActive: dto.isActive ?? true,
       }),
@@ -376,10 +499,17 @@ export class ProductExtensionsService implements OnModuleInit {
       const duplicate = await this.spareParts.findOne({ where: { partNumber } });
       if (duplicate && duplicate.id !== id) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
       part.partNumber = partNumber;
+      if (dto.slug === undefined && !part.slug) {
+        part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(partNumber), id);
+      }
+    }
+    if (dto.slug !== undefined) {
+      part.slug = await this.ensureUniqueSlug(dto.slug.trim().toLowerCase() || this.slugifyPartNumber(part.partNumber), id);
     }
     if (dto.nameFa !== undefined) part.nameFa = dto.nameFa.trim();
     if (dto.nameEn !== undefined) part.nameEn = dto.nameEn.trim();
     if (dto.description !== undefined) part.description = dto.description.trim();
+    if (dto.shortDescription !== undefined) part.shortDescription = dto.shortDescription.trim() || null;
     if (dto.category !== undefined) part.category = dto.category.trim();
     if (dto.compatibleProducts !== undefined) {
       part.compatibleProducts = dto.compatibleProducts.map((value) => value.trim()).filter(Boolean);
@@ -389,8 +519,20 @@ export class ProductExtensionsService implements OnModuleInit {
     if (dto.stockQuantity !== undefined) part.stockQuantity = dto.stockQuantity;
     if (dto.reorderLevel !== undefined) part.reorderLevel = dto.reorderLevel;
     if (dto.imageUrl !== undefined) part.imageUrl = toRelativeMediaPath(dto.imageUrl) || null;
+    if (dto.gallery !== undefined) {
+      part.gallery = normalizeMediaList(dto.gallery);
+      if (!part.imageUrl && part.gallery[0]) part.imageUrl = part.gallery[0];
+    }
+    if (dto.brand !== undefined) part.brand = dto.brand.trim() || null;
+    if (dto.oemCode !== undefined) part.oemCode = dto.oemCode.trim() || null;
+    if (dto.weightGrams !== undefined) part.weightGrams = dto.weightGrams;
+    if (dto.dimensions !== undefined) part.dimensions = dto.dimensions.trim() || null;
+    if (dto.specs !== undefined) part.specs = this.normalizeSpecs(dto.specs);
     if (dto.warrantyMonths !== undefined) part.warrantyMonths = dto.warrantyMonths;
     if (dto.isActive !== undefined) part.isActive = dto.isActive;
+    if (!part.slug) {
+      part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(part.partNumber), id);
+    }
 
     return this.spareParts.save(part);
   }

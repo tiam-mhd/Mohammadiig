@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useCallback } from 'react';
 import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
 import { formatDate, formatMoney, INVOICE_STATUS } from '@/lib/admin-labels';
@@ -23,7 +24,14 @@ export default function AdminInvoicesPage() {
       columns={[
         {
           header: 'شماره',
-          cell: (item) => <strong className="font-medium text-[var(--ops-ink)]">{item.invoiceNumber}</strong>,
+          cell: (item) => (
+            <Link
+              href={`/admin/invoices/${item.id}`}
+              className="font-medium text-[var(--ops-accent)] hover:underline"
+            >
+              {item.invoiceNumber}
+            </Link>
+          ),
         },
         {
           header: 'مشتری',
