@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 export type AdminFilterOption = { value: string; label: string };
 
@@ -9,9 +10,11 @@ export function useAdminList<T>(
   searchText: (item: T) => string,
   matchFilter?: (item: T, filterKey: string, filterValue: string) => boolean,
 ) {
-  const [query, setQuery] = useState('');
+  const router = useRouter(); const pathname = usePathname(); const searchParams = useSearchParams();
+  const [query, setQueryState] = useState(() => searchParams.get('q') ?? '');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [filters, setFiltersState] = useState<Record<string, string>>(() => Object.fromEntries(Array.from(searchParams.entries()).filter(([key]) => key !== 'q' && key !== 'page')));
+  const setQuery = (value: string) => { setQueryState(value); const next = new URLSearchParams(searchParams.toString()); if (value.trim()) next.set('q', value); else next.delete('q'); next.delete('page'); router.replace(`${pathname}?${next.toString()}`, { scroll: false }); };
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -28,12 +31,11 @@ export function useAdminList<T>(
   }, [items, query, filters, searchText, matchFilter]);
 
   function setFilter(key: string, value: string) {
-    setFilters((current) => ({ ...current, [key]: value }));
+    setFiltersState((current) => ({ ...current, [key]: value })); const next = new URLSearchParams(searchParams.toString()); if (value && value !== 'all') next.set(key, value); else next.delete(key); next.delete('page'); router.replace(`${pathname}?${next.toString()}`, { scroll: false });
   }
 
   function clearFilters() {
-    setFilters({});
-    setQuery('');
+    setFiltersState({}); setQuery('');
   }
 
   const activeFilterCount = Object.values(filters).filter((value) => value && value !== 'all').length;
