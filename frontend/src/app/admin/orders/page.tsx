@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback } from 'react';
 import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
 import { formatMoney, ORDER_STATUS, ORDER_TYPE, PAYMENT_STATUS, labelOf } from '@/lib/admin-labels';
-import { fetchAdminOrders, OrderAdminSummary, updateOrderStatus } from '@/lib/api-client';
+import { fetchAdminOrders, fetchAdminOrdersPage, OrderAdminSummary, updateOrderStatus } from '@/lib/api-client';
 
 const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({ value, label }));
 
@@ -56,6 +56,7 @@ export default function AdminOrdersPage() {
       getStatus={(item) => item.status}
       searchText={searchText}
       fetchItems={fetchAdminOrders}
+      fetchPage={fetchAdminOrdersPage}
       updateStatus={updateOrderStatus}
       cancelStatus="cancelled"
       addHint="سفارش جدید معمولاً با تأیید پیش‌فاکتور توسط مشتری ساخته می‌شود. وضعیت تولید و ارسال را از همین صفحه به‌روز کنید."

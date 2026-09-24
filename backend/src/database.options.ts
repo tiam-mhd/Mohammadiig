@@ -78,6 +78,7 @@ const migrations = [
   PaymentIntegrityAudit1710000023000,
   AuthSessions1710000024000,
   QuotationAcceptance1710000025000,
+  ProductCategoryId1710000026000,
 ];
 
 const entities = [

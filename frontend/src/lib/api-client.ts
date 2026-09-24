@@ -514,6 +514,8 @@ export interface OrderAdminSummary {
 }
 export interface InvoiceAdminSummary { id: string; invoiceNumber: string; customerId: string; orderId: string | null; totalAfterTax: number; paymentStatus: string; dueDate: string; }
 export interface PaymentAdminSummary { id: string; invoiceId: string; orderId: string | null; amount: number; paymentMethod: string; paymentStatus: string; transactionId: string | null; }
+export interface AdminListMeta { page: number; limit: number; total: number; totalPages: number; }
+export interface AdminListResponse<T> { data: T[]; meta: AdminListMeta; }
 export interface ServiceAdminSummary {
   id: string;
   nameFa: string;
@@ -1214,6 +1216,9 @@ async function adminRequest<T>(accessToken: string, path: string, init?: Request
 }
 
 export function fetchAdminCustomers(accessToken: string, status: 'current' | 'deleted' = 'current'): Promise<CustomerAdminSummary[]> { return adminRequest(accessToken, `/customers/admin/all?status=${status}`); }
+export function fetchAdminCustomersPage(accessToken: string, options: { status?: 'current' | 'deleted'; page?: number; limit?: number; search?: string } = {}): Promise<AdminListResponse<CustomerAdminSummary>> {
+  return fetchAdminPage(accessToken, '/customers/admin/all', options);
+}
 
 export function updateCustomerStatus(accessToken: string, id: string, status: { isVerified: boolean; status: import('./customer-status').CustomerStatus; reason?: string }): Promise<CustomerAdminSummary> {
   return adminRequest(accessToken, `/customers/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) });
@@ -1238,6 +1243,18 @@ export async function permanentlyDeleteAdminCustomer(accessToken: string, id: st
 }
 export function fetchAdminQuotations(accessToken: string): Promise<QuotationAdminSummary[]> { return adminRequest(accessToken, '/quotations/admin/all'); }
 export function fetchAdminOrders(accessToken: string): Promise<OrderAdminSummary[]> { return adminRequest(accessToken, '/orders/admin/all'); }
+async function fetchAdminPage<T>(accessToken: string, path: string, options: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc'; status?: string } = {}): Promise<AdminListResponse<T>> {
+  const params = new URLSearchParams({ page: String(options.page ?? 1), limit: String(options.limit ?? 20) });
+  if (options.search?.trim()) params.set('search', options.search.trim());
+  if (options.sort) params.set('sort', options.sort);
+  if (options.order) params.set('order', options.order);
+  if (options.status) params.set('status', options.status);
+  const result = await adminRequest<T[] | AdminListResponse<T>>(accessToken, `${path}?${params.toString()}`);
+  if (Array.isArray(result)) return { data: result, meta: { page: options.page ?? 1, limit: options.limit ?? 20, total: result.length, totalPages: Math.max(1, Math.ceil(result.length / (options.limit ?? 20))) } };
+  return result;
+}
+export function fetchAdminOrdersPage(accessToken: string, options?: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc' }): Promise<AdminListResponse<OrderAdminSummary>> { return fetchAdminPage(accessToken, '/orders/admin/all', options); }
+export function fetchAdminQuotationsPage(accessToken: string, options?: { page?: number; limit?: number; search?: string }): Promise<AdminListResponse<QuotationAdminSummary>> { return fetchAdminPage(accessToken, '/quotations/admin/all', options); }
 export function fetchAdminOrder(accessToken: string, id: string): Promise<OrderDetail> {
   return adminRequest(accessToken, `/orders/admin/${id}`);
 }
@@ -1321,11 +1338,13 @@ export async function deleteAdminPortfolio(accessToken: string, id: string): Pro
 }
 
 export function fetchAdminInvoices(accessToken: string): Promise<InvoiceAdminSummary[]> { return adminRequest(accessToken, '/invoices/admin/all'); }
+export function fetchAdminInvoicesPage(accessToken: string, options?: { page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }): Promise<AdminListResponse<InvoiceAdminSummary>> { return fetchAdminPage(accessToken, '/invoices/admin/all', options); }
 export function fetchAdminInvoice(accessToken: string, id: string): Promise<InvoiceSummary> {
   return adminRequest(accessToken, `/invoices/admin/${id}`);
 }
 export function updateInvoiceStatus(accessToken: string, id: string, status: string): Promise<InvoiceAdminSummary> { return adminRequest(accessToken, `/invoices/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminPayments(accessToken: string): Promise<PaymentAdminSummary[]> { return adminRequest(accessToken, '/payments/admin/all'); }
+export function fetchAdminPaymentsPage(accessToken: string, options?: { page?: number; limit?: number; sort?: string; order?: 'asc' | 'desc' }): Promise<AdminListResponse<PaymentAdminSummary>> { return fetchAdminPage(accessToken, '/payments/admin/all', options); }
 export function updatePaymentStatus(accessToken: string, id: string, status: string): Promise<PaymentAdminSummary> { return adminRequest(accessToken, `/payments/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status }) }); }
 export function fetchAdminServices(accessToken: string): Promise<ServiceAdminSummary[]> {
   return adminRequest(accessToken, '/services/admin/all');
@@ -1666,6 +1685,7 @@ export async function restoreSystemBackup(
 }
 
 export function fetchAdminUsers(accessToken: string): Promise<UserAdminSummary[]> { return adminRequest(accessToken, '/users/admin/all'); }
+export function fetchAdminUsersPage(accessToken: string, options: { page?: number; limit?: number; search?: string } = {}): Promise<AdminListResponse<UserAdminSummary>> { return fetchAdminPage(accessToken, '/users/admin/all', options); }
 export function updateUserRole(accessToken: string, id: string, role: string): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/role`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) }); }
 export function updateUserActive(accessToken: string, id: string, isActive: boolean): Promise<UserAdminSummary> { return adminRequest(accessToken, `/users/${id}/active`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ isActive }) }); }
 

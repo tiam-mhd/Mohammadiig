@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useCallback } from 'react';
 import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
 import { formatDate, formatMoney, INVOICE_STATUS } from '@/lib/admin-labels';
-import { fetchAdminInvoices, InvoiceAdminSummary, updateInvoiceStatus } from '@/lib/api-client';
+import { fetchAdminInvoices, fetchAdminInvoicesPage, InvoiceAdminSummary, updateInvoiceStatus } from '@/lib/api-client';
 
 const statusOptions = Object.entries(INVOICE_STATUS).map(([value, label]) => ({ value, label }));
 
@@ -49,6 +49,7 @@ export default function AdminInvoicesPage() {
       getStatus={(item) => item.paymentStatus}
       searchText={searchText}
       fetchItems={fetchAdminInvoices}
+      fetchPage={fetchAdminInvoicesPage}
       updateStatus={updateInvoiceStatus}
       cancelStatus="cancelled"
       addHint="فاکتور هنگام تبدیل سفارش ساخته می‌شود. وضعیت تسویه را از همین صفحه به‌روز کنید."

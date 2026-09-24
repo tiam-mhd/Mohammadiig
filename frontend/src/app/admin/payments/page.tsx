@@ -3,7 +3,7 @@
 import { useCallback } from 'react';
 import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
 import { formatMoney, labelOf, PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/admin-labels';
-import { fetchAdminPayments, PaymentAdminSummary, updatePaymentStatus } from '@/lib/api-client';
+import { fetchAdminPayments, fetchAdminPaymentsPage, PaymentAdminSummary, updatePaymentStatus } from '@/lib/api-client';
 
 const statusOptions = Object.entries(PAYMENT_STATUS)
   .filter(([value]) => ['pending', 'processing', 'completed', 'failed', 'cancelled'].includes(value))
@@ -50,6 +50,7 @@ export default function AdminPaymentsPage() {
       getStatus={(item) => item.paymentStatus}
       searchText={searchText}
       fetchItems={fetchAdminPayments}
+      fetchPage={fetchAdminPaymentsPage}
       updateStatus={updatePaymentStatus}
       cancelStatus="cancelled"
       addHint="پرداخت از پنل مشتری روی فاکتور ثبت می‌شود. تأیید یا رد پرداخت را از این فهرست انجام دهید."

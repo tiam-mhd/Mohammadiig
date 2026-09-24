@@ -14,7 +14,7 @@ import { CUSTOMER_STATUS_DESCRIPTIONS, CUSTOMER_STATUS_LABELS, CustomerStatus } 
 import {
   CustomerAdminSummary,
   deleteAdminCustomer,
-  fetchAdminCustomers,
+  fetchAdminCustomersPage,
   updateCustomerStatus,
   permanentlyDeleteAdminCustomer,
 } from '@/lib/api-client';
@@ -38,6 +38,8 @@ export default function AdminCustomersPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
 
   const searchText = useCallback(
     (item: CustomerAdminSummary) =>
@@ -54,8 +56,8 @@ export default function AdminCustomersPage() {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
-    fetchAdminCustomers(token, status)
-      .then((items) => { if (!cancelled) setCustomers(items); })
+    fetchAdminCustomersPage(token, { status, page, limit: 20, search: list.query })
+      .then((result) => { if (!cancelled) { setCustomers(result.data); setMeta(result.meta); } })
       .catch(() => {
         if (!cancelled) {
           setLoadError(true);
@@ -64,7 +66,8 @@ export default function AdminCustomersPage() {
       })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [token, status]);
+  }, [token, status, page, list.query]);
+  useEffect(() => setPage(1), [status, list.query, JSON.stringify(list.filters)]);
 
   async function saveEdit(event: FormEvent) {
     event.preventDefault();
@@ -181,7 +184,7 @@ export default function AdminCustomersPage() {
 
       <DataTable
         headers={['شرکت', 'تماس', 'کشور', 'شرایط پرداخت', 'تاریخ', 'وضعیت', 'عملیات']}
-        isEmpty={list.filtered.length === 0}
+        isEmpty={list.filtered.length === 0 && !loading}
         emptyText={loading ? 'در حال دریافت مشتریان…' : loadError ? 'دریافت مشتریان انجام نشد. صفحه را دوباره بارگذاری کنید.' : 'مشتری‌ای با این جستجو پیدا نشد.'}
       >
         {list.filtered.map((customer) => (
@@ -244,6 +247,7 @@ export default function AdminCustomersPage() {
           </DataRow>
         ))}
       </DataTable>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {meta.totalPages.toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
 
       <AdminModal
         open={Boolean(editing)}

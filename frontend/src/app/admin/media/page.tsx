@@ -113,11 +113,10 @@ export default function AdminMediaLibraryPage() {
   const page = serverMeta.page;
   const pageCount = serverMeta.totalPages;
   const visibleMedia = list.filtered;
-  useEffect(() => { if (serverMeta.page !== 1) setServerMeta((m) => ({ ...m, page: 1 })); }, [list.query, folderFilter, statusFilter, kindFilter]);
-
   const statusFilter = list.filters.status || 'active';
   const kindFilter = list.filters.kind || 'all';
   const folderFilter = list.filters.folder || '';
+  useEffect(() => { if (serverMeta.page !== 1) setServerMeta((m) => ({ ...m, page: 1 })); }, [list.query, folderFilter, statusFilter, kindFilter, serverMeta.page]);
 
   const load = useCallback(async () => {
     if (!token) return;

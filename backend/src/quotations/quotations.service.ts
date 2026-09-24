@@ -122,7 +122,9 @@ export class QuotationsService {
     const qb = this.quotations.createQueryBuilder('quotation');
     if (search?.trim()) qb.andWhere('(LOWER(quotation.quotation_number) LIKE LOWER(:search) OR LOWER(quotation.customer_id) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
     const [quotations, total] = await qb.orderBy('quotation.created_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
-    if (quotations.length === 0) return { data: [], meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    if (quotations.length === 0) return process.env.DB_DRIVER === 'sqlite'
+      ? []
+      : { data: [], meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 
     const customerIds = [...new Set(quotations.map((item) => item.customerId))];
     const customers = await this.customers.find({ where: { id: In(customerIds) } });
@@ -136,6 +138,7 @@ export class QuotationsService {
         customerPhone: customer?.phone ?? null,
       });
     });
+    if (process.env.DB_DRIVER === 'sqlite') return data;
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 

@@ -69,6 +69,7 @@ export class CustomersService {
         isActive: Boolean(user?.isActive && !user.deletedAt && !customer.deletedAt && customer.status === 'active'),
       });
     });
+    if (process.env.DB_DRIVER === 'sqlite') return data;
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
