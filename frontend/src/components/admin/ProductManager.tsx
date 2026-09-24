@@ -43,6 +43,8 @@ export function ProductManager() {
   const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>('active');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const categoryOptions = useMemo(
     () => categories.map((category) => ({ value: category.id, label: category.nameFa })),
@@ -70,6 +72,9 @@ export function ProductManager() {
     [categories],
   );
   const list = useAdminList(products, searchText, matchFilter);
+  const pageCount = Math.max(1, Math.ceil(list.filtered.length / pageSize));
+  const visibleProducts = list.filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters), statusFilter]);
   const inTrash = (list.filters.status ?? statusFilter) === 'trash';
 
   const reloadProducts = useCallback(
@@ -177,7 +182,7 @@ export function ProductManager() {
         isEmpty={list.filtered.length === 0}
         emptyText={inTrash ? 'سطل زباله خالی است.' : 'محصولی با این جستجو پیدا نشد.'}
       >
-        {list.filtered.map((product) => {
+        {visibleProducts.map((product) => {
           const deleted = Boolean(product.deletedAt);
           return (
             <DataRow key={product.id}>
@@ -239,6 +244,7 @@ export function ProductManager() {
           );
         })}
       </DataTable>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>قبلی</button><span>صفحه {page.toLocaleString('fa-IR')} از {pageCount.toLocaleString('fa-IR')} · {list.total.toLocaleString('fa-IR')} مورد</span><button className="admin-button" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>بعدی</button></div>
 
       <AdminConfirmModal
         open={Boolean(pendingAction)}
