@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { randomUUID } from 'node:crypto';
 import { In, Repository } from 'typeorm';
 import { ProductEntity } from './product.entity';
+import { AuditActor, AuditService } from '../audit/audit.service';
 import { ProductVariantEntity } from './product-variant.entity';
 import { ProductSpecificationEntity } from './product-specification.entity';
 import { SparePartEntity } from './spare-part.entity';
@@ -306,13 +307,13 @@ export class ProductExtensionsService implements OnModuleInit {
     return this.findSpecifications(targetProductId);
   }
 
-  async createVariant(productId: string, dto: ManageProductVariantDto): Promise<ProductVariantEntity> {
+  async createVariant(productId: string, dto: ManageProductVariantDto, actor?: AuditActor): Promise<ProductVariantEntity> {
     const product = await this.assertProductExists(productId);
     const skuVariant = dto.skuVariant.trim().toUpperCase();
     const existing = await this.variants.findOne({ where: { skuVariant }, withDeleted: true });
     if (existing) throw new ConflictException('کد مدل از قبل وجود دارد.');
 
-    return this.variants.save(
+    const saved = await this.variants.save(
       this.variants.create({
         id: randomUUID(),
         productId,
@@ -328,12 +329,14 @@ export class ProductExtensionsService implements OnModuleInit {
         isActive: dto.isActive ?? true,
       }),
     );
+    if (actor) await AuditService.record(this.variants.manager, actor, 'product.variant_created', 'product_variant', saved.id, null, { priceBase: saved.priceBase, priceAdjustment: saved.priceAdjustment });
+    return saved;
   }
 
   async updateVariant(
     productId: string,
     variantId: string,
-    dto: ManageProductVariantDto,
+    dto: ManageProductVariantDto, actor?: AuditActor,
   ): Promise<ProductVariantEntity> {
     const variant = await this.variants.findOne({ where: { id: variantId, productId } });
     if (!variant) throw new NotFoundException('مدل پیدا نشد.');
@@ -346,12 +349,15 @@ export class ProductExtensionsService implements OnModuleInit {
     variant.variantNameFa = dto.variantNameFa.trim();
     variant.variantNameEn = dto.variantNameEn.trim();
     variant.variantCode = dto.variantCode?.trim() || null;
+    const previousPrice = variant.priceBase;
     if (dto.priceBase !== undefined) variant.priceBase = dto.priceBase;
     if (dto.priceAdjustment !== undefined) variant.priceAdjustment = dto.priceAdjustment;
     if (dto.stockQuantity !== undefined) variant.stockQuantity = dto.stockQuantity;
     if (dto.isActive !== undefined) variant.isActive = dto.isActive;
 
-    return this.variants.save(variant);
+    const saved = await this.variants.save(variant);
+    if (actor && (previousPrice !== saved.priceBase)) await AuditService.record(this.variants.manager, actor, 'product.variant_price_changed', 'product_variant', variantId, { priceBase: previousPrice }, { priceBase: saved.priceBase });
+    return saved;
   }
 
   async removeVariant(productId: string, variantId: string): Promise<void> {

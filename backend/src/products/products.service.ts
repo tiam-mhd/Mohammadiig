@@ -8,6 +8,8 @@ import { CategoriesService } from './categories.service';
 import { ManageProductDto } from './dto/manage-product.dto';
 import { randomUUID } from 'node:crypto';
 import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
+import { DataSource } from 'typeorm';
+import { AuditActor, AuditService } from '../audit/audit.service';
 
 const imageBase = 'https://images.unsplash.com';
 
@@ -58,6 +60,7 @@ export class ProductsService implements OnModuleInit {
   constructor(
     @InjectRepository(ProductEntity) private readonly repository: Repository<ProductEntity>,
     private readonly categoriesService: CategoriesService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -134,7 +137,7 @@ export class ProductsService implements OnModuleInit {
     return this.toProduct(entity);
   }
 
-  async create(dto: ManageProductDto): Promise<Product> {
+  async create(dto: ManageProductDto, actor?: AuditActor): Promise<Product> {
     const slug = dto.slug.trim();
     const nameFa = dto.nameFa.trim();
     const sku = await this.resolveUniqueSku(dto.sku, slug);
@@ -162,10 +165,11 @@ export class ProductsService implements OnModuleInit {
       isActive: dto.isActive ?? false,
       isFeatured: dto.isFeatured ?? false,
     });
+    if (actor) await AuditService.record(this.dataSource.manager, actor, 'product.created', 'product', entity.id, null, { priceBase: entity.priceBase, categoryId: entity.categoryId });
     return this.toProduct(entity);
   }
 
-  async update(id: string, dto: Partial<ManageProductDto>): Promise<Product> {
+  async update(id: string, dto: Partial<ManageProductDto>, actor?: AuditActor): Promise<Product> {
     const entity = await this.repository.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('Product not found');
 
@@ -192,6 +196,7 @@ export class ProductsService implements OnModuleInit {
       if (categoryId && !(await this.categoriesService.findEntityById(categoryId))) throw new ConflictException('دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.');
       entity.categoryId = categoryId || null;
     }
+    const previousPrice = entity.priceBase;
     if (dto.priceBase !== undefined) entity.priceBase = dto.priceBase;
     if (dto.priceNegotiable !== undefined) entity.priceNegotiable = dto.priceNegotiable;
     if (dto.images !== undefined) {
@@ -206,7 +211,9 @@ export class ProductsService implements OnModuleInit {
     if (dto.isActive !== undefined) entity.isActive = dto.isActive;
     if (dto.isFeatured !== undefined) entity.isFeatured = dto.isFeatured;
 
-    return this.toProduct(await this.repository.save(entity));
+    const saved = await this.repository.save(entity);
+    if (actor && previousPrice !== saved.priceBase) await AuditService.record(this.dataSource.manager, actor, 'product.price_changed', 'product', id, { priceBase: previousPrice }, { priceBase: saved.priceBase });
+    return this.toProduct(saved);
   }
 
   async remove(id: string): Promise<void> {

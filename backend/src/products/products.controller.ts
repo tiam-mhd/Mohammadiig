@@ -1,4 +1,6 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Request } from 'express';
+import { AuthUser } from '../auth/jwt.strategy';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ListProductsDto } from './dto/list-products.dto';
 import { Product, ProductListResponse } from './product.types';
@@ -26,8 +28,8 @@ export class ProductsController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  create(@Body() dto: ManageProductDto): Promise<Product> {
-    return this.productsService.create(dto);
+  create(@Req() req: Request & { user: AuthUser }, @Body() dto: ManageProductDto): Promise<Product> {
+    return this.productsService.create(dto, { userId: req.user.userId, ipAddress: req.ip, userAgent: req.get('user-agent') });
   }
 
   @Get('admin/all')
@@ -68,8 +70,8 @@ export class ProductsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  update(@Param('id') id: string, @Body() dto: ManageProductDto): Promise<Product> {
-    return this.productsService.update(id, dto);
+  update(@Req() req: Request & { user: AuthUser }, @Param('id') id: string, @Body() dto: ManageProductDto): Promise<Product> {
+    return this.productsService.update(id, dto, { userId: req.user.userId, ipAddress: req.ip, userAgent: req.get('user-agent') });
   }
 
   @Delete(':id/purge')
@@ -141,8 +143,8 @@ export class ProductsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  createVariant(@Param('id') id: string, @Body() dto: ManageProductVariantDto) {
-    return this.extensionsService.createVariant(id, dto);
+  createVariant(@Req() req: Request & { user: AuthUser }, @Param('id') id: string, @Body() dto: ManageProductVariantDto) {
+    return this.extensionsService.createVariant(id, dto, { userId: req.user.userId, ipAddress: req.ip, userAgent: req.get('user-agent') });
   }
 
   @Patch(':id/variants/:variantId')
@@ -150,11 +152,11 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   updateVariant(
-    @Param('id') id: string,
+    @Req() req: Request & { user: AuthUser }, @Param('id') id: string,
     @Param('variantId') variantId: string,
     @Body() dto: ManageProductVariantDto,
   ) {
-    return this.extensionsService.updateVariant(id, variantId, dto);
+    return this.extensionsService.updateVariant(id, variantId, dto, { userId: req.user.userId, ipAddress: req.ip, userAgent: req.get('user-agent') });
   }
 
   @Delete(':id/variants/:variantId')
