@@ -108,8 +108,9 @@ export class PaymentsService {
     return { payment, invoice: refreshed! };
   }
 
-  async findAll(page = 1, limit = 20) {
-    const [data, total] = await this.payments.findAndCount({ order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+  async findAll(page = 1, limit = 20, sort = 'createdAt', order: 'asc'|'desc' = 'desc') {
+    const sortMap: Record<string, string> = { createdAt: 'createdAt', amount: 'amount', paymentStatus: 'paymentStatus' };
+    const [data, total] = await this.payments.findAndCount({ order: { [sortMap[sort] ?? 'createdAt']: order.toUpperCase() as 'ASC'|'DESC' }, skip: (page - 1) * limit, take: limit });
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 

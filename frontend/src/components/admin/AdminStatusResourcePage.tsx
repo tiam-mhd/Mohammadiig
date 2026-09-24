@@ -56,6 +56,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
   const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -71,7 +72,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
 
   useEffect(() => {
     if (!token) return;
-    fetchItems(token).then(setItems).catch(() => adminToast.error(`دریافت ${resourceLabel} انجام نشد.`));
+    setLoadError(false); fetchItems(token).then(setItems).catch(() => { setLoadError(true); adminToast.error(`دریافت ${resourceLabel} انجام نشد.`); });
   }, [token, fetchItems, resourceLabel]);
 
   function openEdit(item: T) {
@@ -132,6 +133,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
         ) : null}
       </AdminToolbar>
 
+      {loadError ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">دریافت {resourceLabel} انجام نشد. <button className="mr-2 underline" onClick={() => token && fetchItems(token).then(setItems).then(() => setLoadError(false)).catch(() => undefined)}>تلاش دوباره</button></div> : null}
       <DataTable
         headers={[...headers, 'وضعیت', 'عملیات']}
         isEmpty={list.filtered.length === 0}

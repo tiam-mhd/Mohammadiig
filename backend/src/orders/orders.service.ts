@@ -404,8 +404,9 @@ export class OrdersService {
     return Object.assign(order, { items, invoice });
   }
 
-  async findAll(page = 1, limit = 20) {
-    const [data, total] = await this.orders.findAndCount({ order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+  async findAll(page = 1, limit = 20, sort = 'createdAt', order: 'asc'|'desc' = 'desc') {
+    const sortMap: Record<string, string> = { createdAt: 'createdAt', orderNumber: 'orderNumber', totalAmount: 'totalAmount', status: 'status' };
+    const [data, total] = await this.orders.findAndCount({ order: { [sortMap[sort] ?? 'createdAt']: order.toUpperCase() as 'ASC'|'DESC' }, skip: (page - 1) * limit, take: limit });
     return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 

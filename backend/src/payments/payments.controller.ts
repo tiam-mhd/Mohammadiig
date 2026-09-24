@@ -46,7 +46,7 @@ export class PaymentsController {
   @Roles('admin')
   @ApiOperation({ summary: 'List payments for operations staff' })
   all(@Query() query: PaginationQueryDto) {
-    return this.paymentsService.findAll(query.page, query.limit);
+    return this.paymentsService.findAll(query.page, query.limit, query.sort, query.order);
   }
 
   @Patch('admin/:id/status')

@@ -54,7 +54,7 @@ export class OrdersController {
   @Roles('admin')
   @ApiOperation({ summary: 'List orders for operations staff' })
   all(@Query() query: PaginationQueryDto) {
-    return this.ordersService.findAll(query.page, query.limit);
+    return this.ordersService.findAll(query.page, query.limit, query.sort, query.order);
   }
 
   @Get('admin/detailed')

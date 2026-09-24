@@ -40,7 +40,7 @@ export class InvoicesController {
   @Roles('admin')
   @ApiOperation({ summary: 'List invoices for operations staff' })
   all(@Query() query: PaginationQueryDto) {
-    return this.invoicesService.findAll(query.page, query.limit);
+    return this.invoicesService.findAll(query.page, query.limit, query.sort, query.order);
   }
 
   @Get('admin/:id')
