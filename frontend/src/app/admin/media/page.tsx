@@ -109,6 +109,11 @@ export default function AdminMediaLibraryPage() {
     return true;
   }, []);
   const list = useAdminList(items, searchText, matchFilter);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
+  const pageCount = Math.max(1, Math.ceil(list.filtered.length / pageSize));
+  const visibleMedia = list.filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
 
   const statusFilter = list.filters.status || 'active';
   const kindFilter = list.filters.kind || 'all';
@@ -509,7 +514,7 @@ export default function AdminMediaLibraryPage() {
             <p className="media-picker__empty">هنوز فایلی در کتابخانه نیست.</p>
           ) : null}
 
-          {list.filtered.map((item) => {
+          {visibleMedia.map((item) => {
             const src = resolveMediaUrl(item.absoluteUrl || item.url);
             const video = isVideoMedia(item.mimeType);
             return (
@@ -584,6 +589,7 @@ export default function AdminMediaLibraryPage() {
           })}
         </div>
       </section>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>قبلی</button><span>صفحه {page.toLocaleString('fa-IR')} از {pageCount.toLocaleString('fa-IR')} · {list.total.toLocaleString('fa-IR')} مورد</span><button className="admin-button" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>بعدی</button></div>
 
       {previewItem ? (
         <div
