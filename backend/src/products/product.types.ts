@@ -10,6 +10,7 @@ export interface Product {
   priceNegotiable: boolean;
   currency: 'IRR';
   category: string;
+  categoryId?: string | null;
   /** Primary image (first gallery item) for cards/listings. */
   image: string | null;
   /** Full product image gallery. */

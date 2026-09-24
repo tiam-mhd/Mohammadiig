@@ -44,6 +44,7 @@ import { CustomerLifecycle1710000021000 } from './database/migrations/1710000021
 import { UniqueQuotationOrder1710000022000 } from './database/migrations/1710000022000-unique-quotation-order';
 import { PaymentIntegrityAudit1710000023000 } from './database/migrations/1710000023000-payment-integrity-audit';
 import { AuditEntity } from './audit/audit.entity';
+import { ProductCategoryId1710000026000 } from './database/migrations/1710000026000-product-category-id';
 import { SessionEntity } from './auth/session.entity';
 import { AuthSessions1710000024000 } from './database/migrations/1710000024000-auth-sessions';
 import { QuotationAcceptance1710000025000 } from './database/migrations/1710000025000-quotation-acceptance';
@@ -81,6 +82,7 @@ const migrations = [
 
 const entities = [
   AuditEntity,
+  ProductCategoryId1710000026000,
   SessionEntity,
   ProductEntity,
   CategoryEntity,

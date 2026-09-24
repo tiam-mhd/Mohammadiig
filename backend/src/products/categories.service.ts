@@ -73,6 +73,10 @@ export class CategoriesService {
     return categories.map((category) => this.toDto(category));
   }
 
+  async findEntityById(id: string): Promise<CategoryEntity | null> {
+    return this.repository.findOne({ where: { id, isActive: true } });
+  }
+
   async findAllForAdmin(): Promise<ProductCategory[]> {
     const categories = await this.repository.find({
       order: { displayOrder: 'ASC', createdAt: 'DESC' },

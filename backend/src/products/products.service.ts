@@ -92,7 +92,7 @@ export class ProductsService implements OnModuleInit {
       .andWhere('product.deleted_at IS NULL');
 
     if (query.category) {
-      queryBuilder.andWhere('product.category = :category', { category: query.category });
+      queryBuilder.andWhere('(product.category_id = :category OR product.category = :legacyCategory)', { category: query.category, legacyCategory: query.category.toUpperCase() });
     }
 
     const [entities, total] = await queryBuilder
@@ -139,6 +139,8 @@ export class ProductsService implements OnModuleInit {
     const nameFa = dto.nameFa.trim();
     const sku = await this.resolveUniqueSku(dto.sku, slug);
     await this.assertUniqueIdentifiers(slug, sku);
+    const categoryId = dto.categoryId?.trim() || null;
+    if (categoryId && !(await this.categoriesService.findEntityById(categoryId))) throw new ConflictException('دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.');
 
     const images = this.normalizeImages(dto.images, dto.thumbnailImageUrl);
     const entity = await this.repository.save({
@@ -154,6 +156,7 @@ export class ProductsService implements OnModuleInit {
       priceNegotiable: dto.priceNegotiable ?? false,
       currency: 'IRR',
       category: (dto.category?.trim() || 'uncategorized').slice(0, 40),
+      categoryId,
       gallery: images,
       thumbnailImageUrl: images[0] ?? null,
       isActive: dto.isActive ?? false,
@@ -183,6 +186,11 @@ export class ProductsService implements OnModuleInit {
     if (dto.descriptionLongFa !== undefined) entity.descriptionLongFa = dto.descriptionLongFa.trim() || null;
     if (dto.category !== undefined) {
       entity.category = (dto.category.trim() || 'uncategorized').slice(0, 40);
+    }
+    if (dto.categoryId !== undefined) {
+      const categoryId = dto.categoryId.trim();
+      if (categoryId && !(await this.categoriesService.findEntityById(categoryId))) throw new ConflictException('دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.');
+      entity.categoryId = categoryId || null;
     }
     if (dto.priceBase !== undefined) entity.priceBase = dto.priceBase;
     if (dto.priceNegotiable !== undefined) entity.priceNegotiable = dto.priceNegotiable;
@@ -311,6 +319,7 @@ export class ProductsService implements OnModuleInit {
       priceNegotiable: Boolean(entity.priceNegotiable),
       currency: entity.currency,
       category: entity.category,
+      categoryId: entity.categoryId,
       image: images[0] ?? null,
       images,
       isActive: entity.isActive,

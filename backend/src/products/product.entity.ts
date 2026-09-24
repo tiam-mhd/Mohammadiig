@@ -46,6 +46,9 @@ export class ProductEntity {
   @Column({ type: 'varchar', length: 40 })
   category!: string;
 
+  @Column({ name: 'category_id', type: 'varchar', length: 100, nullable: true })
+  categoryId!: string | null;
+
   @Column({ name: 'thumbnail_image_url', type: 'varchar', length: 500, nullable: true })
   thumbnailImageUrl!: string | null;
 

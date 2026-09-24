@@ -48,6 +48,10 @@ export class ManageProductDto {
   @Length(0, 40)
   category?: string;
 
+  @ApiPropertyOptional({ description: 'شناسه معتبر دسته‌بندی' })
+  @IsOptional() @IsString() @Length(1, 100)
+  categoryId?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @Type(() => Number)
