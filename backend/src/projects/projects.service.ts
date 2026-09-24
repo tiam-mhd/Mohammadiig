@@ -85,7 +85,7 @@ export class ProjectsService implements OnModuleInit {
     return project;
   }
 
-  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.projects.findAndCount({ order: { createdAt: 'DESC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
+  async findAllForAdmin(page = 1, limit = 20, search = '', sort = 'createdAt', order: 'asc'|'desc' = 'desc') { const qb = this.projects.createQueryBuilder('project'); if (search.trim()) qb.where('(LOWER(project.project_name) LIKE LOWER(:search) OR LOWER(project.slug) LIKE LOWER(:search))', { search: `%${search.trim()}%` }); const sortMap: Record<string,string> = { createdAt:'createdAt', projectName:'projectName' }; const [data,total] = await qb.orderBy(`project.${sortMap[sort] ?? 'createdAt'}`, order.toUpperCase() as 'ASC'|'DESC').skip((page-1)*limit).take(limit).getManyAndCount(); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async create(dto: ManageOpsProjectDto, user?: AuthUser): Promise<ProjectEntity> {

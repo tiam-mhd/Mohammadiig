@@ -95,7 +95,7 @@ export class ServicesService implements OnModuleInit {
     return this.services.find({ where: { isActive: true }, order: { createdAt: 'ASC' } });
   }
 
-  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.services.findAndCount({ order: { createdAt: 'ASC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
+  async findAllForAdmin(page = 1, limit = 20, search = '', sort = 'createdAt', order: 'asc'|'desc' = 'asc') { const qb = this.services.createQueryBuilder('service'); if (search.trim()) qb.where('(LOWER(service.name_fa) LIKE LOWER(:search) OR LOWER(service.name_en) LIKE LOWER(:search))', { search: `%${search.trim()}%` }); const sortMap: Record<string,string> = { createdAt:'createdAt', nameFa:'nameFa' }; const [data,total] = await qb.orderBy(`service.${sortMap[sort] ?? 'createdAt'}`, order.toUpperCase() as 'ASC'|'DESC').skip((page-1)*limit).take(limit).getManyAndCount(); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async findOneForAdmin(id: string): Promise<ServiceEntity> {

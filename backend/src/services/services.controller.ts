@@ -25,7 +25,7 @@ export class ServicesController {
   @Roles('admin')
   @ApiOperation({ summary: 'List services for admin' })
   adminAll(@Query() query: PaginationQueryDto) {
-    return this.servicesService.findAllForAdmin(query.page, query.limit);
+    return this.servicesService.findAllForAdmin(query.page, query.limit, query.search, query.sort, query.order);
   }
 
   @Get('admin/:id')

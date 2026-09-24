@@ -25,7 +25,7 @@ export class AttachmentsService {
     );
   }
   findByOwner(ownerType: string, ownerId: string): Promise<AttachmentEntity[]> { return this.attachments.find({ where: { ownerType: ownerType as AttachmentEntity['ownerType'], ownerId } }); }
-  async findAll(page = 1, limit = 20) { const [data,total] = await this.attachments.findAndCount({ order: { uploadedAt: 'DESC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } }; }
+  async findAll(page = 1, limit = 20, search = '') { const qb = this.attachments.createQueryBuilder('attachment'); if (search.trim()) qb.where('(LOWER(attachment.file_name) LIKE LOWER(:search) OR LOWER(attachment.file_type) LIKE LOWER(:search))', { search: `%${search.trim()}%` }); const [data,total] = await qb.orderBy('attachment.uploaded_at','DESC').skip((page-1)*limit).take(limit).getManyAndCount(); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } }; }
   async remove(id: string): Promise<void> {
     const attachment = await this.attachments.findOne({ where: { id } });
     if (!attachment) throw new NotFoundException('فایل پیدا نشد');

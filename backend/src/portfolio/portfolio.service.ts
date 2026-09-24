@@ -77,7 +77,7 @@ export class PortfolioService implements OnModuleInit {
     return item;
   }
 
-  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.repository.findAndCount({ order: { displayOrder: 'ASC', createdAt: 'DESC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
+  async findAllForAdmin(page = 1, limit = 20, search = '', sort = 'createdAt', order: 'asc'|'desc' = 'desc') { const qb = this.repository.createQueryBuilder('portfolio'); if (search.trim()) qb.where('(LOWER(portfolio.title_fa) LIKE LOWER(:search) OR LOWER(portfolio.slug) LIKE LOWER(:search))', { search: `%${search.trim()}%` }); const sortMap: Record<string,string> = { createdAt:'createdAt', displayOrder:'displayOrder', titleFa:'titleFa' }; const [data,total] = await qb.orderBy(`portfolio.${sortMap[sort] ?? 'createdAt'}`, order.toUpperCase() as 'ASC'|'DESC').skip((page-1)*limit).take(limit).getManyAndCount(); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async findOneForAdmin(id: string): Promise<PortfolioWorkEntity> {

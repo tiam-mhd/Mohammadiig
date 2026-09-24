@@ -25,7 +25,7 @@ export class PortfolioController {
   @Roles('admin')
   @ApiOperation({ summary: 'List all portfolio works for admin' })
   adminAll(@Query() query: PaginationQueryDto) {
-    return this.portfolioService.findAllForAdmin(query.page, query.limit);
+    return this.portfolioService.findAllForAdmin(query.page, query.limit, query.search, query.sort, query.order);
   }
 
   @Get('admin/:id')

@@ -19,7 +19,7 @@ export class AttachmentsController {
   constructor(private readonly attachmentsService: AttachmentsService) {}
   @Post() @ApiOperation({ summary: 'Register an uploaded attachment' }) create(@Req() request: AuthenticatedRequest, @Body() dto: CreateAttachmentDto) { return this.attachmentsService.create(request.user, dto); }
   @Get() @ApiOperation({ summary: 'List attachments by owner' }) findByOwner(@Query('ownerType') ownerType: string, @Query('ownerId') ownerId: string) { return this.attachmentsService.findByOwner(ownerType, ownerId); }
-  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List attachments for admin' }) all(@Query() query: PaginationQueryDto) { return this.attachmentsService.findAll(query.page, query.limit); }
+  @Get('admin/all') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'List attachments for admin' }) all(@Query() query: PaginationQueryDto) { return this.attachmentsService.findAll(query.page, query.limit, query.search); }
   @Delete('admin/:id') @UseGuards(RolesGuard) @Roles('admin') @ApiOperation({ summary: 'Delete attachment record' })
   async remove(@Param('id') id: string): Promise<{ ok: true }> {
     await this.attachmentsService.remove(id);

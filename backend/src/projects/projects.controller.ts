@@ -29,7 +29,7 @@ export class ProjectsController {
   @Roles('admin')
   @ApiOperation({ summary: 'List all ops projects for admin' })
   adminAll(@Query() query: PaginationQueryDto) {
-    return this.projectsService.findAllForAdmin(query.page, query.limit);
+    return this.projectsService.findAllForAdmin(query.page, query.limit, query.search, query.sort, query.order);
   }
 
   @Get(':slug')
