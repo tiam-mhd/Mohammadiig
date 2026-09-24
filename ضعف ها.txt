@@ -301,7 +301,7 @@ expired
 
 # بخش پنجم: Pagination و عملکرد API
 
-## ۱۵. اضافه کردن Pagination به APIهای مدیریتی
+## ✅ ۱۵. اضافه کردن Pagination به APIهای مدیریتی
 
 برای این APIها Pagination، Search، Filter و Sort اضافه کن:
 
@@ -340,7 +340,7 @@ expired
 * Queryهای سنگین بدون Pagination اجرا نشوند.
 * Indexهای لازم ایجاد شوند.
 
-## ۱۶. اصلاح Frontend پنل مدیریت
+## ✅ ۱۶. اصلاح Frontend پنل مدیریت
 
 * Pagination واقعی از API استفاده شود.
 * فیلترها به Query String متصل شوند.
