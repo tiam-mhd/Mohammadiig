@@ -167,6 +167,7 @@ export class PaymentsService {
         if (order) {
           const previous = order.paymentStatus;
           order.paymentStatus = paid >= invoice.totalAfterTax ? 'paid' : paid > 0 ? 'partially_paid' : 'unpaid';
+          if (paid >= invoice.totalAfterTax && order.status === 'pending') order.status = 'processing';
           await orders.save(order);
           await AuditService.record(manager, actor, 'order.payment_changed', 'order', order.id,
             { paymentStatus: previous }, { paymentStatus: order.paymentStatus });
