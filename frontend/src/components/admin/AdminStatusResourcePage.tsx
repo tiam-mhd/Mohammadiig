@@ -57,6 +57,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [sort, setSort] = useState<'newest' | 'oldest' | 'az'>('newest');
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -67,7 +68,8 @@ export function AdminStatusResourcePage<T extends { id: string }>({
   );
   const list = useAdminList(items, search, matchFilter);
   const pageCount = Math.max(1, Math.ceil(list.filtered.length / pageSize));
-  const visibleItems = list.filtered.slice((page - 1) * pageSize, page * pageSize);
+  const sortedItems = [...list.filtered].sort((a, b) => { if (sort === 'az') return searchText(a).localeCompare(searchText(b), 'fa'); const av = (a as T & { createdAt?: string }).createdAt ?? ''; const bv = (b as T & { createdAt?: string }).createdAt ?? ''; return sort === 'newest' ? bv.localeCompare(av) : av.localeCompare(bv); });
+  const visibleItems = sortedItems.slice((page - 1) * pageSize, page * pageSize);
   useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
 
   useEffect(() => {
@@ -132,6 +134,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
           />
         ) : null}
       </AdminToolbar>
+      <div className="mb-3 flex justify-end"><label className="flex items-center gap-2 text-sm text-[var(--ops-muted)]">مرتب‌سازی<select className="admin-select" value={sort} onChange={(e) => { const value = e.target.value as typeof sort; setSort(value); setPage(1); }}><option value="newest">جدیدترین</option><option value="oldest">قدیمی‌ترین</option><option value="az">الفبایی</option></select></label></div>
 
       {loadError ? <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">دریافت {resourceLabel} انجام نشد. <button className="mr-2 underline" onClick={() => token && fetchItems(token).then(setItems).then(() => setLoadError(false)).catch(() => undefined)}>تلاش دوباره</button></div> : null}
       <DataTable
