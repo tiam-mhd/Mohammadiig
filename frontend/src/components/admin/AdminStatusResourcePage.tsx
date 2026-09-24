@@ -56,6 +56,8 @@ export function AdminStatusResourcePage<T extends { id: string }>({
   const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const search = searchText;
   const matchFilter = useCallback(
@@ -63,6 +65,9 @@ export function AdminStatusResourcePage<T extends { id: string }>({
     [getStatus],
   );
   const list = useAdminList(items, search, matchFilter);
+  const pageCount = Math.max(1, Math.ceil(list.filtered.length / pageSize));
+  const visibleItems = list.filtered.slice((page - 1) * pageSize, page * pageSize);
+  useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
 
   useEffect(() => {
     if (!token) return;
@@ -132,7 +137,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
         isEmpty={list.filtered.length === 0}
         emptyText={`${resourceLabel}ی با این جستجو پیدا نشد.`}
       >
-        {list.filtered.map((item) => (
+        {visibleItems.map((item) => (
           <DataRow key={item.id}>
             {columns.map((column) => (
               <td key={column.header} className="text-start">
@@ -155,6 +160,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
           </DataRow>
         ))}
       </DataTable>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>قبلی</button><span>صفحه {page.toLocaleString('fa-IR')} از {pageCount.toLocaleString('fa-IR')} · {list.total.toLocaleString('fa-IR')} مورد</span><button className="admin-button" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>بعدی</button></div>
 
       <AdminModal
         open={Boolean(editing)}
