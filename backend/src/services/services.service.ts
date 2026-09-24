@@ -95,8 +95,7 @@ export class ServicesService implements OnModuleInit {
     return this.services.find({ where: { isActive: true }, order: { createdAt: 'ASC' } });
   }
 
-  findAllForAdmin(): Promise<ServiceEntity[]> {
-    return this.services.find({ order: { createdAt: 'ASC' } });
+  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.services.findAndCount({ order: { createdAt: 'ASC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async findOneForAdmin(id: string): Promise<ServiceEntity> {

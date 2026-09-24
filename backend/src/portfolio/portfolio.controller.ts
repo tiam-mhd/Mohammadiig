@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { PortfolioService } from './portfolio.service';
 import { ManagePortfolioWorkDto } from './dto/manage-portfolio-work.dto';
@@ -23,8 +24,8 @@ export class PortfolioController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all portfolio works for admin' })
-  adminAll(): Promise<PortfolioWorkEntity[]> {
-    return this.portfolioService.findAllForAdmin();
+  adminAll(@Query() query: PaginationQueryDto) {
+    return this.portfolioService.findAllForAdmin(query.page, query.limit);
   }
 
   @Get('admin/:id')

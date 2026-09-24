@@ -85,8 +85,7 @@ export class ProjectsService implements OnModuleInit {
     return project;
   }
 
-  findAllForAdmin(): Promise<ProjectEntity[]> {
-    return this.projects.find({ order: { createdAt: 'DESC' } });
+  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.projects.findAndCount({ order: { createdAt: 'DESC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async create(dto: ManageOpsProjectDto, user?: AuthUser): Promise<ProjectEntity> {

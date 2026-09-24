@@ -77,8 +77,7 @@ export class PortfolioService implements OnModuleInit {
     return item;
   }
 
-  findAllForAdmin(): Promise<PortfolioWorkEntity[]> {
-    return this.repository.find({ order: { displayOrder: 'ASC', createdAt: 'DESC' } });
+  async findAllForAdmin(page = 1, limit = 20) { const [data,total] = await this.repository.findAndCount({ order: { displayOrder: 'ASC', createdAt: 'DESC' }, skip: (page-1)*limit, take: limit }); return { data, meta: { page, limit, total, totalPages: Math.ceil(total/limit) } };
   }
 
   async findOneForAdmin(id: string): Promise<PortfolioWorkEntity> {

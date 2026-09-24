@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ServiceEntity } from './service.entity';
 import { ServicesService } from './services.service';
@@ -23,8 +24,8 @@ export class ServicesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List services for admin' })
-  adminAll(): Promise<ServiceEntity[]> {
-    return this.servicesService.findAllForAdmin();
+  adminAll(@Query() query: PaginationQueryDto) {
+    return this.servicesService.findAllForAdmin(query.page, query.limit);
   }
 
   @Get('admin/:id')

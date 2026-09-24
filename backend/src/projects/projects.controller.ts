@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -27,8 +28,8 @@ export class ProjectsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all ops projects for admin' })
-  adminAll(): Promise<ProjectEntity[]> {
-    return this.projectsService.findAllForAdmin();
+  adminAll(@Query() query: PaginationQueryDto) {
+    return this.projectsService.findAllForAdmin(query.page, query.limit);
   }
 
   @Get(':slug')
