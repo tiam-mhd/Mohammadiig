@@ -59,6 +59,7 @@ export default function AdminMediaLibraryPage() {
   const token = useAuthStore((s) => s.accessToken);
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
+  const [serverMeta, setServerMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [busy, setBusy] = useState(false);
   const [uploads, setUploads] = useState<UploadJob[]>([]);
   const [selected, setSelected] = useState<MediaAsset | null>(null);
@@ -109,11 +110,10 @@ export default function AdminMediaLibraryPage() {
     return true;
   }, []);
   const list = useAdminList(items, searchText, matchFilter);
-  const [page, setPage] = useState(1);
-  const pageSize = 20;
-  const pageCount = Math.max(1, Math.ceil(list.filtered.length / pageSize));
-  const visibleMedia = list.filtered.slice((page - 1) * pageSize, page * pageSize);
-  useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
+  const page = serverMeta.page;
+  const pageCount = serverMeta.totalPages;
+  const visibleMedia = list.filtered;
+  useEffect(() => { if (serverMeta.page !== 1) setServerMeta((m) => ({ ...m, page: 1 })); }, [list.query, folderFilter, statusFilter, kindFilter]);
 
   const statusFilter = list.filters.status || 'active';
   const kindFilter = list.filters.kind || 'all';
@@ -128,16 +128,17 @@ export default function AdminMediaLibraryPage() {
         folder: folderFilter || undefined,
         status: statusFilter === 'trash' ? 'trash' : 'active',
         kind: kindFilter !== 'all' ? kindFilter : undefined,
-        limit: 80,
+        page,
+        limit: 20,
       });
-      setItems(res.data);
+      setItems(res.data); setServerMeta({ page: res.meta.page, limit: res.meta.limit, total: res.meta.total, totalPages: res.meta.totalPages });
       setFolders(res.meta.folders);
     } catch {
       setMessage('دریافت کتابخانه رسانه انجام نشد.');
     } finally {
       setBusy(false);
     }
-  }, [token, list.query, folderFilter, statusFilter, kindFilter]);
+  }, [token, list.query, folderFilter, statusFilter, kindFilter, page]);
 
   useEffect(() => {
     void load();
@@ -589,7 +590,7 @@ export default function AdminMediaLibraryPage() {
           })}
         </div>
       </section>
-      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>قبلی</button><span>صفحه {page.toLocaleString('fa-IR')} از {pageCount.toLocaleString('fa-IR')} · {list.total.toLocaleString('fa-IR')} مورد</span><button className="admin-button" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>بعدی</button></div>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setServerMeta((m) => ({ ...m, page: m.page - 1 }))}>قبلی</button><span>صفحه {page.toLocaleString('fa-IR')} از {pageCount.toLocaleString('fa-IR')} · {serverMeta.total.toLocaleString('fa-IR')} مورد</span><button className="admin-button" disabled={page >= pageCount} onClick={() => setServerMeta((m) => ({ ...m, page: m.page + 1 }))}>بعدی</button></div>
 
       {previewItem ? (
         <div
