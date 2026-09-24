@@ -11,6 +11,8 @@ export function ProductsCatalog() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageMeta, setPageMeta] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
 
   useEffect(() => {
     let cancelled = false;
@@ -20,11 +22,12 @@ export function ProductsCatalog() {
         setErrorMessage('');
       }
     });
-    Promise.all([fetchProducts({ category: selectedCategory || undefined }), fetchCategories()])
+    Promise.all([fetchProducts({ category: selectedCategory || undefined, page, limit: 12 }), fetchCategories()])
       .then(([productResponse, categoryResponse]) => {
         if (!cancelled) {
           setProducts(productResponse.data ?? []);
           setCategories(categoryResponse);
+          setPageMeta(productResponse.meta);
         }
       })
       .catch((error) => {
@@ -39,7 +42,9 @@ export function ProductsCatalog() {
     return () => {
       cancelled = true;
     };
-  }, [selectedCategory]);
+  }, [selectedCategory, page]);
+
+  useEffect(() => setPage(1), [selectedCategory]);
 
   const visibleProducts = useMemo(() => {
     return products;
@@ -84,7 +89,7 @@ export function ProductsCatalog() {
           <p className="products-count" aria-live="polite">
             {isLoading
               ? 'در حال بارگذاری...'
-              : `${visibleProducts.length.toLocaleString('fa-IR')} محصول`}
+              : `${pageMeta.total.toLocaleString('fa-IR')} محصول`}
           </p>
         </div>
 
@@ -95,6 +100,13 @@ export function ProductsCatalog() {
               تلاش دوباره
             </button>
           </div>
+        ) : null}
+        {!errorMessage && !isLoading && pageMeta.totalPages > 1 ? (
+          <nav className="mt-8 flex items-center justify-between" aria-label="صفحه‌بندی محصولات">
+            <button type="button" className="products-empty__reset" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>قبلی</button>
+            <span>صفحه {page.toLocaleString('fa-IR')} از {pageMeta.totalPages.toLocaleString('fa-IR')}</span>
+            <button type="button" className="products-empty__reset" disabled={page >= pageMeta.totalPages} onClick={() => setPage((value) => value + 1)}>بعدی</button>
+          </nav>
         ) : null}
 
         {!errorMessage && !isLoading ? (

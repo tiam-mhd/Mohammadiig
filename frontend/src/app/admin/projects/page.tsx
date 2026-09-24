@@ -14,7 +14,7 @@ import { labelOf, PROJECT_STATUS, PROJECT_TYPE } from '@/lib/admin-labels';
 import {
   createAdminProject,
   deleteAdminProject,
-  fetchAdminProjects,
+  fetchAdminProjectsPage,
   OpsProject,
   updateAdminProject,
 } from '@/lib/api-client';
@@ -69,6 +69,9 @@ export default function AdminProjectsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(false);
 
   const searchText = useCallback(
     (item: OpsProject) =>
@@ -85,10 +88,13 @@ export default function AdminProjectsPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetchAdminProjects(token)
-      .then(setItems)
-      .catch(() => adminToast.error('دریافت پروژه‌ها انجام نشد.'));
-  }, [token]);
+    setLoading(true);
+    fetchAdminProjectsPage(token, { page, limit: 20, search: list.query })
+      .then((result) => { setItems(result.data); setMeta(result.meta); })
+      .catch(() => adminToast.error('دریافت پروژه‌ها انجام نشد.'))
+      .finally(() => setLoading(false));
+  }, [token, page, list.query]);
+  useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
 
   function openCreate() {
     setEditingId(null);
@@ -225,7 +231,7 @@ export default function AdminProjectsPage() {
 
       <DataTable
         headers={['پروژه', 'نوع', 'لوکیشن', 'وضعیت', 'عملیات']}
-        isEmpty={list.filtered.length === 0}
+        isEmpty={list.filtered.length === 0 && !loading}
         emptyText="پروژه‌ای با این جستجو پیدا نشد."
       >
         {list.filtered.map((item) => (
@@ -259,6 +265,7 @@ export default function AdminProjectsPage() {
           </DataRow>
         ))}
       </DataTable>
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {meta.totalPages.toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
 
       <AdminModal
         open={modalOpen}

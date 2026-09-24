@@ -626,6 +626,7 @@ export async function fetchCategories(): Promise<ProductCategory[]> {
 export function fetchAdminCategories(accessToken: string): Promise<ProductCategory[]> {
   return adminRequest(accessToken, '/categories/admin/all');
 }
+export function fetchAdminCategoriesPage(accessToken: string, options: { page?: number; limit?: number; search?: string } = {}): Promise<AdminListResponse<ProductCategory>> { return fetchAdminPage(accessToken, '/categories/admin/all', options); }
 
 export function createAdminCategory(
   accessToken: string,
@@ -1266,6 +1267,7 @@ export function updateOrderStatus(accessToken: string, id: string, status: strin
 export function fetchAdminProjects(accessToken: string): Promise<OpsProject[]> {
   return adminRequest(accessToken, '/projects/admin/all');
 }
+export function fetchAdminProjectsPage(accessToken: string, options: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc' } = {}): Promise<AdminListResponse<OpsProject>> { return fetchAdminPage(accessToken, '/projects/admin/all', options); }
 
 export function createAdminProject(
   accessToken: string,
@@ -1305,6 +1307,7 @@ export function updateProjectStatus(accessToken: string, id: string, status: str
 export function fetchAdminPortfolio(accessToken: string): Promise<PortfolioWork[]> {
   return adminRequest(accessToken, '/portfolio/admin/all');
 }
+export function fetchAdminPortfolioPage(accessToken: string, options: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc' } = {}): Promise<AdminListResponse<PortfolioWork>> { return fetchAdminPage(accessToken, '/portfolio/admin/all', options); }
 
 export function fetchAdminPortfolioWork(accessToken: string, id: string): Promise<PortfolioWork> {
   return adminRequest(accessToken, `/portfolio/admin/${id}`);
@@ -1349,6 +1352,7 @@ export function updatePaymentStatus(accessToken: string, id: string, status: str
 export function fetchAdminServices(accessToken: string): Promise<ServiceAdminSummary[]> {
   return adminRequest(accessToken, '/services/admin/all');
 }
+export function fetchAdminServicesPage(accessToken: string, options: { page?: number; limit?: number; search?: string; sort?: string; order?: 'asc' | 'desc' } = {}): Promise<AdminListResponse<ServiceAdminSummary>> { return fetchAdminPage(accessToken, '/services/admin/all', options); }
 
 export function fetchAdminService(accessToken: string, id: string): Promise<ServiceAdminSummary> {
   return adminRequest(accessToken, `/services/admin/${id}`);
@@ -1399,6 +1403,7 @@ export function updateAdminService(
   });
 }
 export function fetchAdminAttachments(accessToken: string): Promise<AttachmentAdminSummary[]> { return adminRequest(accessToken, '/attachments/admin/all'); }
+export function fetchAdminAttachmentsPage(accessToken: string, options: { page?: number; limit?: number; search?: string } = {}): Promise<AdminListResponse<AttachmentAdminSummary>> { return fetchAdminPage(accessToken, '/attachments/admin/all', options); }
 export function createAdminAttachment(accessToken: string, payload: { ownerType: string; ownerId: string; fileName: string; fileUrl: string; fileSize?: number; fileType?: string }): Promise<AttachmentAdminSummary> { return adminRequest(accessToken, '/attachments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }); }
 export async function deleteAdminAttachment(accessToken: string, id: string): Promise<void> { await adminRequest(accessToken, `/attachments/admin/${id}`, { method: 'DELETE' }); }
 
