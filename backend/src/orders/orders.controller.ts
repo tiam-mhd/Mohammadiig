@@ -76,7 +76,7 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'Update order status' })
-  updateStatus(@Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
-    return this.ordersService.updateStatus(id, dto.status);
+  updateStatus(@Req() request: AuthenticatedRequest, @Param('id') id: string, @Body() dto: UpdateOrderStatusDto) {
+    return this.ordersService.updateStatus(id, dto.status, { userId: request.user.userId, ipAddress: request.ip, userAgent: request.get('user-agent') });
   }
 }

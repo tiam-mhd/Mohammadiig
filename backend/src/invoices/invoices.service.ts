@@ -5,12 +5,15 @@ import { AuthUser } from '../auth/jwt.strategy';
 import { CustomerEntity } from '../customers/customer.entity';
 import { InvoiceEntity } from './invoice.entity';
 import { InvoicePaymentStatus, invoicePaymentTransitions } from './invoice-status';
+import { DataSource } from 'typeorm';
+import { AuditActor, AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class InvoicesService {
   constructor(
     @InjectRepository(InvoiceEntity) private readonly invoices: Repository<InvoiceEntity>,
     @InjectRepository(CustomerEntity) private readonly customers: Repository<CustomerEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   async findMine(user: AuthUser): Promise<InvoiceEntity[]> {
@@ -44,7 +47,7 @@ export class InvoicesService {
     return invoice;
   }
 
-  async updateStatus(id: string, paymentStatus: InvoicePaymentStatus): Promise<InvoiceEntity> {
+  async updateStatus(id: string, paymentStatus: InvoicePaymentStatus, actor: AuditActor): Promise<InvoiceEntity> {
     const invoice = await this.invoices.findOne({ where: { id } });
     if (!invoice) throw new NotFoundException('فاکتور یافت نشد.');
     const current = invoice.paymentStatus;
@@ -52,10 +55,15 @@ export class InvoicesService {
     if (!invoicePaymentTransitions[current as InvoicePaymentStatus]?.includes(paymentStatus)) {
       throw new BadRequestException('تغییر وضعیت فاکتور مجاز نیست.');
     }
-    invoice.paymentStatus = paymentStatus;
-    if (paymentStatus === InvoicePaymentStatus.Paid && !invoice.paidAt) {
-      invoice.paidAt = new Date();
-    }
-    return this.invoices.save(invoice);
+    return this.dataSource.transaction(async manager => {
+      const locked = await manager.getRepository(InvoiceEntity).findOne({ where: { id }, ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}) });
+      if (!locked) throw new NotFoundException('فاکتور یافت نشد.');
+      if (locked.paymentStatus !== current || !invoicePaymentTransitions[locked.paymentStatus as InvoicePaymentStatus]?.includes(paymentStatus)) throw new BadRequestException('این تغییر وضعیت دیگر مجاز نیست.');
+      locked.paymentStatus = paymentStatus;
+      if (paymentStatus === InvoicePaymentStatus.Paid && !locked.paidAt) locked.paidAt = new Date();
+      const saved = await manager.getRepository(InvoiceEntity).save(locked);
+      await AuditService.record(manager, actor, 'invoice.status_changed', 'invoice', id, { status: current }, { status: paymentStatus });
+      return saved;
+    });
   }
 }

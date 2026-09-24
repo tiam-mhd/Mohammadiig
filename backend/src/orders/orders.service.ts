@@ -19,6 +19,7 @@ import { SparePartEntity } from '../products/spare-part.entity';
 import { SparePartsCheckoutDto } from './dto/spare-parts-checkout.dto';
 import { PaymentEntity } from '../payments/payment.entity';
 import { OrderStatus, orderStatusTransitions } from './order-status';
+import { AuditActor, AuditService } from '../audit/audit.service';
 
 export type OrderDetail = OrderEntity & {
   items: OrderItemEntity[];
@@ -407,12 +408,20 @@ export class OrdersService {
     return this.orders.find({ order: { createdAt: 'DESC' } });
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<OrderEntity> {
+  async updateStatus(id: string, status: OrderStatus, actor: AuditActor): Promise<OrderEntity> {
     const order = await this.orders.findOne({ where: { id } });
     if (!order) throw new NotFoundException('سفارش یافت نشد.');
     if (order.status === status) return order;
     if (!orderStatusTransitions[order.status as OrderStatus]?.includes(status)) throw new BadRequestException('تغییر وضعیت سفارش مجاز نیست.');
-    order.status = status;
-    return this.orders.save(order);
+    const previous = order.status;
+    return this.orders.manager.transaction(async manager => {
+      const locked = await manager.getRepository(OrderEntity).findOne({ where: { id }, ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}) });
+      if (!locked) throw new NotFoundException('سفارش یافت نشد.');
+      if (locked.status !== previous || !orderStatusTransitions[locked.status as OrderStatus]?.includes(status)) throw new BadRequestException('این تغییر وضعیت دیگر مجاز نیست.');
+      locked.status = status;
+      const saved = await manager.getRepository(OrderEntity).save(locked);
+      await AuditService.record(manager, actor, 'order.status_changed', 'order', id, { status: previous }, { status });
+      return saved;
+    });
   }
 }

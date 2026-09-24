@@ -55,9 +55,9 @@ export class InvoicesController {
   @Roles('admin')
   @ApiOperation({ summary: 'Update invoice payment status' })
   updateStatus(
-    @Param('id') id: string,
+    @Req() request: AuthenticatedRequest, @Param('id') id: string,
     @Body() dto: UpdateInvoiceStatusDto,
   ): Promise<InvoiceEntity> {
-    return this.invoicesService.updateStatus(id, dto.status as InvoicePaymentStatus);
+    return this.invoicesService.updateStatus(id, dto.status as InvoicePaymentStatus, { userId: request.user.userId, ipAddress: request.ip, userAgent: request.get('user-agent') });
   }
 }
