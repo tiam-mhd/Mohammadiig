@@ -1218,6 +1218,14 @@ export function fetchAdminCustomers(accessToken: string, status: 'current' | 'de
 export function updateCustomerStatus(accessToken: string, id: string, status: { isVerified: boolean; status: import('./customer-status').CustomerStatus; reason?: string }): Promise<CustomerAdminSummary> {
   return adminRequest(accessToken, `/customers/admin/${id}/status`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(status) });
 }
+
+export async function fetchAdminProductsPage(accessToken: string, options: { status?: 'active'|'trash'|'all'; page?: number; limit?: number; search?: string } = {}): Promise<ProductListResponse> {
+  const params = new URLSearchParams({ status: options.status ?? 'active', page: String(options.page ?? 1), limit: String(options.limit ?? 20) });
+  if (options.search?.trim()) params.set('search', options.search.trim());
+  const response = await fetch(`${getApiUrl()}/products/admin/all?${params.toString()}`, { headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' }, cache: 'no-store' });
+  if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت محصولات انجام نشد.'));
+  return response.json() as Promise<ProductListResponse>;
+}
 export function fetchAdminCustomer360(accessToken: string, id: string): Promise<Customer360> {
   return adminRequest(accessToken, `/customers/admin/${id}/360`);
 }

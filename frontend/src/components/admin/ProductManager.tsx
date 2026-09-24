@@ -11,6 +11,7 @@ import { CATEGORY_LABELS, formatDisplayPrice, labelOf } from '@/lib/admin-labels
 import {
   deleteProduct,
   fetchAdminProducts,
+  fetchAdminProductsPage,
   fetchCategories,
   Product,
   ProductCategory,
@@ -43,6 +44,7 @@ export function ProductManager() {
   const [statusFilter, setStatusFilter] = useState<ProductStatusFilter>('active');
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [serverMeta, setServerMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
@@ -80,21 +82,21 @@ export function ProductManager() {
   const reloadProducts = useCallback(
     async (status: ProductStatusFilter = statusFilter) => {
       if (!accessToken) return;
-      const next = await fetchAdminProducts(accessToken, status);
-      setProducts(next);
+      const next = await fetchAdminProductsPage(accessToken, { status, page: serverMeta.page, limit: serverMeta.limit, search: list.query });
+      setProducts(next.data); setServerMeta(next.meta);
     },
     [accessToken, statusFilter],
   );
 
   useEffect(() => {
     if (!accessToken) return;
-    Promise.all([fetchAdminProducts(accessToken, statusFilter), fetchCategories()])
+    Promise.all([fetchAdminProductsPage(accessToken, { status: statusFilter, page: serverMeta.page, limit: serverMeta.limit, search: list.query }), fetchCategories()])
       .then(([productResponse, categoryResponse]) => {
-        setProducts(productResponse);
+        setProducts(productResponse.data); setServerMeta(productResponse.meta);
         setCategories(categoryResponse);
       })
       .catch(() => adminToast.error('دریافت محصولات یا دسته‌ها انجام نشد.'));
-  }, [accessToken, statusFilter]);
+  }, [accessToken, statusFilter, list.query, serverMeta.page]);
 
   async function confirmRemove() {
     if (!accessToken || !pendingAction) return;
