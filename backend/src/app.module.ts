@@ -17,6 +17,7 @@ import { AttachmentsModule } from './attachments/attachments.module';
 import { MediaModule } from './media/media.module';
 import { UsersModule } from './users/users.module';
 import { BackupModule } from './backup/backup.module';
+import { AuditModule } from './audit/audit.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { BackupModule } from './backup/backup.module';
     MediaModule,
     UsersModule,
     BackupModule,
+    AuditModule,
   ],
   controllers: [HealthController],
 })
