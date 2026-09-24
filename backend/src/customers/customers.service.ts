@@ -52,25 +52,24 @@ export class CustomersService {
     return profile;
   }
 
-  async findAll(status: 'current' | 'deleted' = 'current'): Promise<CustomerAdminSummary[]> {
-    const customers = await this.customers.find({
-      withDeleted: status === 'deleted',
-      where: { deletedAt: status === 'deleted' ? Not(IsNull()) : IsNull(), purgedAt: IsNull() },
-      order: { createdAt: 'DESC' },
-    });
+  async findAll(status: 'current' | 'deleted' = 'current', page = 1, limit = 20, search = '') {
+    const qb = this.customers.createQueryBuilder('customer').withDeleted().where('customer.purged_at IS NULL').andWhere(status === 'deleted' ? 'customer.deleted_at IS NOT NULL' : 'customer.deleted_at IS NULL');
+    if (search.trim()) qb.andWhere('(LOWER(customer.company_name) LIKE LOWER(:search) OR LOWER(customer.contact_person) LIKE LOWER(:search) OR LOWER(customer.phone) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
+    const [customers, total] = await qb.orderBy('customer.created_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
     const users = customers.length ? await this.users.find({
       where: { id: In(customers.map((customer) => customer.userId)) },
       select: { id: true, isActive: true, deletedAt: true },
       withDeleted: true,
     }) : [];
     const byId = new Map(users.map((user) => [user.id, user]));
-    return customers.map((customer) => {
+    const data = customers.map((customer) => {
       const user = byId.get(customer.userId);
       return Object.assign(customer, {
         status: customer.status === 'active' && (!user?.isActive || user.deletedAt) ? 'inactive' as const : customer.status,
         isActive: Boolean(user?.isActive && !user.deletedAt && !customer.deletedAt && customer.status === 'active'),
       });
     });
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async get360(id: string): Promise<Customer360> {

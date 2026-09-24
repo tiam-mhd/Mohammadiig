@@ -28,8 +28,8 @@ export class CustomersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all B2B customers for operations staff' })
-  all(@Query() query: CustomerListQueryDto): Promise<CustomerEntity[]> {
-    return this.customersService.findAll(query.status);
+  all(@Query() query: CustomerListQueryDto) {
+    return this.customersService.findAll(query.status, query.page, query.limit, query.search);
   }
 
   @Patch('admin/:id/status')

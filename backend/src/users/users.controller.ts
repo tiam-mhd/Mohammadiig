@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -13,7 +14,7 @@ import { UsersService } from './users.service';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  @Get('admin/all') @ApiOperation({ summary: 'List users for administrators' }) all(): Promise<UserEntity[]> { return this.usersService.findAll(); }
+  @Get('admin/all') @ApiOperation({ summary: 'List users for administrators' }) all(@Query() query: PaginationQueryDto) { return this.usersService.findAll(query.page, query.limit, query.search); }
   @Patch(':id/role') @ApiOperation({ summary: 'Update user role' }) updateRole(@Param('id') id: string, @Body('role') role: UserRole): Promise<UserEntity> { return this.usersService.updateRole(id, role); }
   @Patch(':id/active') @ApiOperation({ summary: 'Activate or deactivate user' }) updateActive(@Param('id') id: string, @Body('isActive') isActive: boolean): Promise<UserEntity> { return this.usersService.updateActive(id, isActive); }
 }

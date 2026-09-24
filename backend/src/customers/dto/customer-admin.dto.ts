@@ -2,8 +2,10 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Equals, IsBoolean, IsIn, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 import { CUSTOMER_STATUSES, CustomerStatus } from '../customer-status';
+import { PaginationQueryDto } from '../../common/pagination.dto';
 
-export class CustomerListQueryDto {
+export class CustomerListQueryDto extends PaginationQueryDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
   @ApiPropertyOptional({ enum: ['current', 'deleted'], default: 'current' })
   @IsOptional()
   @IsIn(['current', 'deleted'])
