@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -8,6 +8,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { SparePartsCheckoutDto } from './dto/spare-parts-checkout.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
+import { PaginationQueryDto } from '../common/pagination.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -52,8 +53,8 @@ export class OrdersController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List orders for operations staff' })
-  all() {
-    return this.ordersService.findAll();
+  all(@Query() query: PaginationQueryDto) {
+    return this.ordersService.findAll(query.page, query.limit);
   }
 
   @Get('admin/detailed')

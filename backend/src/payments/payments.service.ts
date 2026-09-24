@@ -108,8 +108,9 @@ export class PaymentsService {
     return { payment, invoice: refreshed! };
   }
 
-  findAll(): Promise<PaymentEntity[]> {
-    return this.payments.find({ order: { createdAt: 'DESC' } });
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.payments.findAndCount({ order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   findMine(user: AuthUser): Promise<PaymentEntity[]> {

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -8,6 +8,7 @@ import { PaymentsService } from './payments.service';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UpdatePaymentStatusDto } from './dto/update-payment-status.dto';
+import { PaginationQueryDto } from '../common/pagination.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -44,8 +45,8 @@ export class PaymentsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List payments for operations staff' })
-  all() {
-    return this.paymentsService.findAll();
+  all(@Query() query: PaginationQueryDto) {
+    return this.paymentsService.findAll(query.page, query.limit);
   }
 
   @Patch('admin/:id/status')

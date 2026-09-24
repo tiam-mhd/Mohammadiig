@@ -404,8 +404,9 @@ export class OrdersService {
     return Object.assign(order, { items, invoice });
   }
 
-  findAll(): Promise<OrderEntity[]> {
-    return this.orders.find({ order: { createdAt: 'DESC' } });
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.orders.findAndCount({ order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async updateStatus(id: string, status: OrderStatus, actor: AuditActor): Promise<OrderEntity> {

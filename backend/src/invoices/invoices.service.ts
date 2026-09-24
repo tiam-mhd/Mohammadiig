@@ -37,8 +37,9 @@ export class InvoicesService {
     return invoice;
   }
 
-  findAll(): Promise<InvoiceEntity[]> {
-    return this.invoices.find({ order: { createdAt: 'DESC' } });
+  async findAll(page = 1, limit = 20) {
+    const [data, total] = await this.invoices.findAndCount({ order: { createdAt: 'DESC' }, skip: (page - 1) * limit, take: limit });
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findOneAdmin(id: string): Promise<InvoiceEntity> {

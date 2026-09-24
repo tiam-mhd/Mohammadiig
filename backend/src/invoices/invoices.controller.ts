@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -9,6 +9,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UpdateInvoiceStatusDto } from './dto/update-invoice-status.dto';
 import { InvoicePaymentStatus } from './invoice-status';
+import { PaginationQueryDto } from '../common/pagination.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
@@ -38,8 +39,8 @@ export class InvoicesController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List invoices for operations staff' })
-  all(): Promise<InvoiceEntity[]> {
-    return this.invoicesService.findAll();
+  all(@Query() query: PaginationQueryDto) {
+    return this.invoicesService.findAll(query.page, query.limit);
   }
 
   @Get('admin/:id')
