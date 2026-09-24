@@ -1,4 +1,5 @@
-import { Body, Controller, Get, Param, Patch, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthUser } from '../auth/jwt.strategy';
@@ -40,8 +41,8 @@ export class QuotationsController {
   @UseGuards(RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'فهرست پیش‌فاکتورها برای پنل مدیریت' })
-  all() {
-    return this.quotationsService.findAll();
+  all(@Query() query: PaginationQueryDto) {
+    return this.quotationsService.findAll(query.page, query.limit, query.search);
   }
 
   @Patch(':id/status')

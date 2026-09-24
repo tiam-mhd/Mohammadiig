@@ -77,12 +77,11 @@ export class CategoriesService {
     return this.repository.findOne({ where: { id, isActive: true } });
   }
 
-  async findAllForAdmin(): Promise<ProductCategory[]> {
-    const categories = await this.repository.find({
-      order: { displayOrder: 'ASC', createdAt: 'DESC' },
-      withDeleted: false,
-    });
-    return categories.map((category) => this.toDto(category));
+  async findAllForAdmin(page = 1, limit = 20, search = '') {
+    const qb = this.repository.createQueryBuilder('category').where('category.deleted_at IS NULL');
+    if (search?.trim()) qb.andWhere('(LOWER(category.name_fa) LIKE LOWER(:search) OR LOWER(category.name_en) LIKE LOWER(:search) OR LOWER(category.slug) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
+    const [categories, total] = await qb.orderBy('category.display_order', 'ASC').addOrderBy('category.created_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
+    return { data: categories.map((category) => this.toDto(category)), meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async create(dto: ManageCategoryDto): Promise<ProductCategory> {

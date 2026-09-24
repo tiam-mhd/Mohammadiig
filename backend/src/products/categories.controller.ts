@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { ProductCategory } from './categories.types';
@@ -23,8 +24,8 @@ export class CategoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all categories for admin' })
-  adminAll(): Promise<ProductCategory[]> {
-    return this.categoriesService.findAllForAdmin();
+  adminAll(@Query() query: PaginationQueryDto) {
+    return this.categoriesService.findAllForAdmin(query.page, query.limit, query.search);
   }
 
   @Post()

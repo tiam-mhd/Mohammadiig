@@ -118,15 +118,17 @@ export class QuotationsService {
     });
   }
 
-  async findAll(): Promise<QuotationAdminView[]> {
-    const quotations = await this.quotations.find({ order: { createdAt: 'DESC' } });
-    if (quotations.length === 0) return [];
+  async findAll(page = 1, limit = 20, search = '') {
+    const qb = this.quotations.createQueryBuilder('quotation');
+    if (search?.trim()) qb.andWhere('(LOWER(quotation.quotation_number) LIKE LOWER(:search) OR LOWER(quotation.customer_id) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
+    const [quotations, total] = await qb.orderBy('quotation.created_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
+    if (quotations.length === 0) return { data: [], meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
 
     const customerIds = [...new Set(quotations.map((item) => item.customerId))];
     const customers = await this.customers.find({ where: { id: In(customerIds) } });
     const customerMap = new Map(customers.map((customer) => [customer.id, customer]));
 
-    return quotations.map((quotation) => {
+    const data = quotations.map((quotation) => {
       const customer = customerMap.get(quotation.customerId);
       return Object.assign(quotation, {
         customerCompanyName: customer?.companyName ?? null,
@@ -134,6 +136,7 @@ export class QuotationsService {
         customerPhone: customer?.phone ?? null,
       });
     });
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async updateStatus(id: string, status: QuotationEntity['status'], actor: AuditActor): Promise<QuotationAdminView> {
