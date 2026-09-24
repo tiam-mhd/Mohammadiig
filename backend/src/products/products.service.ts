@@ -110,7 +110,7 @@ export class ProductsService implements OnModuleInit {
     };
   }
 
-  async findAllForAdmin(status: 'active' | 'trash' | 'all' = 'active'): Promise<Product[]> {
+  async findAllForAdmin(status: 'active' | 'trash' | 'all' = 'active', page = 1, limit = 20, search = '') {
     const qb = this.repository.createQueryBuilder('product').withDeleted();
 
     if (status === 'active') {
@@ -118,9 +118,9 @@ export class ProductsService implements OnModuleInit {
     } else if (status === 'trash') {
       qb.andWhere('product.deleted_at IS NOT NULL');
     }
-
-    const entities = await qb.orderBy('product.updated_at', 'DESC').getMany();
-    return entities.map((entity) => this.toProduct(entity));
+    if (search.trim()) qb.andWhere('(LOWER(product.name_fa) LIKE LOWER(:search) OR LOWER(product.name_en) LIKE LOWER(:search) OR LOWER(product.sku) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
+    const [entities, total] = await qb.orderBy('product.updated_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
+    return { data: entities.map((entity) => this.toProduct(entity)), meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findOne(idOrSlug: string): Promise<Product> {

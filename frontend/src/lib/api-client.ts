@@ -1056,7 +1056,8 @@ export async function fetchAdminProducts(
     cache: 'no-store',
   });
   if (!response.ok) throw new Error(await readApiErrorMessage(response, 'دریافت محصولات انجام نشد.'));
-  return response.json() as Promise<Product[]>;
+  const body = await response.json() as Product[] | { data: Product[] };
+  return Array.isArray(body) ? body : body.data;
 }
 
 export async function fetchAdminProduct(accessToken: string, productId: string): Promise<Product> {

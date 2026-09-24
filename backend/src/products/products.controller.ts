@@ -10,6 +10,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { ProductExtensionsService } from './product-extensions.service';
+import { PaginationQueryDto } from '../common/pagination.dto';
 import {
   CopyProductSpecsDto,
   ManageProductSpecificationDto,
@@ -37,9 +38,9 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List products for admin (active / trash / all)' })
-  adminAll(@Query('status') status?: 'active' | 'trash' | 'all'): Promise<Product[]> {
+  adminAll(@Query('status') status: 'active' | 'trash' | 'all' = 'active', @Query() query: PaginationQueryDto) {
     const normalized = status === 'trash' || status === 'all' ? status : 'active';
-    return this.productsService.findAllForAdmin(normalized);
+    return this.productsService.findAllForAdmin(normalized, query.page, query.limit, query.search);
   }
 
   @Get('admin/:id')
