@@ -44,6 +44,7 @@ type BackupManifest = {
   includeSoftDeleted: boolean;
   includeMediaFiles: boolean;
   notes?: string[];
+  dataSha256?: string;
 };
 
 type TablePayload = {
@@ -189,8 +190,10 @@ export class BackupService {
     const filePath = join(tmpdir(), fileName);
 
     const zip = new AdmZip();
+    const dataBuffer = Buffer.from(JSON.stringify({ datasets: payloads }), 'utf8');
+    manifest.dataSha256 = createHash('sha256').update(dataBuffer).digest('hex');
     zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
-    zip.addFile('data.json', Buffer.from(JSON.stringify({ datasets: payloads }, null, 2), 'utf8'));
+    zip.addFile('data.json', dataBuffer);
 
     if (manifest.includeMediaFiles) {
       const mediaRoot = resolveMediaRoot();
@@ -512,7 +515,11 @@ export class BackupService {
     let payloads: DatasetPayload[];
     try {
       manifest = JSON.parse(manifestEntry.getData().toString('utf8')) as BackupManifest;
-      const data = JSON.parse(dataEntry.getData().toString('utf8')) as { datasets: DatasetPayload[] };
+      const dataBuffer = dataEntry.getData();
+      if (manifest.dataSha256 && createHash('sha256').update(dataBuffer).digest('hex') !== manifest.dataSha256) {
+        throw new BadRequestException('صحت داده‌های بک‌آپ تأیید نشد');
+      }
+      const data = JSON.parse(dataBuffer.toString('utf8')) as { datasets: DatasetPayload[] };
       payloads = data.datasets ?? [];
     } catch {
       throw new BadRequestException('خواندن محتوای بک‌آپ ممکن نشد');
