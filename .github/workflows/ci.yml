@@ -72,6 +72,14 @@ jobs:
       - name: ESLint
         run: npm run lint
 
+      - name: Frontend TypeScript check
+        run: npm run typecheck
+        working-directory: frontend
+
+      - name: Frontend UI contract tests
+        run: npm run test:contract
+        working-directory: frontend
+
       - name: TypeScript check and unit/integration tests
         run: npm run test
 

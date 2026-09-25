@@ -503,7 +503,7 @@ createdAt
 
 # بخش یازدهم: تست‌ها
 
-## ۲۲. تست Backend
+## ✅ ۲۲. تست Backend
 
 برای سرویس‌های زیر Unit و Integration Test اضافه کن:
 
@@ -568,7 +568,7 @@ createdAt
 * ارسال فرم
 * جلوگیری از Double Submit
 
-## ۲۴. تست E2E
+## ✅ ۲۴. تست E2E
 
 حداقل یک جریان کامل E2E ایجاد کن:
 
@@ -591,7 +591,7 @@ createdAt
 
 # بخش دوازدهم: کیفیت کد و آماده‌سازی Production
 
-## ۲۵. اضافه کردن Pipeline
+## ✅ ۲۵. اضافه کردن Pipeline
 
 در GitHub Actions این مراحل را اضافه کن:
 
