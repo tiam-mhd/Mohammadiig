@@ -35,6 +35,7 @@ import { OtpChallengeEntity, OtpPurpose } from './otp-challenge.entity';
 import { ParsgreenSmsService } from '../sms/parsgreen-sms.service';
 import { maskMobile, normalizeIranMobile } from './phone.util';
 import { SessionService } from './session.service';
+import { AuditService } from '../audit/audit.service';
 
 export interface AuthResponse {
   accessToken: string;
@@ -163,13 +164,16 @@ export class AuthService implements OnModuleInit {
       contactPerson: `${dto.firstName} ${dto.lastName}`,
       isVerified: false,
     });
-    return this.createResponse(user);
+    const response = await this.createResponse(user);
+    await this.recordAuthAudit(user.id, 'auth.registered', { email: user.email });
+    return response;
   }
 
   /** Admin / email-password login. */
   async login(dto: LoginDto): Promise<AuthResponse> {
     const user = await this.users.findOne({ where: { email: dto.email.trim().toLowerCase() } });
     if (!user?.passwordHash || !user.isActive || !(await compare(dto.password, user.passwordHash))) {
+      await this.recordAuthAudit(user?.id ?? 'anonymous', 'auth.login_failed', { email: dto.email.trim().toLowerCase() });
       throw new UnauthorizedException('ایمیل یا رمز عبور نادرست است.');
     }
     return this.issueLogin(user);
@@ -495,7 +499,12 @@ export class AuthService implements OnModuleInit {
     if (current.role === 'customer') await ensureCustomerProfile(this.customers, current);
     current.lastLoginAt = new Date().toISOString();
     await this.users.update(current.id, { lastLoginAt: current.lastLoginAt });
+    await this.recordAuthAudit(current.id, 'auth.login_succeeded', { role: current.role });
     return this.createResponse(current);
+  }
+
+  private async recordAuthAudit(userId: string, action: string, newValue: Record<string, unknown>): Promise<void> {
+    try { await AuditService.record(this.users.manager, { userId }, action, 'auth', userId, null, newValue); } catch (error) { this.logger.warn(`ثبت گزارش احراز هویت انجام نشد: ${error instanceof Error ? error.message : String(error)}`); }
   }
 
   /** Validate current database state so previously issued tokens cannot bypass a block/delete. */
