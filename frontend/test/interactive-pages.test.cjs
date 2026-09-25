@@ -19,6 +19,7 @@ const pages = [
   { name: 'مدیریت سفارش‌ها', file: 'app/admin/orders/page.tsx', required: [/AdminStatusResourcePage/, /fetchAdminOrdersPage/, /updateOrderStatus/] },
   { name: 'مدیریت پرداخت‌ها', file: 'app/admin/payments/page.tsx', required: [/AdminStatusResourcePage/, /fetchAdminPaymentsPage/, /updatePaymentStatus/] },
   { name: 'مدیریت رسانه', file: 'app/admin/media/page.tsx', required: [/fetchMedia/, /upload/, /compressMediaAsset|compress/, /catch/, /AdminConfirmModal/] },
+  { name: 'گزارش ممیزی', file: 'app/admin/audit/page.tsx', required: [/AdminShell/, /AdminToolbar/, /AdminFilterBar/, /دسترسی به گزارش ممیزی/, /تلاش دوباره/, /صفحه‌بندی گزارش ممیزی/, /navigator\.clipboard/] },
 ];
 
 for (const page of pages) {
