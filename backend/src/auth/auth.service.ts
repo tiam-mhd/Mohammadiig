@@ -109,11 +109,27 @@ export class AuthService implements OnModuleInit {
 
     const existing = await this.users.findOne({ where: { email } });
     if (existing) {
-      if (existing.role !== 'admin' || !existing.isActive) {
+      let changed = false;
+      if (existing.role !== 'admin') {
         existing.role = 'admin';
+        changed = true;
+      }
+      if (!existing.isActive) {
         existing.isActive = true;
+        changed = true;
+      }
+      // In production ADMIN_PASSWORD is an explicit deployment secret. Keep
+      // the configured bootstrap credential usable when an older database
+      // contains a hash created from a previous value. Development keeps an
+      // existing manually chosen password unless ADMIN_PASSWORD was supplied.
+      const passwordWasConfigured = Boolean(process.env.ADMIN_PASSWORD?.trim());
+      if (passwordWasConfigured && (!existing.passwordHash || !(await compare(password, existing.passwordHash)))) {
+        existing.passwordHash = await hash(password, 12);
+        changed = true;
+      }
+      if (changed) {
         await this.users.save(existing);
-        this.logger.log(`Ensured admin role for existing user ${email}`);
+        this.logger.log(`Ensured configured admin account for ${email}`);
       }
       return;
     }
