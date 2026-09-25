@@ -11,7 +11,8 @@
     "start": "next start --hostname 0.0.0.0 --port 3000",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test:contract": "node --test test/ui-contract.test.cjs"
+    "test:contract": "node --test test/ui-contract.test.cjs",
+    "test:interactive": "node --test test/interactive-pages.test.cjs"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",

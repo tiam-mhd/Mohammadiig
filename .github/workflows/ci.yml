@@ -80,6 +80,10 @@ jobs:
         run: npm run test:contract
         working-directory: frontend
 
+      - name: Frontend interactive page tests
+        run: npm run test:interactive
+        working-directory: frontend
+
       - name: TypeScript check and unit/integration tests
         run: npm run test
 
