@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { fetchAdminDashboard, AdminDashboardMetrics } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
@@ -12,8 +12,8 @@ export default function AdminDashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
-  function load() { if (!token) return; setIsLoading(true); setError(''); fetchAdminDashboard(token).then((result) => setMetrics(result.data)).catch(() => { setMetrics(null); setError('دریافت آمار داشبورد انجام نشد.'); }).finally(() => setIsLoading(false)); }
-  useEffect(() => { load(); }, [token]);
+  const load = useCallback(() => { if (!token) return; setIsLoading(true); setError(''); fetchAdminDashboard(token).then((result) => setMetrics(result.data)).catch(() => { setMetrics(null); setError('دریافت آمار داشبورد انجام نشد.'); }).finally(() => setIsLoading(false)); }, [token]);
+  useEffect(() => { load(); }, [load]);
 
   const value = (key: keyof AdminDashboardMetrics) => isLoading ? 'در حال بارگذاری…' : metrics ? Number(metrics[key]).toLocaleString('fa-IR') : 'داده در دسترس نیست';
 

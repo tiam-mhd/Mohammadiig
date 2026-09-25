@@ -1,54 +1,17 @@
 import type { Metadata } from "next";
-import {
-  Saira_Condensed,
-  Cormorant_Garamond,
-  Noto_Naskh_Arabic,
-  JetBrains_Mono,
-  Vazirmatn,
-} from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SiteChrome } from "@/components/SiteChrome";
 
 /** Bugatti Display substitute — English only */
-const bugattiDisplay = Saira_Condensed({
-  variable: "--font-bugatti-display",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-});
 
 /** Bugatti Text substitute — English body */
-const bugattiText = Cormorant_Garamond({
-  variable: "--font-bugatti-text",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-});
 
 /** Bugatti Monospace substitute — English labels */
-const bugattiMono = JetBrains_Mono({
-  variable: "--font-bugatti-mono",
-  subsets: ["latin"],
-  weight: ["400"],
-  display: "swap",
-});
 
 /** Persian display / titles */
-const displayFa = Noto_Naskh_Arabic({
-  variable: "--font-display-fa",
-  subsets: ["arabic", "latin"],
-  weight: ["400", "500"],
-  display: "swap",
-});
 
 /** Persian UI / body */
-const ui = Vazirmatn({
-  variable: "--font-ui",
-  subsets: ["arabic", "latin"],
-  weight: ["300", "400"],
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "MIG — گروه صنعتی محمدی",
@@ -71,7 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       dir="rtl"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${bugattiDisplay.variable} ${bugattiText.variable} ${bugattiMono.variable} ${displayFa.variable} ${ui.variable} dark h-full antialiased`}
+      className="dark h-full antialiased"
     >
       <head>
         <script

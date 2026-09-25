@@ -5,6 +5,11 @@
 
 :root,
 html.dark {
+  --font-bugatti-display: "Arial Narrow", Arial, sans-serif;
+  --font-bugatti-text: Georgia, "Times New Roman", serif;
+  --font-bugatti-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-display-fa: Tahoma, Arial, sans-serif;
+  --font-ui: Tahoma, Arial, sans-serif;
   --canvas: #000000;
   --ink: #ffffff;
   --muted: #999999;
@@ -5677,4 +5682,3 @@ html.dark .sp-shop__glow {
   font-family: var(--font-ui), Vazirmatn, sans-serif;
   font-size: 0.8125rem;
 }
-
