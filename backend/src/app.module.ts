@@ -18,6 +18,16 @@ import { MediaModule } from './media/media.module';
 import { UsersModule } from './users/users.module';
 import { BackupModule } from './backup/backup.module';
 import { AuditModule } from './audit/audit.module';
+import { DashboardController } from './dashboard.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserEntity } from './auth/user.entity';
+import { CustomerEntity } from './customers/customer.entity';
+import { ProductEntity } from './products/product.entity';
+import { CategoryEntity } from './products/category.entity';
+import { QuotationEntity } from './quotations/quotation.entity';
+import { OrderEntity } from './orders/order.entity';
+import { InvoiceEntity } from './invoices/invoice.entity';
+import { PaymentEntity } from './payments/payment.entity';
 
 @Module({
   imports: [
@@ -38,7 +48,8 @@ import { AuditModule } from './audit/audit.module';
     UsersModule,
     BackupModule,
     AuditModule,
+    TypeOrmModule.forFeature([UserEntity, CustomerEntity, ProductEntity, CategoryEntity, QuotationEntity, OrderEntity, InvoiceEntity, PaymentEntity]),
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, DashboardController],
 })
 export class AppModule {}

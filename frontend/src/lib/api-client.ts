@@ -626,6 +626,15 @@ export async function fetchCategories(): Promise<ProductCategory[]> {
 export function fetchAdminCategories(accessToken: string): Promise<ProductCategory[]> {
   return adminRequest(accessToken, '/categories/admin/all');
 }
+
+export interface AdminDashboardMetrics {
+  products: number; categories: number; customers: number; users: number; newRequests: number;
+  pendingQuotations: number; activeOrders: number; pendingPayments: number; unpaidInvoices: number;
+  health: { backend: 'ok' | 'error'; database: 'ok' | 'error' };
+}
+export function fetchAdminDashboard(accessToken: string): Promise<{ data: AdminDashboardMetrics; generatedAt: string }> {
+  return adminRequest(accessToken, '/dashboard/admin');
+}
 export function fetchAdminCategoriesPage(accessToken: string, options: { page?: number; limit?: number; search?: string } = {}): Promise<AdminListResponse<ProductCategory>> { return fetchAdminPage(accessToken, '/categories/admin/all', options); }
 
 export function createAdminCategory(
