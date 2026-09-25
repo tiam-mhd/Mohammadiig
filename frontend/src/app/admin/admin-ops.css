@@ -750,6 +750,17 @@
   width: 100%;
 }
 
+.admin-filter-input {
+  display: block;
+  min-height: 40px;
+  text-align: right;
+}
+
+.admin-filter-input::placeholder {
+  color: var(--ops-muted);
+  opacity: 0.9;
+}
+
 .ops-btn.is-active-filter {
   border-color: var(--ops-accent);
   color: var(--ops-accent-strong);
