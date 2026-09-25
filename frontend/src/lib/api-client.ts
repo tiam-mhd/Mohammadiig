@@ -6,6 +6,7 @@ async function fetch(input: string, init?: RequestInit): Promise<Response> {
   headers.set('X-Mig-Csrf', '1');
   const response = await globalThis.fetch(input, { ...init, headers, credentials: 'same-origin' });
   if (response.status === 401 && !input.includes('/auth/')) window.dispatchEvent(new Event('mig-session-expired'));
+  if (response.status === 403) window.dispatchEvent(new Event('mig-forbidden'));
   return response;
 }
 
@@ -1218,7 +1219,10 @@ export async function deleteProductVariant(
 
 async function adminRequest<T>(accessToken: string, path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${getApiUrl()}${path}`, { ...init, headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', ...(init?.headers ?? {}) }, cache: 'no-store' });
-  if (!response.ok) throw new Error('عملیات پنل مدیریت انجام نشد.');
+  if (!response.ok) {
+    const fallback = response.status === 401 ? 'نشست شما منقضی شده است. دوباره وارد شوید.' : response.status === 403 ? 'شما اجازهٔ انجام این عملیات را ندارید.' : response.status === 404 ? 'اطلاعات درخواستی پیدا نشد.' : response.status >= 500 ? 'خطای داخلی سامانه رخ داد. دوباره تلاش کنید.' : 'عملیات پنل مدیریت انجام نشد.';
+    throw new Error(await readApiErrorMessage(response, fallback));
+  }
   if (response.status === 204) return undefined as T;
   const text = await response.text();
   if (!text) return undefined as T;

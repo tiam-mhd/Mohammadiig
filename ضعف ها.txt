@@ -478,7 +478,7 @@ createdAt
 
 # بخش دهم: مدیریت خطا و تجربه کاربری
 
-## ۲۱. یکسان‌سازی Error Handling
+## ✅ ۲۱. یکسان‌سازی Error Handling
 
 در Backend:
 

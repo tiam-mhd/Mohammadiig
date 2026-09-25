@@ -47,5 +47,6 @@ if (typeof window !== 'undefined') {
     useAuthStore.setState({ accessToken: null, user: null, hasHydrated: true });
     window.location.replace(window.location.pathname.startsWith('/admin') ? '/admin/login' : '/auth');
   });
+  window.addEventListener('mig-forbidden', () => toast.error('شما اجازهٔ دسترسی به این بخش را ندارید.'));
   void restoreSession();
 }
