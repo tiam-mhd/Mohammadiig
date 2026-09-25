@@ -451,31 +451,39 @@ export class MediaService implements OnModuleInit {
       const nextUrl = publicMediaUrl(newRelative);
       const dest = safeJoinMedia(this.getRoot(), newRelative);
       ensureDir(dirname(dest));
-      await fs.writeFile(dest, compressed.buffer);
-
-      if (newRelative !== previousRelative && existsSync(sourcePath)) {
-        await fs.unlink(sourcePath).catch(() => undefined);
-      }
-
-      entity.relativePath = newRelative;
-      entity.storedName = basename(newRelative);
-      entity.url = nextUrl;
-      entity.mimeType = compressed.mimeType;
-      entity.fileSize = compressed.buffer.length;
-      entity.width = compressed.width;
-      entity.height = compressed.height;
-      entity.checksum = createHash('sha256').update(compressed.buffer).digest('hex');
-      entity.originalName = this.withExtension(entity.originalName || entity.storedName, compressed.ext);
-
-      const saved = await this.media.save(entity);
+      const rollbackPath = join(backupsDir(this.getRoot()), `${entity.id}-${Date.now()}.rollback`);
+      ensureDir(dirname(rollbackPath));
+      await fs.copyFile(sourcePath, rollbackPath);
       let referencesUpdated = 0;
-      if (previousUrl !== nextUrl || previousRelative !== newRelative) {
-        referencesUpdated = await this.rewriteMediaReferences(previousNeedles, nextUrl);
-        console.log(
-          `[Media] compress replace ${previousUrl} → ${nextUrl} (referencesUpdated=${referencesUpdated})`,
-        );
+      const previousEntity = { relativePath: entity.relativePath, storedName: entity.storedName, url: entity.url, mimeType: entity.mimeType, fileSize: entity.fileSize, width: entity.width, height: entity.height, checksum: entity.checksum, originalName: entity.originalName };
+      try {
+        await fs.writeFile(dest, compressed.buffer);
+        if (newRelative !== previousRelative && existsSync(sourcePath)) await fs.unlink(sourcePath);
+        entity.relativePath = newRelative;
+        entity.storedName = basename(newRelative);
+        entity.url = nextUrl;
+        entity.mimeType = compressed.mimeType;
+        entity.fileSize = compressed.buffer.length;
+        entity.width = compressed.width;
+        entity.height = compressed.height;
+        entity.checksum = createHash('sha256').update(compressed.buffer).digest('hex');
+        entity.originalName = this.withExtension(entity.originalName || entity.storedName, compressed.ext);
+        const saved = await this.media.save(entity);
+        if (previousUrl !== nextUrl || previousRelative !== newRelative) {
+          referencesUpdated = await this.rewriteMediaReferences(previousNeedles, nextUrl);
+          console.log(`[Media] compress replace ${previousUrl} → ${nextUrl} (referencesUpdated=${referencesUpdated})`);
+        }
+        await fs.unlink(rollbackPath).catch(() => undefined);
+        return Object.assign(this.toView(saved), { referencesUpdated });
+      } catch (error) {
+        await fs.copyFile(rollbackPath, sourcePath).catch(() => undefined);
+        if (newRelative !== previousRelative) await fs.unlink(dest).catch(() => undefined);
+        if (referencesUpdated > 0) await this.rewriteMediaReferences([nextUrl], previousUrl).catch(() => undefined);
+        Object.assign(entity, previousEntity);
+        await this.media.save(entity).catch(() => undefined);
+        await fs.unlink(rollbackPath).catch(() => undefined);
+        throw new BadRequestException('فشرده‌سازی انجام نشد و تغییرات به‌طور کامل بازگردانی شد');
       }
-      return Object.assign(this.toView(saved), { referencesUpdated });
     }
 
     const copyId = randomUUID();

@@ -355,7 +355,7 @@ expired
 
 # بخش ششم: Upload و Media
 
-## ۱۷. امن‌سازی Upload
+## ✅ ۱۷. امن‌سازی Upload
 
 برای Media و Backup:
 
@@ -371,7 +371,7 @@ expired
 * Errorها فارسی باشند.
 * فایل‌های خراب یا ناقص پاک شوند.
 
-## ۱۸. اصلاح Media Library
+## ✅ ۱۸. اصلاح Media Library
 
 * URL رسانه‌ها پایدار باشند.
 * حذف رسانه‌ای که در محصول یا پروژه استفاده شده، کنترل شود.
@@ -386,7 +386,7 @@ expired
 
 # بخش هفتم: Backup و Restore
 
-## ۱۹. امن‌سازی Backup
+## ✅ ۱۹. امن‌سازی Backup
 
 * فقط مدیر مجاز بتواند Backup بگیرد.
 * فقط Super Admin بتواند Restore یا Purge انجام دهد.

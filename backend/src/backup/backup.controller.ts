@@ -16,7 +16,10 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import { mkdirSync, promises as fs } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { AuthUser } from '../auth/jwt.strategy';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -26,9 +29,11 @@ import { ExportBackupDto, RestoreBackupOptionsDto } from './dto/backup.dto';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
+const backupUploadTemp = join(tmpdir(), 'mohammadiig-backup-upload');
+mkdirSync(backupUploadTemp, { recursive: true });
 const uploadInterceptor = FileInterceptor('file', {
-  storage: memoryStorage(),
-  limits: { fileSize: 512 * 1024 * 1024 },
+  storage: diskStorage({ destination: backupUploadTemp, filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}.zip`) }),
+  limits: { fileSize: 128 * 1024 * 1024 },
 });
 
 @ApiTags('backup')
@@ -83,9 +88,9 @@ export class BackupController {
     },
   })
   @UseInterceptors(uploadInterceptor)
-  inspect(@UploadedFile() file: Express.Multer.File) {
+  async inspect(@UploadedFile() file: Express.Multer.File) {
     try {
-      return this.backupService.inspectArchive(file);
+      return await this.withUploadBuffer(file, (prepared) => Promise.resolve(this.backupService.inspectArchive(prepared)));
     } catch (error) {
       this.logger.error(
         `inspect failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`,
@@ -124,14 +129,14 @@ export class BackupController {
     if (!options.mode) options.mode = 'skip';
 
     try {
-      return await this.backupService.restoreArchive(file, {
+      return await this.withUploadBuffer(file, (prepared) => this.backupService.restoreArchive(prepared, {
         datasets: options.datasets,
         mode: options.mode,
         dryRun: options.dryRun,
         restoreMediaFiles: options.restoreMediaFiles,
         protectCurrentAdmin: options.protectCurrentAdmin,
         currentUserId: request.user.userId,
-      });
+      }));
     } catch (error) {
       this.logger.error(
         `restore failed: ${error instanceof Error ? error.stack ?? error.message : String(error)}`,
@@ -143,5 +148,13 @@ export class BackupController {
   private isSuperAdmin(user: AuthUser): boolean {
     const configured = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
     return Boolean(configured && user.email?.trim().toLowerCase() === configured);
+  }
+
+  private async withUploadBuffer<T>(file: Express.Multer.File | undefined, action: (prepared: Express.Multer.File | undefined) => Promise<T>): Promise<T> {
+    if (file?.path && !file.buffer) {
+      file.buffer = await fs.readFile(file.path);
+      await fs.unlink(file.path).catch(() => undefined);
+    }
+    return action(file);
   }
 }
