@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SparePartCategoriesService } from './spare-part-categories.service';
 import { SparePartCategory } from './spare-part-categories.types';
@@ -14,8 +14,8 @@ export class SparePartCategoriesController {
 
   @Get()
   @ApiOperation({ summary: 'List active spare-part categories' })
-  findAll(): Promise<SparePartCategory[]> {
-    return this.categoriesService.findAll();
+  findAll(@Query('page') rawPage = '1', @Query('limit') rawLimit = '20', @Query('q') q = '') {
+    return this.categoriesService.findAll(Number(rawPage), Number(rawLimit), q);
   }
 
   @Get('admin/all')
@@ -23,8 +23,8 @@ export class SparePartCategoriesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all spare-part categories for admin' })
-  adminAll(): Promise<SparePartCategory[]> {
-    return this.categoriesService.findAllForAdmin();
+  adminAll(@Query('page') rawPage = '1', @Query('limit') rawLimit = '20', @Query('q') q = '') {
+    return this.categoriesService.findAllForAdmin(Number(rawPage), Number(rawLimit), q);
   }
 
   @Post()

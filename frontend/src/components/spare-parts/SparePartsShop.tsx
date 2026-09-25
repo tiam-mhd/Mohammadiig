@@ -9,7 +9,7 @@ import {
 } from '@/components/icons/CartBagIcon';
 import {
   fetchSparePartCategories,
-  fetchSpareParts,
+  fetchSparePartsPage,
   type SparePart,
   type SparePartCategory,
 } from '@/lib/api-client';
@@ -124,19 +124,25 @@ export function SparePartsShop() {
   const [preview, setPreview] = useState<SparePart | null>(null);
   const [toast, setToast] = useState('');
   const [priceBounds, setPriceBounds] = useState({ min: 0, max: 50_000_000 });
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     const t = window.setTimeout(() => setDebouncedQuery(query.trim()), 280);
     return () => window.clearTimeout(t);
   }, [query]);
 
+  useEffect(() => { setPage(1); }, [debouncedQuery, filters]);
+
   useEffect(() => {
     fetchSparePartCategories()
       .then((list) => setCategories(list.filter((c) => c.isActive !== false)))
       .catch(() => undefined);
 
-    fetchSpareParts()
-      .then((list) => {
+    fetchSparePartsPage({ limit: 100 })
+      .then((response) => {
+        const list = response.data;
         const priced = list.filter((p) => !p.priceNegotiable && p.price > 0);
         if (!priced.length) return;
         const min = Math.min(...priced.map((p) => p.price));
@@ -152,21 +158,23 @@ export function SparePartsShop() {
     try {
       const min = filters.minPrice.trim() ? Number(filters.minPrice) : undefined;
       const max = filters.maxPrice.trim() ? Number(filters.maxPrice) : undefined;
-      const list = await fetchSpareParts({
+      const response = await fetchSparePartsPage({
         q: debouncedQuery || undefined,
         category: filters.category || undefined,
         inStock: filters.inStock || undefined,
         minPrice: Number.isFinite(min) ? min : undefined,
         maxPrice: Number.isFinite(max) ? max : undefined,
+        page,
+        limit: 20,
       });
-      setParts(list);
+      setParts(response.data); setTotalPages(response.meta.totalPages); setTotal(response.meta.total);
     } catch {
       setParts([]);
       setError('دریافت قطعات انجام نشد.');
     } finally {
       setLoaded(true);
     }
-  }, [debouncedQuery, filters]);
+  }, [debouncedQuery, filters, page]);
 
   useEffect(() => {
     void loadParts();
@@ -337,6 +345,7 @@ export function SparePartsShop() {
               })}
             </div>
           ) : null}
+          {loaded && totalPages > 1 ? <div className="mt-8 flex items-center justify-center gap-3" dir="rtl"><button type="button" className="btn-pill btn-pill--ghost" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>قبلی</button><span className="text-sm text-muted">{total.toLocaleString('fa-IR')} قطعه · صفحه {page.toLocaleString('fa-IR')} از {totalPages.toLocaleString('fa-IR')}</span><button type="button" className="btn-pill btn-pill--ghost" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>بعدی</button></div> : null}
         </div>
       </div>
 

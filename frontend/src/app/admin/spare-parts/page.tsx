@@ -12,7 +12,7 @@ import { formatDisplayPrice } from '@/lib/admin-labels';
 import {
   deleteAdminSparePart,
   fetchAdminSparePartCategories,
-  fetchAdminSpareParts,
+  fetchAdminSparePartsPage,
   ManageSparePartPayload,
   SparePart,
   SparePartCategory,
@@ -36,6 +36,9 @@ export default function AdminSparePartsPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<SparePart | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
 
   const categoryOptions = useMemo(
     () => categories.map((category) => ({ value: category.id, label: category.nameFa })),
@@ -83,13 +86,15 @@ export default function AdminSparePartsPage() {
 
   useEffect(() => {
     if (!token) return;
-    Promise.all([fetchAdminSpareParts(token), fetchAdminSparePartCategories(token)])
-      .then(([nextParts, nextCategories]) => {
-        setParts(nextParts);
+    setLoading(true);
+    Promise.all([fetchAdminSparePartsPage(token, { page, limit: 20, q: list.query }), fetchAdminSparePartCategories(token)])
+      .then(([partResponse, nextCategories]) => {
+        setParts(partResponse.data); setMeta(partResponse.meta);
         setCategories(nextCategories);
       })
-      .catch(() => adminToast.error('دریافت قطعات یدکی انجام نشد.'));
-  }, [token]);
+      .catch(() => adminToast.error('دریافت قطعات یدکی انجام نشد.'))
+      .finally(() => setLoading(false));
+  }, [token, page, list.query]);
 
   function categoryLabel(value: string) {
     const found = categories.find((category) => category.id === value || category.slug === value);
@@ -174,7 +179,7 @@ export default function AdminSparePartsPage() {
       <AdminToolbar
         countLabel={`${list.shown.toLocaleString('fa-IR')} از ${list.total.toLocaleString('fa-IR')} مورد`}
         query={list.query}
-        onQueryChange={list.setQuery}
+        onQueryChange={(value) => { list.setQuery(value); setPage(1); }}
         filtersOpen={list.filtersOpen}
         onToggleFilters={() => list.setFiltersOpen((open) => !open)}
         activeFilterCount={list.activeFilterCount}
@@ -215,7 +220,8 @@ export default function AdminSparePartsPage() {
 
       <DataTable
         headers={['قطعه', 'دسته', 'شماره', 'موجودی', 'قیمت', 'وضعیت', 'عملیات']}
-        isEmpty={list.filtered.length === 0}
+        isEmpty={list.filtered.length === 0 && !loading}
+        loading={loading}
         emptyText="قطعه‌ای با این جستجو پیدا نشد."
       >
         {list.filtered.map((part) => {
@@ -313,6 +319,8 @@ export default function AdminSparePartsPage() {
           );
         })}
       </DataTable>
+
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {Math.max(1, meta.totalPages).toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
 
       <AdminConfirmModal
         open={Boolean(pendingDelete)}

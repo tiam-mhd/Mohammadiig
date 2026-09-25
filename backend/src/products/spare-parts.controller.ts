@@ -20,13 +20,17 @@ export class SparePartsController {
     @Query('inStock') inStock?: string,
     @Query('minPrice') minPrice?: string,
     @Query('maxPrice') maxPrice?: string,
-  ): Promise<SparePartEntity[]> {
+    @Query('page') rawPage = '1',
+    @Query('limit') rawLimit = '20',
+  ) {
     return this.extensionsService.findSpareParts({
       q,
       category,
       inStock: inStock === '1' || inStock === 'true',
       minPrice: minPrice != null && minPrice !== '' ? Number(minPrice) : undefined,
       maxPrice: maxPrice != null && maxPrice !== '' ? Number(maxPrice) : undefined,
+      page: Number(rawPage),
+      limit: Number(rawLimit),
     });
   }
 
@@ -35,8 +39,8 @@ export class SparePartsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   @ApiOperation({ summary: 'List all spare parts for admin' })
-  adminAll(): Promise<SparePartEntity[]> {
-    return this.extensionsService.findSparePartsForAdmin();
+  adminAll(@Query('page') rawPage = '1', @Query('limit') rawLimit = '20', @Query('q') q?: string): Promise<{ data: SparePartEntity[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    return this.extensionsService.findSparePartsForAdmin(Number(rawPage), Number(rawLimit), q);
   }
 
   @Get('admin/:id')

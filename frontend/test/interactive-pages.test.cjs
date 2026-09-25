@@ -71,3 +71,19 @@ test('تمام صفحات اصلی زیر Layout راست‌به‌چپ اجرا
   assert.match(layout, /lang="fa"/);
   assert.match(layout, /dir="rtl"/);
 });
+
+test('سایدبار پس از جابه‌جایی فوکوس و اسکرول آیتم فعال را حفظ می‌کند', () => {
+  const source = read('components/admin/AdminShell.tsx');
+  assert.match(source, /admin-nav-link\.is-active/);
+  assert.match(source, /scrollIntoView\(\{ block: 'nearest'/);
+  assert.match(source, /focus\(\{ preventScroll: true \}\)/);
+});
+
+test('قطعات یدکی و دسته‌بندی قطعات قرارداد Pagination دارند', () => {
+  for (const file of ['app/admin/spare-parts/page.tsx', 'app/admin/spare-part-categories/page.tsx', 'components/spare-parts/SparePartsShop.tsx']) {
+    const source = read(file);
+    assert.match(source, /page/);
+    assert.match(source, /بعدی/);
+    assert.match(source, /قبلی/);
+  }
+});

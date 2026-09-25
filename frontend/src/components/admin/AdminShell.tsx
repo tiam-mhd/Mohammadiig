@@ -314,6 +314,17 @@ export function AdminShell({
   }, [pathname]);
 
   useEffect(() => {
+    if (!mounted) return;
+    const frame = window.requestAnimationFrame(() => {
+      const activeLink = document.querySelector<HTMLAnchorElement>('.admin-sidebar__nav .admin-nav-link.is-active');
+      if (!activeLink) return;
+      activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      activeLink.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [mounted, pathname]);
+
+  useEffect(() => {
     if (!mobileNavOpen) return;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';

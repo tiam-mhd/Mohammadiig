@@ -84,20 +84,22 @@ export class SparePartCategoriesService implements OnModuleInit {
       .replace(/[^a-z0-9-_]/g, '');
   }
 
-  async findAll(): Promise<SparePartCategory[]> {
-    const categories = await this.repository.find({
-      where: { isActive: true },
-      order: { displayOrder: 'ASC' },
-    });
-    return categories.map((category) => this.toDto(category));
+  async findAll(page = 1, limit = 20, search = '') {
+    const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 20;
+    const qb = this.repository.createQueryBuilder('category').where('category.is_active = :active', { active: true }).orderBy('category.display_order', 'ASC');
+    if (search.trim()) qb.andWhere('(category.name_fa LIKE :search OR category.name_en LIKE :search OR category.slug LIKE :search)', { search: `%${search.trim()}%` });
+    const [categories, total] = await qb.skip((safePage - 1) * safeLimit).take(safeLimit).getManyAndCount();
+    return { data: categories.map((category) => this.toDto(category)), meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
   }
 
-  async findAllForAdmin(): Promise<SparePartCategory[]> {
-    const categories = await this.repository.find({
-      order: { displayOrder: 'ASC', createdAt: 'DESC' },
-      withDeleted: false,
-    });
-    return categories.map((category) => this.toDto(category));
+  async findAllForAdmin(page = 1, limit = 20, search = '') {
+    const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 20;
+    const qb = this.repository.createQueryBuilder('category').orderBy('category.display_order', 'ASC').addOrderBy('category.created_at', 'DESC');
+    if (search.trim()) qb.where('(category.name_fa LIKE :search OR category.name_en LIKE :search OR category.slug LIKE :search)', { search: `%${search.trim()}%` });
+    const [categories, total] = await qb.skip((safePage - 1) * safeLimit).take(safeLimit).getManyAndCount();
+    return { data: categories.map((category) => this.toDto(category)), meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
   }
 
   async create(dto: ManageCategoryDto): Promise<SparePartCategory> {

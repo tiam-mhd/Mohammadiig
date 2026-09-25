@@ -403,7 +403,9 @@ export class ProductExtensionsService implements OnModuleInit {
     inStock?: boolean;
     minPrice?: number;
     maxPrice?: number;
-  }): Promise<SparePartEntity[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: SparePartEntity[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
     const qb = this.spareParts
       .createQueryBuilder('part')
       .where('part.is_active = :active', { active: true })
@@ -431,11 +433,19 @@ export class ProductExtensionsService implements OnModuleInit {
       );
     }
 
-    return qb.getMany();
+    const page = Number.isInteger(filters?.page) && (filters?.page ?? 0) > 0 ? filters!.page! : 1;
+    const limit = Number.isInteger(filters?.limit) && (filters?.limit ?? 0) > 0 && (filters?.limit ?? 0) <= 100 ? filters!.limit! : 20;
+    const [data, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
+    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
-  findSparePartsForAdmin(): Promise<SparePartEntity[]> {
-    return this.spareParts.find({ order: { createdAt: 'DESC' } });
+  async findSparePartsForAdmin(page = 1, limit = 20, search = ''): Promise<{ data: SparePartEntity[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+    const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 20;
+    const qb = this.spareParts.createQueryBuilder('part').orderBy('part.created_at', 'DESC');
+    if (search.trim()) qb.where('(part.name_fa LIKE :search OR part.name_en LIKE :search OR part.part_number LIKE :search)', { search: `%${search.trim()}%` });
+    const [data, total] = await qb.skip((safePage - 1) * safeLimit).take(safeLimit).getManyAndCount();
+    return { data, meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
   }
 
   async findSparePartPublic(slugOrId: string): Promise<SparePartEntity> {

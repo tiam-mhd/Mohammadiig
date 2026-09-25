@@ -11,7 +11,7 @@ import { useAdminList } from '@/hooks/useAdminList';
 import {
   createAdminSparePartCategory,
   deleteAdminSparePartCategory,
-  fetchAdminSparePartCategories,
+  fetchAdminSparePartCategoriesPage,
   SparePartCategory,
   updateAdminSparePartCategory,
 } from '@/lib/api-client';
@@ -36,6 +36,9 @@ export default function AdminSparePartCategoriesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [loading, setLoading] = useState(true);
 
   const searchText = useCallback(
     (item: SparePartCategory) =>
@@ -50,10 +53,12 @@ export default function AdminSparePartCategoriesPage() {
 
   useEffect(() => {
     if (!token) return;
-    fetchAdminSparePartCategories(token)
-      .then(setCategories)
-      .catch(() => adminToast.error('دریافت دسته‌بندی قطعات انجام نشد.'));
-  }, [token]);
+    setLoading(true);
+    fetchAdminSparePartCategoriesPage(token, { page, limit: 20, q: list.query })
+      .then((response) => { setCategories(response.data); setMeta(response.meta); })
+      .catch(() => adminToast.error('دریافت دسته‌بندی قطعات انجام نشد.'))
+      .finally(() => setLoading(false));
+  }, [token, page, list.query]);
 
   function openCreate() {
     setEditingId(null);
@@ -116,7 +121,7 @@ export default function AdminSparePartCategoriesPage() {
       <AdminToolbar
         countLabel={`${list.shown.toLocaleString('fa-IR')} از ${list.total.toLocaleString('fa-IR')} مورد`}
         query={list.query}
-        onQueryChange={list.setQuery}
+        onQueryChange={(value) => { list.setQuery(value); setPage(1); }}
         filtersOpen={list.filtersOpen}
         onToggleFilters={() => list.setFiltersOpen((open) => !open)}
         activeFilterCount={list.activeFilterCount}
@@ -144,7 +149,8 @@ export default function AdminSparePartCategoriesPage() {
 
       <DataTable
         headers={['نام', 'شناسه', 'ترتیب', 'وضعیت', 'عملیات']}
-        isEmpty={list.filtered.length === 0}
+        isEmpty={list.filtered.length === 0 && !loading}
+        loading={loading}
         emptyText="دسته‌ای با این جستجو پیدا نشد."
       >
         {list.filtered.map((category) => (
@@ -177,6 +183,8 @@ export default function AdminSparePartCategoriesPage() {
           </DataRow>
         ))}
       </DataTable>
+
+      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {Math.max(1, meta.totalPages).toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
 
       <AdminModal
         open={modalOpen}

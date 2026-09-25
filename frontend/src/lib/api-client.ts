@@ -627,6 +627,8 @@ export async function fetchCategories(): Promise<ProductCategory[]> {
 export function fetchAdminCategories(accessToken: string): Promise<ProductCategory[]> {
   return adminRequest(accessToken, '/categories/admin/all');
 }
+export interface AdminPageMeta { page: number; limit: number; total: number; totalPages: number }
+export interface AdminPage<T> { data: T[]; meta: AdminPageMeta }
 
 export interface AdminDashboardMetrics {
   products: number; categories: number; customers: number; users: number; newRequests: number;
@@ -680,13 +682,27 @@ export async function deleteAdminCategory(accessToken: string, id: string): Prom
 }
 
 export async function fetchSparePartCategories(): Promise<SparePartCategory[]> {
-  const response = await fetch(`${getApiUrl()}/spare-part-categories`, { cache: 'no-store' });
+  const response = await fetch(`${getApiUrl()}/spare-part-categories?page=1&limit=100`, { cache: 'no-store' });
   if (!response.ok) throw new Error('دریافت دسته‌بندی قطعات انجام نشد.');
-  return response.json() as Promise<SparePartCategory[]>;
+  const body = (await response.json()) as AdminPage<SparePartCategory> | SparePartCategory[];
+  return Array.isArray(body) ? body : body.data;
+}
+
+export async function fetchSparePartCategoriesPage(params?: { page?: number; limit?: number; q?: string }): Promise<AdminPage<SparePartCategory>> {
+  const search = new URLSearchParams({ page: String(params?.page ?? 1), limit: String(params?.limit ?? 20) });
+  if (params?.q) search.set('q', params.q);
+  const response = await fetch(`${getApiUrl()}/spare-part-categories?${search}`, { cache: 'no-store' });
+  if (!response.ok) throw new Error('دریافت دسته‌بندی قطعات انجام نشد.');
+  return response.json() as Promise<AdminPage<SparePartCategory>>;
 }
 
 export function fetchAdminSparePartCategories(accessToken: string): Promise<SparePartCategory[]> {
-  return adminRequest(accessToken, '/spare-part-categories/admin/all');
+  return fetchAdminSparePartCategoriesPage(accessToken, { page: 1, limit: 100 }).then((body) => body.data);
+}
+export function fetchAdminSparePartCategoriesPage(accessToken: string, params?: { page?: number; limit?: number; q?: string }): Promise<AdminPage<SparePartCategory>> {
+  const search = new URLSearchParams({ page: String(params?.page ?? 1), limit: String(params?.limit ?? 20) });
+  if (params?.q) search.set('q', params.q);
+  return adminRequest(accessToken, `/spare-part-categories/admin/all?${search}`);
 }
 
 export function createAdminSparePartCategory(
@@ -914,16 +930,26 @@ export async function fetchSpareParts(params?: {
   minPrice?: number;
   maxPrice?: number;
 }): Promise<SparePart[]> {
+  const body = await fetchSparePartsPage(params);
+  return body.data;
+}
+
+export async function fetchSparePartsPage(params?: {
+  q?: string; category?: string; inStock?: boolean; minPrice?: number; maxPrice?: number; page?: number; limit?: number;
+}): Promise<AdminPage<SparePart>> {
   const search = new URLSearchParams();
   if (params?.q) search.set('q', params.q);
   if (params?.category) search.set('category', params.category);
   if (params?.inStock) search.set('inStock', '1');
   if (params?.minPrice != null) search.set('minPrice', String(params.minPrice));
   if (params?.maxPrice != null) search.set('maxPrice', String(params.maxPrice));
+  search.set('page', String(params?.page ?? 1));
+  search.set('limit', String(params?.limit ?? 20));
   const qs = search.toString();
   const response = await fetch(`${getApiUrl()}/spare-parts${qs ? `?${qs}` : ''}`, { cache: 'no-store' });
   if (!response.ok) throw new Error('دریافت قطعات یدکی انجام نشد.');
-  return response.json() as Promise<SparePart[]>;
+  const body = (await response.json()) as AdminPage<SparePart> | SparePart[];
+  return Array.isArray(body) ? { data: body, meta: { page: 1, limit: body.length, total: body.length, totalPages: 1 } } : body;
 }
 
 export async function fetchSparePart(slugOrId: string): Promise<SparePart> {
@@ -941,7 +967,12 @@ export async function fetchServices(): Promise<ServiceSummary[]> {
 }
 
 export function fetchAdminSpareParts(accessToken: string): Promise<SparePart[]> {
-  return adminRequest(accessToken, '/spare-parts/admin/all');
+  return fetchAdminSparePartsPage(accessToken, { page: 1, limit: 100 }).then((body) => body.data);
+}
+export function fetchAdminSparePartsPage(accessToken: string, params?: { page?: number; limit?: number; q?: string }): Promise<AdminPage<SparePart>> {
+  const search = new URLSearchParams({ page: String(params?.page ?? 1), limit: String(params?.limit ?? 20) });
+  if (params?.q) search.set('q', params.q);
+  return adminRequest(accessToken, `/spare-parts/admin/all?${search}`);
 }
 
 export function fetchAdminSparePart(accessToken: string, id: string): Promise<SparePart> {
