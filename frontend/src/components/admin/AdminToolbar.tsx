@@ -89,11 +89,13 @@ export function AdminFilterBar({
   values,
   onChange,
   onClear,
+  customFields,
 }: {
   fields: FilterField[];
   values: Record<string, string>;
   onChange: (key: string, value: string) => void;
   onClear: () => void;
+  customFields?: ReactNode;
 }) {
   return (
     <div className="admin-filters">
@@ -116,6 +118,7 @@ export function AdminFilterBar({
               </select>
             </label>
           ))}
+          {customFields}
         </div>
         <IconAction
           label="پاک‌کردن فیلترها"

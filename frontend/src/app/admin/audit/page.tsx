@@ -4,11 +4,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminShell } from '@/components/admin/AdminShell';
 import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
 import { DataRow, DataTable } from '@/components/admin/DataTable';
-import { IconAction, IconClear, IconFilter } from '@/components/admin/AdminIcons';
+import { IconAction, IconClear } from '@/components/admin/AdminIcons';
+import { PersianDatePicker } from '@/components/admin/PersianDatePicker';
 import { getApiUrl } from '@/lib/api-client';
 import { useAuthStore } from '@/store/auth.store';
 
-type AuditRow = { id: string; action: string; entityType: string; entityId: string; actorUserId: string | null; oldValue?: Record<string, unknown> | null; newValue?: Record<string, unknown> | null; createdAt: string };
+type AuditRow = { id: string; action: string; entityType: string; entityId: string; actorUserId: string | null; actorName?: string | null; actorPhone?: string | null; oldValue?: Record<string, unknown> | null; newValue?: Record<string, unknown> | null; createdAt: string };
 type AuditResponse = { data: AuditRow[]; meta: { page: number; limit: number; total: number; totalPages: number } };
 
 const actionLabels: Record<string, string> = {
@@ -28,7 +29,7 @@ export default function AuditPage() {
   const [query, setQuery] = useState('');
   const [action, setAction] = useState('all');
   const [entityType, setEntityType] = useState('all');
-  const [actorUserId, setActorUserId] = useState('');
+  const [actorSearch, setActorSearch] = useState('');
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function AuditPage() {
     const params = new URLSearchParams({ page: String(page), limit: String(meta.limit) });
     if (action !== 'all') params.set('action', action);
     if (entityType !== 'all') params.set('entityType', entityType);
-    if (actorUserId.trim()) params.set('actorUserId', actorUserId.trim());
+    if (actorSearch.trim()) params.set('actorSearch', actorSearch.trim());
     if (from) params.set('from', from);
     if (to) params.set('to', `${to}T23:59:59.999Z`);
     try {
@@ -53,12 +54,12 @@ export default function AuditPage() {
     } catch (requestError) {
       setRows([]); setError(requestError instanceof Error ? requestError.message : 'دریافت گزارش ممیزی انجام نشد.');
     } finally { setLoading(false); }
-  }, [accessToken, action, actorUserId, entityType, from, meta.limit, page, to, user?.role]);
+  }, [accessToken, action, actorSearch, entityType, from, meta.limit, page, to, user?.role]);
 
   useEffect(() => { if (hasHydrated) void load(); }, [hasHydrated, load]);
   const visibleRows = useMemo(() => { const normalized = query.trim().toLowerCase(); return normalized ? rows.filter((row) => `${row.action} ${row.entityType} ${row.entityId} ${row.actorUserId ?? ''}`.toLowerCase().includes(normalized)) : rows; }, [query, rows]);
-  const activeFilterCount = [action !== 'all' ? action : '', entityType !== 'all' ? entityType : '', actorUserId, from, to].filter(Boolean).length;
-  const resetFilters = () => { setQuery(''); setAction('all'); setEntityType('all'); setActorUserId(''); setFrom(''); setTo(''); setPage(1); };
+  const activeFilterCount = [action !== 'all' ? action : '', entityType !== 'all' ? entityType : '', actorSearch, from, to].filter(Boolean).length;
+  const resetFilters = () => { setQuery(''); setAction('all'); setEntityType('all'); setActorSearch(''); setFrom(''); setTo(''); setPage(1); };
   const copyId = async (id: string) => { try { await navigator.clipboard.writeText(id); setCopiedId(id); window.setTimeout(() => setCopiedId(''), 1600); } catch { setCopiedId(''); } };
 
   return (
@@ -70,17 +71,11 @@ export default function AuditPage() {
           <div className="admin-stat text-start"><p className="caption-up">فیلترهای فعال</p><p className="admin-stat__value">{activeFilterCount.toLocaleString('fa-IR')}</p><p className="admin-stat__hint">قابل پاک‌سازی از نوار فیلتر</p></div>
         </section>
         <AdminToolbar countLabel={`${visibleRows.length.toLocaleString('fa-IR')} از ${meta.total.toLocaleString('fa-IR')} رویداد`} query={query} onQueryChange={(value) => { setQuery(value); setPage(1); }} filtersOpen={filtersOpen} onToggleFilters={() => setFiltersOpen((open) => !open)} activeFilterCount={activeFilterCount} extraActions={<IconAction label="پاک‌سازی فیلترها" tone="ghost" onClick={resetFilters}><IconClear /></IconAction>}>
-          {filtersOpen ? <AdminFilterBar fields={[{ key: 'action', label: 'عملیات', options: actionOptions }, { key: 'entityType', label: 'نوع موجودیت', options: entityOptions }]} values={{ action, entityType }} onChange={(key, value) => { if (key === 'action') setAction(value); if (key === 'entityType') setEntityType(value); setPage(1); }} onClear={resetFilters} /> : null}
+          {filtersOpen ? <AdminFilterBar fields={[{ key: 'action', label: 'عملیات', options: actionOptions }, { key: 'entityType', label: 'نوع موجودیت', options: entityOptions }]} values={{ action, entityType }} onChange={(key, value) => { if (key === 'action') setAction(value); if (key === 'entityType') setEntityType(value); setPage(1); }} onClear={resetFilters} customFields={<><label className="admin-filters__field"><span className="ops-login__label">کاربر ثبت‌کننده</span><input className="admin-input" value={actorSearch} onChange={(event) => { setActorSearch(event.target.value); setPage(1); }} placeholder="نام یا شماره موبایل (بخشی از مقدار)" /></label><PersianDatePicker label="از تاریخ" value={from} onChange={(value) => { setFrom(value); setPage(1); }} /><PersianDatePicker label="تا تاریخ" value={to} onChange={(value) => { setTo(value); setPage(1); }} /></>} /> : null}
         </AdminToolbar>
-        <section className="admin-card p-4" aria-label="فیلترهای تکمیلی"><div className="grid gap-3 md:grid-cols-[1fr_1fr_1fr_auto]">
-          <label className="admin-filters__field"><span className="ops-login__label">شناسه کاربر</span><input className="admin-input" value={actorUserId} onChange={(event) => { setActorUserId(event.target.value); setPage(1); }} placeholder="شناسه کاربر ثبت‌کننده" /></label>
-          <label className="admin-filters__field"><span className="ops-login__label">از تاریخ</span><input className="admin-input" type="date" value={from} onChange={(event) => { setFrom(event.target.value); setPage(1); }} /></label>
-          <label className="admin-filters__field"><span className="ops-login__label">تا تاریخ</span><input className="admin-input" type="date" value={to} onChange={(event) => { setTo(event.target.value); setPage(1); }} /></label>
-          <button type="button" className="ops-btn ops-btn--ghost self-end" onClick={resetFilters}><IconFilter /> پاک‌سازی</button>
-        </div></section>
         {error ? <div className="field-message field-message--error flex items-center justify-between gap-3" role="alert"><span>{error}</span><button type="button" className="ops-btn ops-btn--ghost" onClick={() => void load()}>تلاش دوباره</button></div> : null}
         {loading ? <div className="admin-card p-8 text-center text-[var(--ops-muted)]" role="status">در حال بارگذاری گزارش ممیزی…</div> : null}
-        {!loading && !error ? <DataTable headers={['رویداد', 'موجودیت', 'ثبت‌کننده', 'زمان', 'جزئیات']} emptyText="در این بازه رویدادی ثبت نشده است." isEmpty={visibleRows.length === 0}>{visibleRows.map((row) => <DataRow key={row.id}><td><strong className="block text-[var(--ops-ink)]">{actionLabels[row.action] ?? row.action}</strong><span className="en mt-1 block text-xs text-[var(--ops-muted)]" dir="ltr">{row.action}</span></td><td><span className="admin-badge">{entityLabels[row.entityType] ?? row.entityType}</span><span className="en mt-1 block text-xs text-[var(--ops-muted)]" dir="ltr">{row.entityId.slice(0, 12)}…</span></td><td><span dir="ltr" className="en text-xs">{row.actorUserId ?? 'system'}</span></td><td><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString('fa-IR')}</time></td><td><details><summary className="cursor-pointer text-[var(--ops-accent)]">مشاهده</summary><div className="mt-2 max-w-md space-y-2 text-xs"><pre className="overflow-auto rounded bg-[var(--ops-paper)] p-2" dir="ltr">{safeJson(row.newValue ?? row.oldValue)}</pre><button type="button" className="ops-btn ops-btn--ghost" onClick={() => void copyId(row.id)}>{copiedId === row.id ? 'کپی شد' : 'کپی شناسه رویداد'}</button></div></details></td></DataRow>)}</DataTable> : null}
+        {!loading && !error ? <DataTable headers={['رویداد', 'موجودیت', 'ثبت‌کننده', 'زمان', 'جزئیات']} emptyText="در این بازه رویدادی ثبت نشده است." isEmpty={visibleRows.length === 0}>{visibleRows.map((row) => <DataRow key={row.id}><td><strong className="block text-[var(--ops-ink)]">{actionLabels[row.action] ?? row.action}</strong><span className="en mt-1 block text-xs text-[var(--ops-muted)]" dir="ltr">{row.action}</span></td><td><span className="admin-badge">{entityLabels[row.entityType] ?? row.entityType}</span><span className="en mt-1 block text-xs text-[var(--ops-muted)]" dir="ltr">{row.entityId.slice(0, 12)}…</span></td><td><strong className="block">{row.actorName || 'سیستم'}</strong><span dir="ltr" className="en text-xs">{row.actorPhone || row.actorUserId || 'system'}</span></td><td><time dateTime={row.createdAt}>{new Date(row.createdAt).toLocaleString('fa-IR')}</time></td><td><details><summary className="cursor-pointer text-[var(--ops-accent)]">مشاهده</summary><div className="mt-2 max-w-md space-y-2 text-xs"><pre className="overflow-auto rounded bg-[var(--ops-paper)] p-2" dir="ltr">{safeJson(row.newValue ?? row.oldValue)}</pre><button type="button" className="ops-btn ops-btn--ghost" onClick={() => void copyId(row.id)}>{copiedId === row.id ? 'کپی شد' : 'کپی شناسه رویداد'}</button></div></details></td></DataRow>)}</DataTable> : null}
         <div className="flex items-center justify-between gap-3" aria-label="صفحه‌بندی گزارش ممیزی"><button type="button" disabled={loading || page <= 1} onClick={() => setPage((current) => current - 1)} className="ops-btn ops-btn--ghost disabled:opacity-40">قبلی</button><span className="text-sm text-[var(--ops-muted)]">صفحه {page.toLocaleString('fa-IR')} از {Math.max(1, meta.totalPages).toLocaleString('fa-IR')}</span><button type="button" disabled={loading || page >= meta.totalPages} onClick={() => setPage((current) => current + 1)} className="ops-btn ops-btn--ghost disabled:opacity-40">بعدی</button></div>
       </div>
     </AdminShell>
