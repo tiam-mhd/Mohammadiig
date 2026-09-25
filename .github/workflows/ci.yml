@@ -93,6 +93,10 @@ jobs:
       - name: Build frontend
         run: npm run build:frontend
 
+      - name: Frontend browser smoke tests
+        run: npm run test:browser
+        working-directory: frontend
+
       - name: Run migrations on test database
         run: npm --prefix backend run migration:run
 
