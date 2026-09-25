@@ -3019,6 +3019,78 @@
   }
 }
 
+/* Shared responsive pagination: RTL-first controls with a soft loading transition. */
+.admin-main .mt-4.flex.items-center.justify-between.text-sm,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 3.25rem;
+  margin-top: 1rem;
+  padding: 0.55rem;
+  border: 1px solid var(--ops-line);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--ops-surface) 88%, transparent);
+  box-shadow: var(--ops-shadow);
+  direction: rtl;
+}
+
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > button,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button {
+  display: inline-flex;
+  min-width: 6.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid var(--ops-line-strong);
+  border-radius: 0.65rem;
+  padding: 0.55rem 0.8rem;
+  color: var(--ops-ink);
+  background: var(--ops-surface);
+  transition: transform 180ms var(--ops-ease), background 180ms var(--ops-ease), border-color 180ms var(--ops-ease), opacity 180ms var(--ops-ease);
+}
+
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > button:first-child::before,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button:first-child::before { content: '→'; font-size: 1.1rem; }
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > button:last-child::after,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button:last-child::after { content: '←'; font-size: 1.1rem; }
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > button:not(:disabled):hover,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button:not(:disabled):hover { transform: translateY(-1px); border-color: var(--ops-accent); background: var(--ops-accent-soft); }
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > button:disabled,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button:disabled { cursor: not-allowed; opacity: 0.42; }
+
+.admin-main .mt-4.flex.items-center.justify-between.text-sm > span,
+.mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > span {
+  min-width: 10rem;
+  text-align: center;
+  color: var(--ops-muted);
+  font-size: 0.8rem;
+}
+
+.admin-table-wrap.is-loading { position: relative; overflow: hidden; }
+.admin-table-wrap.is-loading::after {
+  position: absolute;
+  inset: 0;
+  content: '';
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent 20%, rgba(255, 255, 255, 0.45) 50%, transparent 80%);
+  backdrop-filter: blur(1.5px);
+  animation: admin-pagination-shimmer 1.15s ease-in-out infinite;
+}
+
+@keyframes admin-pagination-shimmer { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+@media (max-width: 640px) {
+  .admin-main .mt-4.flex.items-center.justify-between.text-sm,
+  .mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] { flex-wrap: wrap; justify-content: center; }
+  .admin-main .mt-4.flex.items-center.justify-between.text-sm > span,
+  .mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > span { order: -1; width: 100%; }
+  .admin-main .mt-4.flex.items-center.justify-between.text-sm > button,
+  .mig-ops [aria-label="صفحه‌بندی گزارش ممیزی"] > button { flex: 1 1 8rem; }
+}
+
 /* ?? Backup / restore ?? */
 .backup-page {
   display: grid;

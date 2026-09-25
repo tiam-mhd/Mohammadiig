@@ -150,6 +150,7 @@ export function AdminStatusResourcePage<T extends { id: string }>({
       <DataTable
         headers={[...headers, 'وضعیت', 'عملیات']}
         isEmpty={visibleItems.length === 0 && !loading}
+        loading={loading}
         emptyText={`${resourceLabel}ی با این جستجو پیدا نشد.`}
       >
         {visibleItems.map((item) => (

@@ -45,15 +45,17 @@ export function DataTable({
   children,
   emptyText = 'موردی برای نمایش وجود ندارد.',
   isEmpty = false,
+  loading = false,
 }: {
   headers: string[];
   children: ReactNode;
   emptyText?: string;
   isEmpty?: boolean;
+  loading?: boolean;
 }) {
   return (
     <DataTableContext.Provider value={{ headers }}>
-      <div className="admin-table-wrap">
+      <div className={`admin-table-wrap ${loading ? 'is-loading' : ''}`} aria-busy={loading}>
         <table className="admin-data-table">
           <thead>
             <tr>
