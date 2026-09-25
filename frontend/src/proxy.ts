@@ -7,7 +7,11 @@ export async function proxy(request: NextRequest) {
   const login = new URL(admin ? '/admin/login' : '/auth', request.url);
   const cookie = request.cookies.get('mig_session');
   if (!cookie) return NextResponse.redirect(login);
-  const internal = (process.env.API_INTERNAL_URL ?? 'http://127.0.0.1:3001/api').replace(/\/+$/, '');
+  // Use the server-only target first, then the public API target as a safe
+  // fallback for deployments that configure a separate API host. Without
+  // this fallback the middleware silently calls localhost in production and
+  // every protected page appears unavailable even though the API is healthy.
+  const internal = (process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:3001/api').replace(/\/+$/, '');
   const base = internal.endsWith('/api') ? internal : `${internal}/api`;
   try {
     const response = await fetch(`${base}/auth/session`, {

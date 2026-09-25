@@ -94,11 +94,20 @@ OTP_RESEND_SECONDS=60
 
 ```env
 NEXT_PUBLIC_API_URL=https://api.mohammadiig.ir/api
+API_INTERNAL_URL=https://api.mohammadiig.ir/api
 ```
 
 نمونه: `frontend/.env.example`
 
 > `NEXT_PUBLIC_*` در زمان build داخل باندل می‌رود؛ بعد از عوض کردن حتماً Rebuild کنید.
+
+`API_INTERNAL_URL` برای Middleware و بررسی نشست سمت سرور است. آن را در محیط اجرای
+سرویس Next نیز تنظیم کنید؛ اگر تنظیم نشود، Middleware به‌صورت پیش‌فرض به
+`127.0.0.1:3001` وصل می‌شود و `/admin` با خطای نشست/۴۰۴ روبه‌رو خواهد شد.
+
+سرویس سایت باید با `next start` اجرا شود، نه با کپی فایل‌های استاتیک یا باز کردن
+پوشه `.next` توسط وب‌سرور. مسیرهای `/api/*` و `/media/*` باید یا توسط rewrite
+داخلی Next به API هدایت شوند یا در Nginx مستقیماً به سرویس Nest برسند.
 
 دامنه اصلی را به این اپ بدهید.
 
