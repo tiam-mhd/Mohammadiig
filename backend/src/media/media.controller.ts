@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -17,7 +18,10 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { createReadStream } from 'node:fs';
-import { memoryStorage } from 'multer';
+import { diskStorage } from 'multer';
+import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { AuthUser } from '../auth/jwt.strategy';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -32,8 +36,10 @@ import { MediaService } from './media.service';
 
 type AuthenticatedRequest = Request & { user: AuthUser };
 
+const mediaUploadTemp = join(tmpdir(), 'mohammadiig-media-upload');
+mkdirSync(mediaUploadTemp, { recursive: true });
 const uploadInterceptor = FileInterceptor('file', {
-  storage: memoryStorage(),
+  storage: diskStorage({ destination: mediaUploadTemp, filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`) }),
   limits: { fileSize: 100 * 1024 * 1024 },
 });
 
@@ -141,8 +147,8 @@ export class MediaController {
 
   @Delete(':id')
   @ApiOperation({ summary: 'Move media asset to trash' })
-  softDelete(@Param('id') id: string) {
-    return this.mediaService.softDelete(id);
+  softDelete(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
+    return this.mediaService.softDelete(id, request.user);
   }
 
   @Post(':id/restore')
@@ -153,7 +159,9 @@ export class MediaController {
 
   @Delete(':id/purge')
   @ApiOperation({ summary: 'Permanently delete media asset' })
-  purge(@Param('id') id: string) {
-    return this.mediaService.purge(id);
+  purge(@Req() request: AuthenticatedRequest, @Param('id') id: string) {
+    const configured = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
+    if (!configured || request.user.email?.trim().toLowerCase() !== configured) throw new ForbiddenException('فقط مدیر ارشد می‌تواند حذف دائمی انجام دهد');
+    return this.mediaService.purge(id, request.user);
   }
 }

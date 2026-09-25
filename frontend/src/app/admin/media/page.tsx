@@ -583,6 +583,7 @@ export default function AdminMediaLibraryPage() {
                     {formatBytes(item.fileSize)}
                     {item.width && item.height ? ` · ${item.width}×${item.height}` : ''}
                   </small>
+                  {!item.altText && !video ? <span className="mt-1 block text-xs text-amber-700">هشدار: متن جایگزین تصویر ثبت نشده است</span> : null}
                 </div>
               </article>
             );

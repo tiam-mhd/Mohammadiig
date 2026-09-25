@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   Logger,
@@ -113,6 +114,7 @@ export class BackupController {
     @Body('options') optionsRaw: string,
     @Req() request: AuthenticatedRequest,
   ) {
+    if (!this.isSuperAdmin(request.user)) throw new ForbiddenException('فقط مدیر ارشد می‌تواند بازیابی انجام دهد');
     let options: RestoreBackupOptionsDto;
     try {
       options = JSON.parse(optionsRaw || '{}') as RestoreBackupOptionsDto;
@@ -136,5 +138,10 @@ export class BackupController {
       );
       throw error;
     }
+  }
+
+  private isSuperAdmin(user: AuthUser): boolean {
+    const configured = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
+    return Boolean(configured && user.email?.trim().toLowerCase() === configured);
   }
 }

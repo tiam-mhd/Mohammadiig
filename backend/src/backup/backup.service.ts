@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { createHash } from 'node:crypto';
 import { existsSync, promises as fs, createReadStream } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join, posix } from 'node:path';
 import { tmpdir } from 'node:os';
 import AdmZip from 'adm-zip';
 import {
@@ -26,9 +26,13 @@ import {
 } from './backup.datasets';
 import { normalizeDatasetSelection } from './dto/backup.dto';
 import { ensureDir, normalizeMediaList, resolveMediaRoot, safeJoinMedia, toRelativeMediaPath } from '../media/media-paths';
+import { AuditService } from '../audit/audit.service';
 
 const FORMAT = 'mohammadiig-backup';
 const VERSION = 1;
+const MAX_BACKUP_BYTES = 128 * 1024 * 1024;
+const MAX_BACKUP_ENTRY_BYTES = 64 * 1024 * 1024;
+const FORBIDDEN_ARCHIVE_EXTENSIONS = new Set(['.exe', '.dll', '.so', '.sh', '.bat', '.cmd', '.ps1', '.js', '.php', '.py']);
 
 type BackupManifest = {
   format: typeof FORMAT;
@@ -286,6 +290,12 @@ export class BackupService {
       mediaFilesSkipped: 0,
       warnings,
     };
+    let safetyBackupPath: string | null = null;
+    if (!dryRun) {
+      const safety = await this.createExportArchive({ includeSoftDeleted: true, includeMediaFiles: false });
+      safetyBackupPath = safety.filePath;
+      report.warnings.push('پیش از بازیابی، یک بک‌آپ ایمنی خودکار ایجاد شد.');
+    }
 
     const queryRunner = this.dataSource.createQueryRunner();
     await queryRunner.connect();
@@ -431,6 +441,7 @@ export class BackupService {
         await queryRunner.rollbackTransaction();
       } else {
         await queryRunner.commitTransaction();
+        if (safetyBackupPath) await this.cleanupTemp(safetyBackupPath);
       }
     } catch (error) {
       await queryRunner.rollbackTransaction();
@@ -439,6 +450,13 @@ export class BackupService {
       await queryRunner.release();
     }
 
+    if (!options.dryRun && options.currentUserId) {
+      await AuditService.record(this.dataSource.manager, { userId: options.currentUserId }, 'backup.restored', 'backup', manifest.createdAt, null, {
+        datasets: report.datasets,
+        tables: report.tables.length,
+        mediaFilesRestored: report.mediaFilesRestored,
+      });
+    }
     return report;
   }
 
@@ -462,11 +480,26 @@ export class BackupService {
     if (!file?.buffer?.length) {
       throw new BadRequestException('فایل بک‌آپ ارسال نشده است');
     }
+    if (file.size > MAX_BACKUP_BYTES || file.buffer.length > MAX_BACKUP_BYTES) {
+      throw new BadRequestException('حجم فایل بک‌آپ بیشتر از حد مجاز است');
+    }
     let zip: AdmZip;
     try {
       zip = new AdmZip(file.buffer);
     } catch {
       throw new BadRequestException('فایل ZIP نامعتبر است');
+    }
+
+    let totalUncompressed = 0;
+    for (const entry of zip.getEntries()) {
+      const normalized = posix.normalize(entry.entryName.replace(/\\/g, '/'));
+      if (normalized.startsWith('../') || normalized.startsWith('/') || normalized !== entry.entryName.replace(/\\/g, '/')) {
+        throw new BadRequestException('مسیر یکی از فایل‌های ZIP ناامن است');
+      }
+      if (entry.header.size > MAX_BACKUP_ENTRY_BYTES) throw new BadRequestException('یکی از فایل‌های داخل ZIP بیش از حد بزرگ است');
+      if (FORBIDDEN_ARCHIVE_EXTENSIONS.has(extname(normalized).toLowerCase())) throw new BadRequestException('فایل اجرایی داخل ZIP مجاز نیست');
+      totalUncompressed += entry.header.size;
+      if (totalUncompressed > MAX_BACKUP_BYTES * 2) throw new BadRequestException('حجم محتوای ZIP بیش از حد مجاز است');
     }
 
     const manifestEntry = zip.getEntry('manifest.json');

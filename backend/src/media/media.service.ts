@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
   OnModuleInit,
@@ -12,11 +13,12 @@ import {
   readFileSync,
   writeFileSync,
 } from 'node:fs';
-import { basename, dirname, extname, join } from 'node:path';
+import { basename, dirname, extname, join, posix } from 'node:path';
 import { IsNull, Repository } from 'typeorm';
 import AdmZip from 'adm-zip';
 import sharp from 'sharp';
 import { AuthUser } from '../auth/jwt.strategy';
+import { AuditService } from '../audit/audit.service';
 import { AttachmentEntity } from '../attachments/attachment.entity';
 import { PortfolioWorkEntity } from '../portfolio/portfolio-work.entity';
 import { ProductEntity } from '../products/product.entity';
@@ -67,6 +69,35 @@ const ALLOWED_VIDEO_MIME = new Set([
 
 const MAX_IMAGE_BYTES = 15 * 1024 * 1024;
 const MAX_VIDEO_BYTES = 100 * 1024 * 1024;
+const MAX_MEDIA_BACKUP_BYTES = 128 * 1024 * 1024;
+
+function hasBytes(buffer: Buffer, offset: number, signature: number[]): boolean {
+  return signature.every((value, index) => buffer[offset + index] === value);
+}
+
+function validateFileContent(buffer: Buffer, mime: string, isVideo: boolean): void {
+  if (!buffer.length) throw new BadRequestException('فایل خالی است');
+  if (mime === 'image/svg+xml') {
+    const text = buffer.toString('utf8').slice(0, 2 * 1024 * 1024);
+    if (!/^\s*(?:<\?xml[^>]*>\s*)?<svg[\s>]/i.test(text) || /<script|javascript:|on[a-z]+\s*=/i.test(text)) {
+      throw new BadRequestException('محتوای SVG معتبر یا امن نیست');
+    }
+    return;
+  }
+  const validImage =
+    (mime === 'image/jpeg' && hasBytes(buffer, 0, [0xff, 0xd8, 0xff])) ||
+    (mime === 'image/png' && hasBytes(buffer, 0, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) ||
+    (mime === 'image/gif' && (buffer.subarray(0, 4).toString('ascii') === 'GIF8')) ||
+    (mime === 'image/webp' && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') ||
+    (mime === 'image/avif' && buffer.subarray(4, 8).toString('ascii') === 'ftyp');
+  const validVideo =
+    (mime === 'video/mp4' && buffer.subarray(4, 8).toString('ascii') === 'ftyp') ||
+    (mime === 'video/quicktime' && buffer.subarray(4, 8).toString('ascii') === 'ftyp') ||
+    (mime === 'video/webm' && hasBytes(buffer, 0, [0x1a, 0x45, 0xdf, 0xa3])) ||
+    (mime === 'video/ogg' && buffer.subarray(0, 4).toString('ascii') === 'OggS') ||
+    (mime === 'video/x-msvideo' && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'AVI ');
+  if (!(isVideo ? validVideo : validImage)) throw new BadRequestException('محتوای واقعی فایل با نوع اعلام‌شده سازگار نیست');
+}
 
 function isVideoMime(mime: string): boolean {
   return mime.startsWith('video/') || ALLOWED_VIDEO_MIME.has(mime);
@@ -213,6 +244,10 @@ export class MediaService implements OnModuleInit {
       kind?: 'image' | 'video';
     },
   ): Promise<MediaAssetView> {
+    if (file?.path && !file.buffer) {
+      file.buffer = await fs.readFile(file.path);
+      await fs.unlink(file.path).catch(() => undefined);
+    }
     if (!file?.buffer?.length) throw new BadRequestException('فایل ارسال نشده است');
     const mime = (file.mimetype || '').toLowerCase();
     const isVideo = isVideoMime(mime);
@@ -235,6 +270,7 @@ export class MediaService implements OnModuleInit {
     if (isImage && file.size > MAX_IMAGE_BYTES) {
       throw new BadRequestException('حجم تصویر بیشتر از ۱۵ مگابایت است');
     }
+    validateFileContent(file.buffer, mime, isVideo);
 
     const settings = this.getSettings();
     let buffer = file.buffer;
@@ -321,7 +357,7 @@ export class MediaService implements OnModuleInit {
     return this.toView(await this.media.save(entity));
   }
 
-  async softDelete(id: string): Promise<{ ok: true }> {
+  async softDelete(id: string, actor?: AuthUser): Promise<{ ok: true }> {
     const entity = await this.media.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('تصویر در کتابخانه پیدا نشد');
 
@@ -339,6 +375,7 @@ export class MediaService implements OnModuleInit {
     }
 
     await this.media.softRemove(entity);
+    if (actor) await AuditService.record(this.media.manager, actor, 'media.deleted', 'media', id, { relativePath: entity.relativePath }, { deleted: true });
     return { ok: true };
   }
 
@@ -359,9 +396,13 @@ export class MediaService implements OnModuleInit {
     return this.toView(await this.media.save(entity));
   }
 
-  async purge(id: string): Promise<{ ok: true }> {
+  async purge(id: string, actor?: AuthUser): Promise<{ ok: true }> {
     const entity = await this.media.findOne({ where: { id }, withDeleted: true });
     if (!entity) throw new NotFoundException('تصویر پیدا نشد');
+    const references = await this.usage(id);
+    if (references.references.length > 0) {
+      throw new ConflictException(`حذف دائمی ممکن نیست؛ رسانه در ${references.references.length.toLocaleString('fa-IR')} مورد استفاده است`);
+    }
 
     for (const candidate of [
       safeJoinMedia(this.getRoot(), entity.relativePath),
@@ -372,6 +413,7 @@ export class MediaService implements OnModuleInit {
       }
     }
     await this.media.remove(entity);
+    if (actor) await AuditService.record(this.media.manager, actor, 'media.purged', 'media', id, { relativePath: entity.relativePath }, null);
     return { ok: true };
   }
 
@@ -515,11 +557,20 @@ export class MediaService implements OnModuleInit {
 
   async restoreFromZip(file: Express.Multer.File | undefined): Promise<{ restored: number; skipped: number }> {
     if (!file?.buffer?.length) throw new BadRequestException('فایل بک‌آپ ارسال نشده است');
+    if (file.size > MAX_MEDIA_BACKUP_BYTES || file.buffer.length > MAX_MEDIA_BACKUP_BYTES) throw new BadRequestException('حجم فایل بک‌آپ رسانه بیشتر از حد مجاز است');
     let zip: AdmZip;
     try {
       zip = new AdmZip(file.buffer);
     } catch {
       throw new BadRequestException('فایل ZIP نامعتبر است');
+    }
+
+    for (const entry of zip.getEntries()) {
+      const normalized = posix.normalize(entry.entryName.replace(/\\/g, '/'));
+      if (normalized.startsWith('../') || normalized.startsWith('/') || normalized !== entry.entryName.replace(/\\/g, '/')) {
+        throw new BadRequestException('مسیر یکی از فایل‌های ZIP رسانه ناامن است');
+      }
+      if (entry.header.size > MAX_MEDIA_BACKUP_BYTES) throw new BadRequestException('فایل داخل ZIP رسانه بیش از حد بزرگ است');
     }
 
     const manifestEntry = zip.getEntry('manifest.json');
