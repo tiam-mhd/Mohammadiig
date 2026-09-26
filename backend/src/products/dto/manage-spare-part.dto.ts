@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
   IsArray,
   IsBoolean,
@@ -8,8 +8,8 @@ import {
   Length,
   Min,
   ValidateNested,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional, PartialType } from "@nestjs/swagger";
 
 export class SparePartSpecDto {
   @ApiProperty()
@@ -30,28 +30,28 @@ export class SparePartSpecDto {
 }
 
 export class ManageSparePartDto {
-  @ApiProperty({ example: 'MIG-SP-MOTOR-A' })
+  @ApiProperty({ example: "MIG-SP-MOTOR-A" })
   @IsString()
   @Length(2, 50)
   partNumber!: string;
 
-  @ApiPropertyOptional({ example: 'mig-sp-motor-a' })
+  @ApiPropertyOptional({ example: "mig-sp-motor-a" })
   @IsOptional()
   @IsString()
   @Length(2, 160)
   slug?: string;
 
-  @ApiProperty({ example: 'موتور محرک سری A' })
+  @ApiProperty({ example: "موتور محرک سری A" })
   @IsString()
   @Length(2, 150)
   nameFa!: string;
 
-  @ApiProperty({ example: 'Drive Motor A' })
+  @ApiProperty({ example: "Drive Motor A" })
   @IsString()
   @Length(2, 150)
   nameEn!: string;
 
-  @ApiProperty({ example: 'موتور یدکی سازگار با تجهیزات MIG.' })
+  @ApiProperty({ example: "موتور یدکی سازگار با تجهیزات MIG." })
   @IsString()
   @Length(2, 2000)
   description!: string;
@@ -62,12 +62,12 @@ export class ManageSparePartDto {
   @Length(0, 500)
   shortDescription?: string;
 
-  @ApiProperty({ example: 'motors' })
+  @ApiProperty({ example: "motors" })
   @IsString()
   @Length(1, 100)
   category!: string;
 
-  @ApiPropertyOptional({ type: [String], example: ['1', '2'] })
+  @ApiPropertyOptional({ type: [String], example: ["1", "2"] })
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
@@ -79,7 +79,7 @@ export class ManageSparePartDto {
   @Min(0)
   price!: number;
 
-  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @ApiPropertyOptional({ description: "قیمت توافقی — بدون نمایش مبلغ ریالی" })
   @IsOptional()
   @IsBoolean()
   priceNegotiable?: boolean;

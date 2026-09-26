@@ -1,70 +1,112 @@
-import { ConflictException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
-import { ListProductsDto } from './dto/list-products.dto';
-import { ProductEntity } from './product.entity';
-import { Product, ProductListResponse } from './product.types';
-import { CategoriesService } from './categories.service';
-import { ManageProductDto } from './dto/manage-product.dto';
-import { randomUUID } from 'node:crypto';
-import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
-import { DataSource } from 'typeorm';
-import { AuditActor, AuditService } from '../audit/audit.service';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { Not, Repository } from "typeorm";
+import { ListProductsDto } from "./dto/list-products.dto";
+import { ProductEntity } from "./product.entity";
+import { Product, ProductListResponse } from "./product.types";
+import { CategoriesService } from "./categories.service";
+import { ManageProductDto } from "./dto/manage-product.dto";
+import { randomUUID } from "node:crypto";
+import { normalizeMediaList, toRelativeMediaPath } from "../media/media-paths";
+import { DataSource } from "typeorm";
+import { AuditActor, AuditService } from "../audit/audit.service";
 
-const imageBase = 'https://images.unsplash.com';
+const imageBase = "https://images.unsplash.com";
 
 const seedProducts: Array<
   Pick<
     ProductEntity,
-    | 'id'
-    | 'sku'
-    | 'nameEn'
-    | 'nameFa'
-    | 'slug'
-    | 'descriptionShortFa'
-    | 'specifications'
-    | 'priceBase'
-    | 'currency'
-    | 'category'
-    | 'thumbnailImageUrl'
-    | 'gallery'
-    | 'isActive'
-    | 'isFeatured'
+    | "id"
+    | "sku"
+    | "nameEn"
+    | "nameFa"
+    | "slug"
+    | "descriptionShortFa"
+    | "specifications"
+    | "priceBase"
+    | "currency"
+    | "category"
+    | "thumbnailImageUrl"
+    | "gallery"
+    | "isActive"
+    | "isFeatured"
   >
 > = [
   {
-    id: '1', sku: 'MIG-BC-SIGNATURE', nameEn: 'Bumper Car Signature', nameFa: 'Bumper Car / سری Signature', slug: 'bumper-car-signature',
-    descriptionShortFa: 'بدنه مهندسی شده، ایمنی بالا و آماده برای بهره برداری حرفه ای.', specifications: { audience: 'adult', power: 'electric' }, priceBase: 45000000, currency: 'IRR', category: 'EQUIPMENT',
+    id: "1",
+    sku: "MIG-BC-SIGNATURE",
+    nameEn: "Bumper Car Signature",
+    nameFa: "Bumper Car / سری Signature",
+    slug: "bumper-car-signature",
+    descriptionShortFa:
+      "بدنه مهندسی شده، ایمنی بالا و آماده برای بهره برداری حرفه ای.",
+    specifications: { audience: "adult", power: "electric" },
+    priceBase: 45000000,
+    currency: "IRR",
+    category: "EQUIPMENT",
     thumbnailImageUrl: `${imageBase}/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=900&q=85`,
-    gallery: [`${imageBase}/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=900&q=85`],
-    isActive: true, isFeatured: true,
+    gallery: [
+      `${imageBase}/photo-1565610222536-ef125c59da2e?auto=format&fit=crop&w=900&q=85`,
+    ],
+    isActive: true,
+    isFeatured: true,
   },
   {
-    id: '2', sku: 'MIG-JUNIOR-PLAY', nameEn: 'Junior Play', nameFa: 'Junior / سری Play', slug: 'junior-play',
-    descriptionShortFa: 'نسخه ایمن و پرانرژی برای تجربه ای ماندگار در فضاهای خانوادگی.', specifications: { audience: 'family', power: 'electric' }, priceBase: 15000000, currency: 'IRR', category: 'FAMILY',
+    id: "2",
+    sku: "MIG-JUNIOR-PLAY",
+    nameEn: "Junior Play",
+    nameFa: "Junior / سری Play",
+    slug: "junior-play",
+    descriptionShortFa:
+      "نسخه ایمن و پرانرژی برای تجربه ای ماندگار در فضاهای خانوادگی.",
+    specifications: { audience: "family", power: "electric" },
+    priceBase: 15000000,
+    currency: "IRR",
+    category: "FAMILY",
     thumbnailImageUrl: `${imageBase}/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=85`,
-    gallery: [`${imageBase}/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=85`],
-    isActive: true, isFeatured: true,
+    gallery: [
+      `${imageBase}/photo-1531058020387-3be344556be6?auto=format&fit=crop&w=900&q=85`,
+    ],
+    isActive: true,
+    isFeatured: true,
   },
   {
-    id: '3', sku: 'MIG-CARE-SPARES', nameEn: 'MIG Care Spare Parts', nameFa: 'MIG Care / قطعات یدکی', slug: 'mig-care-spare-parts',
-    descriptionShortFa: 'قطعات اصلی و پشتیبانی فنی برای حفظ عملکرد بلندمدت مجموعه.', specifications: { support: 'after-sales', availability: 'stock' }, priceBase: 8500000, currency: 'IRR', category: 'AFTER-SALES',
+    id: "3",
+    sku: "MIG-CARE-SPARES",
+    nameEn: "MIG Care Spare Parts",
+    nameFa: "MIG Care / قطعات یدکی",
+    slug: "mig-care-spare-parts",
+    descriptionShortFa:
+      "قطعات اصلی و پشتیبانی فنی برای حفظ عملکرد بلندمدت مجموعه.",
+    specifications: { support: "after-sales", availability: "stock" },
+    priceBase: 8500000,
+    currency: "IRR",
+    category: "AFTER-SALES",
     thumbnailImageUrl: `${imageBase}/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=85`,
-    gallery: [`${imageBase}/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=85`],
-    isActive: true, isFeatured: true,
+    gallery: [
+      `${imageBase}/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=900&q=85`,
+    ],
+    isActive: true,
+    isFeatured: true,
   },
 ];
 
 @Injectable()
 export class ProductsService implements OnModuleInit {
   constructor(
-    @InjectRepository(ProductEntity) private readonly repository: Repository<ProductEntity>,
+    @InjectRepository(ProductEntity)
+    private readonly repository: Repository<ProductEntity>,
     private readonly categoriesService: CategoriesService,
     private readonly dataSource: DataSource,
   ) {}
 
   async onModuleInit(): Promise<void> {
-    if (process.env.NODE_ENV === 'production') return;
+    if (process.env.NODE_ENV === "production") return;
     await this.categoriesService.seed();
     const count = await this.repository.count();
     if (count === 0) {
@@ -78,7 +120,9 @@ export class ProductsService implements OnModuleInit {
   private async backfillGalleries(): Promise<void> {
     const rows = await this.repository.find();
     const pending = rows.filter((row) => {
-      const gallery = Array.isArray(row.gallery) ? row.gallery.filter(Boolean) : [];
+      const gallery = Array.isArray(row.gallery)
+        ? row.gallery.filter(Boolean)
+        : [];
       return gallery.length === 0 && Boolean(row.thumbnailImageUrl?.trim());
     });
     for (const row of pending) {
@@ -90,50 +134,83 @@ export class ProductsService implements OnModuleInit {
 
   async findAll(query: ListProductsDto): Promise<ProductListResponse> {
     const queryBuilder = this.repository
-      .createQueryBuilder('product')
-      .where('product.is_active = :isActive', { isActive: true })
-      .andWhere('product.deleted_at IS NULL');
+      .createQueryBuilder("product")
+      .where("product.is_active = :isActive", { isActive: true })
+      .andWhere("product.deleted_at IS NULL");
 
     if (query.category) {
-      queryBuilder.andWhere('(product.category_id = :category OR product.category = :legacyCategory)', { category: query.category, legacyCategory: query.category.toUpperCase() });
+      queryBuilder.andWhere(
+        "(product.category_id = :category OR product.category = :legacyCategory)",
+        {
+          category: query.category,
+          legacyCategory: query.category.toUpperCase(),
+        },
+      );
     }
 
     const [entities, total] = await queryBuilder
-      .orderBy('product.created_at', 'DESC')
+      .orderBy("product.created_at", "DESC")
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
       .getManyAndCount();
 
     return {
       data: entities.map((entity) => this.toProduct(entity)),
-      meta: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+      meta: {
+        page: query.page,
+        limit: query.limit,
+        total,
+        totalPages: Math.ceil(total / query.limit),
+      },
     };
   }
 
-  async findAllForAdmin(status: 'active' | 'trash' | 'all' = 'active', page = 1, limit = 20, search = '') {
-    const qb = this.repository.createQueryBuilder('product').withDeleted();
+  async findAllForAdmin(
+    status: "active" | "trash" | "all" = "active",
+    page = 1,
+    limit = 20,
+    search = "",
+  ) {
+    const qb = this.repository.createQueryBuilder("product").withDeleted();
 
-    if (status === 'active') {
-      qb.andWhere('product.deleted_at IS NULL');
-    } else if (status === 'trash') {
-      qb.andWhere('product.deleted_at IS NOT NULL');
+    if (status === "active") {
+      qb.andWhere("product.deleted_at IS NULL");
+    } else if (status === "trash") {
+      qb.andWhere("product.deleted_at IS NOT NULL");
     }
-    if (search.trim()) qb.andWhere('(LOWER(product.name_fa) LIKE LOWER(:search) OR LOWER(product.name_en) LIKE LOWER(:search) OR LOWER(product.sku) LIKE LOWER(:search))', { search: `%${search.trim()}%` });
-    const [entities, total] = await qb.orderBy('product.updated_at', 'DESC').skip((page - 1) * limit).take(limit).getManyAndCount();
-    return { data: entities.map((entity) => this.toProduct(entity)), meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    if (search.trim())
+      qb.andWhere(
+        "(LOWER(product.name_fa) LIKE LOWER(:search) OR LOWER(product.name_en) LIKE LOWER(:search) OR LOWER(product.sku) LIKE LOWER(:search))",
+        { search: `%${search.trim()}%` },
+      );
+    const [entities, total] = await qb
+      .orderBy("product.updated_at", "DESC")
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return {
+      data: entities.map((entity) => this.toProduct(entity)),
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async findOne(idOrSlug: string): Promise<Product> {
-    const entity = await this.repository.findOne({ where: [{ id: idOrSlug }, { slug: idOrSlug }] });
+    const entity = await this.repository.findOne({
+      where: [{ id: idOrSlug }, { slug: idOrSlug }],
+    });
     if (!entity || !entity.isActive || entity.deletedAt) {
-      throw new NotFoundException('Product not found');
+      throw new NotFoundException("Product not found");
     }
     return this.toProduct(entity);
   }
 
   async findOneForAdmin(id: string): Promise<Product> {
-    const entity = await this.repository.findOne({ where: { id }, withDeleted: true });
-    if (!entity || entity.deletedAt) throw new NotFoundException('محصول پیدا نشد.');
+    const entity = await this.repository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!entity || entity.deletedAt)
+      throw new NotFoundException("محصول پیدا نشد.");
     return this.toProduct(entity);
   }
 
@@ -143,7 +220,11 @@ export class ProductsService implements OnModuleInit {
     const sku = await this.resolveUniqueSku(dto.sku, slug);
     await this.assertUniqueIdentifiers(slug, sku);
     const categoryId = dto.categoryId?.trim() || null;
-    if (categoryId && !(await this.categoriesService.findEntityById(categoryId))) throw new ConflictException('دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.');
+    if (
+      categoryId &&
+      !(await this.categoriesService.findEntityById(categoryId))
+    )
+      throw new ConflictException("دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.");
 
     const images = this.normalizeImages(dto.images, dto.thumbnailImageUrl);
     const entity = await this.repository.save({
@@ -152,26 +233,39 @@ export class ProductsService implements OnModuleInit {
       nameEn: (dto.nameEn?.trim() || nameFa).slice(0, 200),
       nameFa,
       slug,
-      descriptionShortFa: (dto.descriptionShortFa ?? '').trim().slice(0, 500),
+      descriptionShortFa: (dto.descriptionShortFa ?? "").trim().slice(0, 500),
       descriptionLongFa: dto.descriptionLongFa?.trim() || null,
       specifications: {},
       priceBase: dto.priceBase ?? 0,
       priceNegotiable: dto.priceNegotiable ?? false,
-      currency: 'IRR',
-      category: (dto.category?.trim() || 'uncategorized').slice(0, 40),
+      currency: "IRR",
+      category: (dto.category?.trim() || "uncategorized").slice(0, 40),
       categoryId,
       gallery: images,
       thumbnailImageUrl: images[0] ?? null,
       isActive: dto.isActive ?? false,
       isFeatured: dto.isFeatured ?? false,
     });
-    if (actor) await AuditService.record(this.dataSource.manager, actor, 'product.created', 'product', entity.id, null, { priceBase: entity.priceBase, categoryId: entity.categoryId });
+    if (actor)
+      await AuditService.record(
+        this.dataSource.manager,
+        actor,
+        "product.created",
+        "product",
+        entity.id,
+        null,
+        { priceBase: entity.priceBase, categoryId: entity.categoryId },
+      );
     return this.toProduct(entity);
   }
 
-  async update(id: string, dto: Partial<ManageProductDto>, actor?: AuditActor): Promise<Product> {
+  async update(
+    id: string,
+    dto: Partial<ManageProductDto>,
+    actor?: AuditActor,
+  ): Promise<Product> {
     const entity = await this.repository.findOne({ where: { id } });
-    if (!entity) throw new NotFoundException('Product not found');
+    if (!entity) throw new NotFoundException("Product not found");
 
     const nextSlug = (dto.slug ?? entity.slug).trim();
     const nextSku =
@@ -181,24 +275,31 @@ export class ProductsService implements OnModuleInit {
     await this.assertUniqueIdentifiers(nextSlug, nextSku, id);
 
     if (dto.nameFa !== undefined) entity.nameFa = dto.nameFa.trim();
-    if (dto.nameEn !== undefined) entity.nameEn = (dto.nameEn.trim() || entity.nameFa).slice(0, 200);
+    if (dto.nameEn !== undefined)
+      entity.nameEn = (dto.nameEn.trim() || entity.nameFa).slice(0, 200);
     if (dto.slug !== undefined) entity.slug = nextSlug;
     if (dto.sku !== undefined) entity.sku = nextSku;
     if (dto.descriptionShortFa !== undefined) {
       entity.descriptionShortFa = dto.descriptionShortFa.trim().slice(0, 500);
     }
-    if (dto.descriptionLongFa !== undefined) entity.descriptionLongFa = dto.descriptionLongFa.trim() || null;
+    if (dto.descriptionLongFa !== undefined)
+      entity.descriptionLongFa = dto.descriptionLongFa.trim() || null;
     if (dto.category !== undefined) {
-      entity.category = (dto.category.trim() || 'uncategorized').slice(0, 40);
+      entity.category = (dto.category.trim() || "uncategorized").slice(0, 40);
     }
     if (dto.categoryId !== undefined) {
       const categoryId = dto.categoryId.trim();
-      if (categoryId && !(await this.categoriesService.findEntityById(categoryId))) throw new ConflictException('دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.');
+      if (
+        categoryId &&
+        !(await this.categoriesService.findEntityById(categoryId))
+      )
+        throw new ConflictException("دسته‌بندی انتخاب‌شده معتبر یا فعال نیست.");
       entity.categoryId = categoryId || null;
     }
     const previousPrice = entity.priceBase;
     if (dto.priceBase !== undefined) entity.priceBase = dto.priceBase;
-    if (dto.priceNegotiable !== undefined) entity.priceNegotiable = dto.priceNegotiable;
+    if (dto.priceNegotiable !== undefined)
+      entity.priceNegotiable = dto.priceNegotiable;
     if (dto.images !== undefined) {
       const images = this.normalizeImages(dto.images);
       entity.gallery = images;
@@ -212,13 +313,22 @@ export class ProductsService implements OnModuleInit {
     if (dto.isFeatured !== undefined) entity.isFeatured = dto.isFeatured;
 
     const saved = await this.repository.save(entity);
-    if (actor && previousPrice !== saved.priceBase) await AuditService.record(this.dataSource.manager, actor, 'product.price_changed', 'product', id, { priceBase: previousPrice }, { priceBase: saved.priceBase });
+    if (actor && previousPrice !== saved.priceBase)
+      await AuditService.record(
+        this.dataSource.manager,
+        actor,
+        "product.price_changed",
+        "product",
+        id,
+        { priceBase: previousPrice },
+        { priceBase: saved.priceBase },
+      );
     return this.toProduct(saved);
   }
 
   async remove(id: string): Promise<void> {
     const entity = await this.repository.findOne({ where: { id } });
-    if (!entity) throw new NotFoundException('Product not found');
+    if (!entity) throw new NotFoundException("Product not found");
     // Soft-delete keeps the row; free unique slug/sku so new products can reuse them.
     entity.specifications = {
       ...(entity.specifications ?? {}),
@@ -232,12 +342,18 @@ export class ProductsService implements OnModuleInit {
   }
 
   async restore(id: string): Promise<Product> {
-    const entity = await this.repository.findOne({ where: { id }, withDeleted: true });
-    if (!entity || !entity.deletedAt) throw new NotFoundException('محصول حذف‌شده پیدا نشد.');
+    const entity = await this.repository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!entity || !entity.deletedAt)
+      throw new NotFoundException("محصول حذف‌شده پیدا نشد.");
 
     const specs = (entity.specifications ?? {}) as Record<string, unknown>;
-    const savedSlug = typeof specs._deletedSlug === 'string' ? specs._deletedSlug.trim() : '';
-    const savedSku = typeof specs._deletedSku === 'string' ? specs._deletedSku.trim() : '';
+    const savedSlug =
+      typeof specs._deletedSlug === "string" ? specs._deletedSlug.trim() : "";
+    const savedSku =
+      typeof specs._deletedSku === "string" ? specs._deletedSku.trim() : "";
     const short = entity.id.slice(0, 8);
     const nextSlug = savedSlug || `restored-${short}`;
     const nextSku = savedSku || `RES-${short}`;
@@ -254,18 +370,27 @@ export class ProductsService implements OnModuleInit {
   }
 
   async purge(id: string): Promise<void> {
-    const entity = await this.repository.findOne({ where: { id }, withDeleted: true });
-    if (!entity) throw new NotFoundException('محصول پیدا نشد.');
+    const entity = await this.repository.findOne({
+      where: { id },
+      withDeleted: true,
+    });
+    if (!entity) throw new NotFoundException("محصول پیدا نشد.");
     await this.repository.remove(entity);
   }
 
-  private async assertUniqueIdentifiers(slug: string, sku: string, excludeId?: string): Promise<void> {
+  private async assertUniqueIdentifiers(
+    slug: string,
+    sku: string,
+    excludeId?: string,
+  ): Promise<void> {
     const slugOwner = await this.repository.findOne({
       where: excludeId ? { slug, id: Not(excludeId) } : { slug },
       withDeleted: true,
     });
     if (slugOwner && (!excludeId || slugOwner.id !== excludeId)) {
-      throw new ConflictException('این شناسه آدرس از قبل برای محصول دیگری ثبت شده است.');
+      throw new ConflictException(
+        "این شناسه آدرس از قبل برای محصول دیگری ثبت شده است.",
+      );
     }
 
     const skuOwner = await this.repository.findOne({
@@ -273,32 +398,46 @@ export class ProductsService implements OnModuleInit {
       withDeleted: true,
     });
     if (skuOwner && (!excludeId || skuOwner.id !== excludeId)) {
-      throw new ConflictException('این کد کالا از قبل برای محصول دیگری ثبت شده است.');
+      throw new ConflictException(
+        "این کد کالا از قبل برای محصول دیگری ثبت شده است.",
+      );
     }
   }
 
-  private async resolveUniqueSku(requested: string | undefined, slug: string, excludeId?: string): Promise<string> {
-    const raw = (requested?.trim() || slug || 'product')
+  private async resolveUniqueSku(
+    requested: string | undefined,
+    slug: string,
+    excludeId?: string,
+  ): Promise<string> {
+    const raw = (requested?.trim() || slug || "product")
       .toUpperCase()
-      .replace(/[^A-Z0-9-_]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
+      .replace(/[^A-Z0-9-_]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
       .slice(0, 40);
-    let candidate = raw || 'PRODUCT';
+    let candidate = raw || "PRODUCT";
     let attempt = 0;
     while (attempt < 20) {
       const owner = await this.repository.findOne({
-        where: excludeId ? { sku: candidate, id: Not(excludeId) } : { sku: candidate },
+        where: excludeId
+          ? { sku: candidate, id: Not(excludeId) }
+          : { sku: candidate },
         withDeleted: true,
       });
       if (!owner || (excludeId && owner.id === excludeId)) return candidate;
       attempt += 1;
       candidate = `${raw.slice(0, 32)}-${attempt}`;
     }
-    return `${raw.slice(0, 24)}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50);
+    return `${raw.slice(0, 24)}-${Date.now().toString(36).toUpperCase()}`.slice(
+      0,
+      50,
+    );
   }
 
-  private normalizeImages(images?: string[] | null, fallbackThumbnail?: string | null): string[] {
+  private normalizeImages(
+    images?: string[] | null,
+    fallbackThumbnail?: string | null,
+  ): string[] {
     const fromList = normalizeMediaList(images).slice(0, 30);
     if (fromList.length > 0) return fromList;
     const single = toRelativeMediaPath(fallbackThumbnail);

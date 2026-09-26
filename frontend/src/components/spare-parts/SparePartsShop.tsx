@@ -1,29 +1,32 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   CartBagIcon,
   IconDetails,
   IconPreview,
-} from '@/components/icons/CartBagIcon';
+} from "@/components/icons/CartBagIcon";
 import {
   fetchSparePartCategories,
   fetchSparePartsPage,
   type SparePart,
   type SparePartCategory,
-} from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
-import { useCartStore } from '@/store/cart.store';
-import { formatPartPrice } from './formatSparePartPrice';
-import { SparePartFilterModal, type SparePartFilters } from './SparePartFilterModal';
-import { SparePartPreviewModal } from './SparePartPreviewModal';
+} from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
+import { useCartStore } from "@/store/cart.store";
+import { formatPartPrice } from "./formatSparePartPrice";
+import {
+  SparePartFilterModal,
+  type SparePartFilters,
+} from "./SparePartFilterModal";
+import { SparePartPreviewModal } from "./SparePartPreviewModal";
 
 const emptyFilters: SparePartFilters = {
-  category: '',
+  category: "",
   inStock: false,
-  minPrice: '',
-  maxPrice: '',
+  minPrice: "",
+  maxPrice: "",
 };
 
 function canAddPart(part: SparePart) {
@@ -39,7 +42,7 @@ function addPartToCart(part: SparePart) {
     nameFa: part.nameFa,
     imageUrl: part.imageUrl,
     unitPrice: part.price,
-    currency: part.currency || 'IRR',
+    currency: part.currency || "IRR",
     maxStock: part.stockQuantity,
   });
 }
@@ -65,17 +68,17 @@ function PartCardActions({
         disabled={!addable}
         aria-label={
           part.priceNegotiable
-            ? 'قیمت توافقی'
+            ? "قیمت توافقی"
             : part.stockQuantity <= 0
-              ? 'ناموجود'
-              : 'افزودن به سبد خرید'
+              ? "ناموجود"
+              : "افزودن به سبد خرید"
         }
         title={
           part.priceNegotiable
-            ? 'قیمت توافقی'
+            ? "قیمت توافقی"
             : part.stockQuantity <= 0
-              ? 'ناموجود'
-              : 'افزودن به سبد'
+              ? "ناموجود"
+              : "افزودن به سبد"
         }
         onClick={(e) => {
           e.preventDefault();
@@ -116,13 +119,13 @@ export function SparePartsShop() {
   const [parts, setParts] = useState<SparePart[]>([]);
   const [categories, setCategories] = useState<SparePartCategory[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState('');
-  const [query, setQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [filters, setFilters] = useState<SparePartFilters>(emptyFilters);
   const [filterOpen, setFilterOpen] = useState(false);
   const [preview, setPreview] = useState<SparePart | null>(null);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState("");
   const [priceBounds, setPriceBounds] = useState({ min: 0, max: 50_000_000 });
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -133,7 +136,9 @@ export function SparePartsShop() {
     return () => window.clearTimeout(t);
   }, [query]);
 
-  useEffect(() => { setPage(1); }, [debouncedQuery, filters]);
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedQuery, filters]);
 
   useEffect(() => {
     fetchSparePartCategories()
@@ -154,10 +159,14 @@ export function SparePartsShop() {
 
   const loadParts = useCallback(async () => {
     setLoaded(false);
-    setError('');
+    setError("");
     try {
-      const min = filters.minPrice.trim() ? Number(filters.minPrice) : undefined;
-      const max = filters.maxPrice.trim() ? Number(filters.maxPrice) : undefined;
+      const min = filters.minPrice.trim()
+        ? Number(filters.minPrice)
+        : undefined;
+      const max = filters.maxPrice.trim()
+        ? Number(filters.maxPrice)
+        : undefined;
       const response = await fetchSparePartsPage({
         q: debouncedQuery || undefined,
         category: filters.category || undefined,
@@ -167,10 +176,12 @@ export function SparePartsShop() {
         page,
         limit: 20,
       });
-      setParts(response.data); setTotalPages(response.meta.totalPages); setTotal(response.meta.total);
+      setParts(response.data);
+      setTotalPages(response.meta.totalPages);
+      setTotal(response.meta.total);
     } catch {
       setParts([]);
-      setError('دریافت قطعات انجام نشد.');
+      setError("دریافت قطعات انجام نشد.");
     } finally {
       setLoaded(true);
     }
@@ -182,7 +193,7 @@ export function SparePartsShop() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(''), 2200);
+    const t = window.setTimeout(() => setToast(""), 2200);
     return () => window.clearTimeout(t);
   }, [toast]);
 
@@ -196,14 +207,17 @@ export function SparePartsShop() {
   }, [filters]);
 
   function flashAdded() {
-    setToast('به سبد اضافه شد');
+    setToast("به سبد اضافه شد");
   }
 
   return (
     <div className="sp-shop sp-shop--soft bg-canvas">
       <div className="sp-shop__glow" aria-hidden />
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/products" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/products"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← بازگشت به محصولات
         </Link>
 
@@ -212,10 +226,14 @@ export function SparePartsShop() {
             <p className="caption-up">پس از فروش</p>
             <h1 className="display-feature mt-4 text-ink">قطعات یدکی</h1>
             <p className="body-lead mt-5 max-w-md">
-              قطعات اصلی را آرام و دقیق انتخاب کنید — برای نگهداری بی‌وقفه دستگاه‌های MIG.
+              قطعات اصلی را آرام و دقیق انتخاب کنید — برای نگهداری بی‌وقفه
+              دستگاه‌های MIG.
             </p>
           </div>
-          <Link href="/quote-request" className="btn-pill sp-shop__hero-cta shrink-0">
+          <Link
+            href="/quote-request"
+            className="btn-pill sp-shop__hero-cta shrink-0"
+          >
             درخواست قطعه سفارشی
           </Link>
         </div>
@@ -231,11 +249,15 @@ export function SparePartsShop() {
               autoComplete="off"
             />
           </label>
-          <button type="button" className="sp-filter-btn" onClick={() => setFilterOpen(true)}>
+          <button
+            type="button"
+            className="sp-filter-btn"
+            onClick={() => setFilterOpen(true)}
+          >
             فیلتر
             {activeFilterCount > 0 ? (
               <span className="sp-filter-btn__count">
-                {activeFilterCount.toLocaleString('fa-IR')}
+                {activeFilterCount.toLocaleString("fa-IR")}
               </span>
             ) : null}
           </button>
@@ -246,8 +268,8 @@ export function SparePartsShop() {
             <button
               type="button"
               role="listitem"
-              className={`sp-chip${!filters.category ? ' sp-chip--active' : ''}`}
-              onClick={() => setFilters((f) => ({ ...f, category: '' }))}
+              className={`sp-chip${!filters.category ? " sp-chip--active" : ""}`}
+              onClick={() => setFilters((f) => ({ ...f, category: "" }))}
             >
               همه
             </button>
@@ -259,11 +281,11 @@ export function SparePartsShop() {
                   key={cat.id}
                   type="button"
                   role="listitem"
-                  className={`sp-chip${active ? ' sp-chip--active' : ''}`}
+                  className={`sp-chip${active ? " sp-chip--active" : ""}`}
                   onClick={() =>
                     setFilters((f) => ({
                       ...f,
-                      category: active ? '' : value,
+                      category: active ? "" : value,
                     }))
                   }
                 >
@@ -282,9 +304,7 @@ export function SparePartsShop() {
         {error ? <p className="field-message mt-6">{error}</p> : null}
 
         <div className="sp-shop__catalog">
-          {!loaded ? (
-            <p className="sp-empty">در حال دریافت قطعات…</p>
-          ) : null}
+          {!loaded ? <p className="sp-empty">در حال دریافت قطعات…</p> : null}
 
           {loaded && parts.length === 0 ? (
             <p className="sp-empty">قطعه‌ای با این شرایط یافت نشد.</p>
@@ -309,7 +329,9 @@ export function SparePartsShop() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={imageSrc} alt="" loading="lazy" />
                         ) : (
-                          <span className="font-ui text-xs text-muted">بدون تصویر</span>
+                          <span className="font-ui text-xs text-muted">
+                            بدون تصویر
+                          </span>
                         )}
                       </button>
                       <div className="sp-card__icons sp-card__icons--hover">
@@ -345,7 +367,34 @@ export function SparePartsShop() {
               })}
             </div>
           ) : null}
-          {loaded && totalPages > 1 ? <div className="mt-8 flex items-center justify-center gap-3" dir="rtl"><button type="button" className="btn-pill btn-pill--ghost" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>قبلی</button><span className="text-sm text-muted">{total.toLocaleString('fa-IR')} قطعه · صفحه {page.toLocaleString('fa-IR')} از {totalPages.toLocaleString('fa-IR')}</span><button type="button" className="btn-pill btn-pill--ghost" disabled={page >= totalPages} onClick={() => setPage((value) => value + 1)}>بعدی</button></div> : null}
+          {loaded && totalPages > 1 ? (
+            <div
+              className="mt-8 flex items-center justify-center gap-3"
+              dir="rtl"
+            >
+              <button
+                type="button"
+                className="btn-pill btn-pill--ghost"
+                disabled={page <= 1}
+                onClick={() => setPage((value) => value - 1)}
+              >
+                قبلی
+              </button>
+              <span className="text-sm text-muted">
+                {total.toLocaleString("fa-IR")} قطعه · صفحه{" "}
+                {page.toLocaleString("fa-IR")} از{" "}
+                {totalPages.toLocaleString("fa-IR")}
+              </span>
+              <button
+                type="button"
+                className="btn-pill btn-pill--ghost"
+                disabled={page >= totalPages}
+                onClick={() => setPage((value) => value + 1)}
+              >
+                بعدی
+              </button>
+            </div>
+          ) : null}
         </div>
       </div>
 

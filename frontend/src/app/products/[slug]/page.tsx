@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { GlassButton } from '@/components/GlassButton';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { GlassButton } from "@/components/GlassButton";
 import {
   fetchProduct,
   fetchProductSpecifications,
@@ -11,10 +11,16 @@ import {
   Product,
   ProductSpecification,
   ProductVariant,
-} from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
+} from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
 
-function SpecRows({ items, empty }: { items: ProductSpecification[]; empty: string }) {
+function SpecRows({
+  items,
+  empty,
+}: {
+  items: ProductSpecification[];
+  empty: string;
+}) {
   if (items.length === 0) {
     return <p className="pd-spec__empty">{empty}</p>;
   }
@@ -25,8 +31,8 @@ function SpecRows({ items, empty }: { items: ProductSpecification[]; empty: stri
         <div key={specification.id} className="pd-spec__row">
           <dt>{specification.specificationKey}</dt>
           <dd>
-            {specification.specificationValue || '—'}
-            {specification.unit ? ` ${specification.unit}` : ''}
+            {specification.specificationValue || "—"}
+            {specification.unit ? ` ${specification.unit}` : ""}
           </dd>
         </div>
       ))}
@@ -38,7 +44,9 @@ export default function ProductDetailPage() {
   const params = useParams<{ slug: string }>();
   const [product, setProduct] = useState<Product | null>(null);
   const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [specifications, setSpecifications] = useState<ProductSpecification[]>([]);
+  const [specifications, setSpecifications] = useState<ProductSpecification[]>(
+    [],
+  );
   const [activeImage, setActiveImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -65,13 +73,13 @@ export default function ProductDetailPage() {
     () =>
       specifications.filter(
         (item) =>
-          item.specCategory === 'technical' ||
-          !['appearance', 'technical'].includes(item.specCategory),
+          item.specCategory === "technical" ||
+          !["appearance", "technical"].includes(item.specCategory),
       ),
     [specifications],
   );
   const appearanceSpecs = useMemo(
-    () => specifications.filter((item) => item.specCategory === 'appearance'),
+    () => specifications.filter((item) => item.specCategory === "appearance"),
     [specifications],
   );
 
@@ -122,7 +130,12 @@ export default function ProductDetailPage() {
             <div className="pd-gallery__main">
               {heroSrc ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img key={heroSrc} src={heroSrc} alt={product.name} decoding="async" />
+                <img
+                  key={heroSrc}
+                  src={heroSrc}
+                  alt={product.name}
+                  decoding="async"
+                />
               ) : (
                 <div className="pcard__placeholder">
                   <span>بدون تصویر</span>
@@ -140,7 +153,7 @@ export default function ProductDetailPage() {
                       key={`${url}-${index}`}
                       type="button"
                       role="listitem"
-                      className={`pd-gallery__thumb${isActive ? ' is-active' : ''}`}
+                      className={`pd-gallery__thumb${isActive ? " is-active" : ""}`}
                       aria-label={`تصویر ${index + 1}`}
                       aria-pressed={isActive}
                       onClick={() => setActiveImage(url)}
@@ -163,10 +176,10 @@ export default function ProductDetailPage() {
               <span className="pcard__price-label">قیمت پایه</span>
               <p className="pd-info__price-value">
                 {product.priceNegotiable ? (
-                  'توافقی'
+                  "توافقی"
                 ) : (
                   <>
-                    {product.price.toLocaleString('fa-IR')}
+                    {product.price.toLocaleString("fa-IR")}
                     <span className="pcard__price-unit">ریال</span>
                   </>
                 )}
@@ -174,7 +187,9 @@ export default function ProductDetailPage() {
             </div>
 
             <div className="pd-info__actions">
-              <GlassButton href={`/quote-request?product=${encodeURIComponent(product.slug)}`}>
+              <GlassButton
+                href={`/quote-request?product=${encodeURIComponent(product.slug)}`}
+              >
                 درخواست مشاوره برای این محصول
               </GlassButton>
             </div>
@@ -195,7 +210,10 @@ export default function ProductDetailPage() {
           </section>
           <section className="pd-section">
             <h2 className="pd-section__title">مشخصات ظاهری</h2>
-            <SpecRows items={appearanceSpecs} empty="مشخصات ظاهری ثبت نشده است." />
+            <SpecRows
+              items={appearanceSpecs}
+              empty="مشخصات ظاهری ثبت نشده است."
+            />
           </section>
         </div>
 
@@ -210,11 +228,12 @@ export default function ProductDetailPage() {
                   <div>
                     <p className="pd-variant__name">{variant.variantNameFa}</p>
                     <p className="pd-variant__meta">
-                      {variant.skuVariant} · موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
+                      {variant.skuVariant} · موجودی{" "}
+                      {variant.stockQuantity.toLocaleString("fa-IR")}
                     </p>
                   </div>
                   <p className="pd-variant__price">
-                    +{variant.priceAdjustment.toLocaleString('fa-IR')}
+                    +{variant.priceAdjustment.toLocaleString("fa-IR")}
                   </p>
                 </div>
               ))}

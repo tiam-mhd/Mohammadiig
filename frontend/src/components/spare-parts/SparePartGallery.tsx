@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { resolveMediaUrl } from '@/lib/media';
+import { useMemo, useState } from "react";
+import { resolveMediaUrl } from "@/lib/media";
 
 type SparePartGalleryProps = {
   nameFa: string;
@@ -9,7 +9,11 @@ type SparePartGalleryProps = {
   gallery?: string[];
 };
 
-export function SparePartGallery({ nameFa, imageUrl, gallery = [] }: SparePartGalleryProps) {
+export function SparePartGallery({
+  nameFa,
+  imageUrl,
+  gallery = [],
+}: SparePartGalleryProps) {
   const images = useMemo(() => {
     const list = [imageUrl, ...gallery]
       .map((url) => resolveMediaUrl(url))
@@ -41,9 +45,9 @@ export function SparePartGallery({ nameFa, imageUrl, gallery = [] }: SparePartGa
               key={src}
               type="button"
               role="listitem"
-              className={`sp-gallery__thumb${index === active ? ' sp-gallery__thumb--active' : ''}`}
+              className={`sp-gallery__thumb${index === active ? " sp-gallery__thumb--active" : ""}`}
               onClick={() => setActive(index)}
-              aria-label={`تصویر ${(index + 1).toLocaleString('fa-IR')}`}
+              aria-label={`تصویر ${(index + 1).toLocaleString("fa-IR")}`}
               aria-current={index === active}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}

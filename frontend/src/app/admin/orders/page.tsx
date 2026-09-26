@@ -1,17 +1,31 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useCallback } from 'react';
-import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
-import { formatMoney, ORDER_STATUS, ORDER_TYPE, PAYMENT_STATUS, labelOf } from '@/lib/admin-labels';
-import { fetchAdminOrders, fetchAdminOrdersPage, OrderAdminSummary, updateOrderStatus } from '@/lib/api-client';
+import Link from "next/link";
+import { useCallback } from "react";
+import { AdminStatusResourcePage } from "@/components/admin/AdminStatusResourcePage";
+import {
+  formatMoney,
+  ORDER_STATUS,
+  ORDER_TYPE,
+  PAYMENT_STATUS,
+  labelOf,
+} from "@/lib/admin-labels";
+import {
+  fetchAdminOrders,
+  fetchAdminOrdersPage,
+  OrderAdminSummary,
+  updateOrderStatus,
+} from "@/lib/api-client";
 
-const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({ value, label }));
+const statusOptions = Object.entries(ORDER_STATUS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export default function AdminOrdersPage() {
   const searchText = useCallback(
     (item: OrderAdminSummary) =>
-      `${item.orderNumber} ${item.customerId} ${item.status} ${item.paymentStatus} ${item.orderType ?? ''} ${ORDER_STATUS[item.status] ?? ''}`,
+      `${item.orderNumber} ${item.customerId} ${item.status} ${item.paymentStatus} ${item.orderType ?? ""} ${ORDER_STATUS[item.status] ?? ""}`,
     [],
   );
 
@@ -20,10 +34,10 @@ export default function AdminOrdersPage() {
       eyebrow="عملیات"
       title="سفارش‌ها"
       resourceLabel="سفارش"
-      headers={['شماره سفارش', 'نوع', 'شناسه مشتری', 'مبلغ', 'وضعیت پرداخت']}
+      headers={["شماره سفارش", "نوع", "شناسه مشتری", "مبلغ", "وضعیت پرداخت"]}
       columns={[
         {
-          header: 'شماره',
+          header: "شماره",
           cell: (item) => (
             <Link
               href={`/admin/orders/${item.id}`}
@@ -34,20 +48,20 @@ export default function AdminOrdersPage() {
           ),
         },
         {
-          header: 'نوع',
+          header: "نوع",
           cell: (item) => labelOf(ORDER_TYPE, item.orderType),
         },
         {
-          header: 'مشتری',
+          header: "مشتری",
           cell: (item) => (
             <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
               {item.customerId.slice(0, 10)}…
             </span>
           ),
         },
-        { header: 'مبلغ', cell: (item) => formatMoney(item.totalAmount) },
+        { header: "مبلغ", cell: (item) => formatMoney(item.totalAmount) },
         {
-          header: 'پرداخت',
+          header: "پرداخت",
           cell: (item) => labelOf(PAYMENT_STATUS, item.paymentStatus),
         },
       ]}

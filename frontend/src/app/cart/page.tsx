@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { CartBagIcon } from '@/components/icons/CartBagIcon';
-import { formatCartMoney } from '@/components/spare-parts/formatSparePartPrice';
-import { resolveMediaUrl } from '@/lib/media';
-import { useAuthStore } from '@/store/auth.store';
-import { useCartStore } from '@/store/cart.store';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { CartBagIcon } from "@/components/icons/CartBagIcon";
+import { formatCartMoney } from "@/components/spare-parts/formatSparePartPrice";
+import { resolveMediaUrl } from "@/lib/media";
+import { useAuthStore } from "@/store/auth.store";
+import { useCartStore } from "@/store/cart.store";
 
 export default function CartPage() {
   const accessToken = useAuthStore((s) => s.accessToken);
@@ -19,8 +19,11 @@ export default function CartPage() {
     setHydrated(true);
   }, []);
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const currency = lines[0]?.currency || 'IRR';
+  const subtotal = lines.reduce(
+    (sum, line) => sum + line.unitPrice * line.quantity,
+    0,
+  );
+  const currency = lines[0]?.currency || "IRR";
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
 
   if (!hydrated) {
@@ -37,7 +40,10 @@ export default function CartPage() {
     <div className="sp-cart sp-cart--soft bg-canvas">
       <div className="sp-shop__glow" aria-hidden />
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/spare-parts" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/spare-parts"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← ادامه خرید
         </Link>
 
@@ -46,8 +52,8 @@ export default function CartPage() {
           <h1 className="display-feature mt-4 text-ink">سبد خرید</h1>
           <p className="body-lead mt-5 max-w-md">
             {count > 0
-              ? `${count.toLocaleString('fa-IR')} قلم آمادهٔ سفارش است.`
-              : 'هنوز قطعه‌ای انتخاب نکرده‌اید.'}
+              ? `${count.toLocaleString("fa-IR")} قلم آمادهٔ سفارش است.`
+              : "هنوز قطعه‌ای انتخاب نکرده‌اید."}
           </p>
         </div>
 
@@ -74,7 +80,9 @@ export default function CartPage() {
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={src} alt="" loading="lazy" />
                         ) : (
-                          <span className="font-ui text-[10px] text-muted">—</span>
+                          <span className="font-ui text-[10px] text-muted">
+                            —
+                          </span>
                         )}
                       </div>
                       <div className="min-w-0 text-start">
@@ -91,22 +99,29 @@ export default function CartPage() {
                         <button
                           type="button"
                           aria-label="کاهش"
-                          onClick={() => setQuantity(line.sparePartId, line.quantity - 1)}
+                          onClick={() =>
+                            setQuantity(line.sparePartId, line.quantity - 1)
+                          }
                         >
                           −
                         </button>
-                        <span>{line.quantity.toLocaleString('fa-IR')}</span>
+                        <span>{line.quantity.toLocaleString("fa-IR")}</span>
                         <button
                           type="button"
                           aria-label="افزایش"
                           disabled={line.quantity >= line.maxStock}
-                          onClick={() => setQuantity(line.sparePartId, line.quantity + 1)}
+                          onClick={() =>
+                            setQuantity(line.sparePartId, line.quantity + 1)
+                          }
                         >
                           +
                         </button>
                       </div>
                       <p className="sp-cart__line-total">
-                        {formatCartMoney(line.unitPrice * line.quantity, line.currency)}
+                        {formatCartMoney(
+                          line.unitPrice * line.quantity,
+                          line.currency,
+                        )}
                       </p>
                       <button
                         type="button"
@@ -131,13 +146,16 @@ export default function CartPage() {
                   هزینه ارسال هنگام ثبت سفارش محاسبه می‌شود.
                 </p>
                 {accessToken ? (
-                  <Link href="/checkout" className="sp-detail__cart-btn sp-cart__checkout mt-6">
+                  <Link
+                    href="/checkout"
+                    className="sp-detail__cart-btn sp-cart__checkout mt-6"
+                  >
                     <CartBagIcon className="sp-action-icon" />
                     <span>ادامه به پرداخت</span>
                   </Link>
                 ) : (
                   <Link
-                    href={`/auth?next=${encodeURIComponent('/checkout')}`}
+                    href={`/auth?next=${encodeURIComponent("/checkout")}`}
                     className="sp-detail__cart-btn sp-cart__checkout mt-6"
                   >
                     <span>ورود برای پرداخت</span>

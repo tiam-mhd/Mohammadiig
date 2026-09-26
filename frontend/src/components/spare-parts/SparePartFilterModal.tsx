@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { FormEvent, useEffect, useId, useMemo, useState } from 'react';
-import type { SparePartCategory } from '@/lib/api-client';
-import { PriceRangeSlider } from './PriceRangeSlider';
+import { FormEvent, useEffect, useId, useMemo, useState } from "react";
+import type { SparePartCategory } from "@/lib/api-client";
+import { PriceRangeSlider } from "./PriceRangeSlider";
 
 export type SparePartFilters = {
   category: string;
@@ -44,25 +44,21 @@ export function SparePartFilterModal({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
   }, [open, onClose]);
 
   if (!open) return null;
 
-  const rangeMin = draft.minPrice.trim()
-    ? Number(draft.minPrice)
-    : bounds.min;
-  const rangeMax = draft.maxPrice.trim()
-    ? Number(draft.maxPrice)
-    : bounds.max;
+  const rangeMin = draft.minPrice.trim() ? Number(draft.minPrice) : bounds.min;
+  const rangeMax = draft.maxPrice.trim() ? Number(draft.maxPrice) : bounds.max;
 
   function submit(e: FormEvent) {
     e.preventDefault();
@@ -72,10 +68,10 @@ export function SparePartFilterModal({
 
   function reset() {
     const cleared: SparePartFilters = {
-      category: '',
+      category: "",
       inStock: false,
-      minPrice: '',
-      maxPrice: '',
+      minPrice: "",
+      maxPrice: "",
     };
     setDraft(cleared);
     onApply(cleared);
@@ -84,7 +80,12 @@ export function SparePartFilterModal({
 
   return (
     <div className="sp-modal" role="presentation">
-      <button type="button" className="sp-modal__backdrop" aria-label="بستن" onClick={onClose} />
+      <button
+        type="button"
+        className="sp-modal__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
       <div
         className="sp-modal__panel sp-modal__panel--soft"
         role="dialog"
@@ -98,7 +99,11 @@ export function SparePartFilterModal({
               محدود کردن نتایج
             </h2>
           </div>
-          <button type="button" className="caption-up text-muted hover:text-ink" onClick={onClose}>
+          <button
+            type="button"
+            className="caption-up text-muted hover:text-ink"
+            onClick={onClose}
+          >
             بستن
           </button>
         </div>
@@ -109,11 +114,16 @@ export function SparePartFilterModal({
             <select
               className="sp-field sp-field--soft mt-2 w-full"
               value={draft.category}
-              onChange={(e) => setDraft((d) => ({ ...d, category: e.target.value }))}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, category: e.target.value }))
+              }
             >
               <option value="">همه دسته‌ها</option>
               {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug || cat.nameEn || cat.nameFa}>
+                <option
+                  key={cat.id}
+                  value={cat.slug || cat.nameEn || cat.nameFa}
+                >
                   {cat.nameFa}
                 </option>
               ))}
@@ -125,7 +135,9 @@ export function SparePartFilterModal({
               type="checkbox"
               className="sp-check"
               checked={draft.inStock}
-              onChange={(e) => setDraft((d) => ({ ...d, inStock: e.target.checked }))}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, inStock: e.target.checked }))
+              }
             />
             <span className="font-ui text-sm text-ink">فقط موجود در انبار</span>
           </label>
@@ -153,7 +165,11 @@ export function SparePartFilterModal({
             <button type="submit" className="btn-pill">
               اعمال فیلتر
             </button>
-            <button type="button" className="btn-pill btn-pill--ghost" onClick={reset}>
+            <button
+              type="button"
+              className="btn-pill btn-pill--ghost"
+              onClick={reset}
+            >
               پاک کردن
             </button>
           </div>

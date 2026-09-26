@@ -3,23 +3,27 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'node:crypto';
-import { DataSource, In, Repository } from 'typeorm';
-import { AuthUser } from '../auth/jwt.strategy';
-import { UserEntity } from '../auth/user.entity';
-import { CustomerEntity } from '../customers/customer.entity';
-import { ensureCustomerProfile } from '../customers/customer-profile';
-import { QuotationEntity } from '../quotations/quotation.entity';
-import { OrderEntity } from './order.entity';
-import { OrderItemEntity } from './order-item.entity';
-import { InvoiceEntity, InvoiceLineItem, InvoicePartySnapshot } from '../invoices/invoice.entity';
-import { SparePartEntity } from '../products/spare-part.entity';
-import { SparePartsCheckoutDto } from './dto/spare-parts-checkout.dto';
-import { PaymentEntity } from '../payments/payment.entity';
-import { OrderStatus, orderStatusTransitions } from './order-status';
-import { AuditActor, AuditService } from '../audit/audit.service';
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { randomUUID } from "node:crypto";
+import { DataSource, In, Repository } from "typeorm";
+import { AuthUser } from "../auth/jwt.strategy";
+import { UserEntity } from "../auth/user.entity";
+import { CustomerEntity } from "../customers/customer.entity";
+import { ensureCustomerProfile } from "../customers/customer-profile";
+import { QuotationEntity } from "../quotations/quotation.entity";
+import { OrderEntity } from "./order.entity";
+import { OrderItemEntity } from "./order-item.entity";
+import {
+  InvoiceEntity,
+  InvoiceLineItem,
+  InvoicePartySnapshot,
+} from "../invoices/invoice.entity";
+import { SparePartEntity } from "../products/spare-part.entity";
+import { SparePartsCheckoutDto } from "./dto/spare-parts-checkout.dto";
+import { PaymentEntity } from "../payments/payment.entity";
+import { OrderStatus, orderStatusTransitions } from "./order-status";
+import { AuditActor, AuditService } from "../audit/audit.service";
 
 export type OrderDetail = OrderEntity & {
   items: OrderItemEntity[];
@@ -29,42 +33,58 @@ export type OrderDetail = OrderEntity & {
 @Injectable()
 export class OrdersService {
   constructor(
-    @InjectRepository(OrderEntity) private readonly orders: Repository<OrderEntity>,
-    @InjectRepository(OrderItemEntity) private readonly orderItems: Repository<OrderItemEntity>,
-    @InjectRepository(QuotationEntity) private readonly quotations: Repository<QuotationEntity>,
-    @InjectRepository(CustomerEntity) private readonly customers: Repository<CustomerEntity>,
-    @InjectRepository(InvoiceEntity) private readonly invoices: Repository<InvoiceEntity>,
-    @InjectRepository(SparePartEntity) private readonly spareParts: Repository<SparePartEntity>,
-    @InjectRepository(UserEntity) private readonly users: Repository<UserEntity>,
-    @InjectRepository(PaymentEntity) private readonly payments: Repository<PaymentEntity>,
+    @InjectRepository(OrderEntity)
+    private readonly orders: Repository<OrderEntity>,
+    @InjectRepository(OrderItemEntity)
+    private readonly orderItems: Repository<OrderItemEntity>,
+    @InjectRepository(QuotationEntity)
+    private readonly quotations: Repository<QuotationEntity>,
+    @InjectRepository(CustomerEntity)
+    private readonly customers: Repository<CustomerEntity>,
+    @InjectRepository(InvoiceEntity)
+    private readonly invoices: Repository<InvoiceEntity>,
+    @InjectRepository(SparePartEntity)
+    private readonly spareParts: Repository<SparePartEntity>,
+    @InjectRepository(UserEntity)
+    private readonly users: Repository<UserEntity>,
+    @InjectRepository(PaymentEntity)
+    private readonly payments: Repository<PaymentEntity>,
     private readonly dataSource: DataSource,
   ) {}
 
-  private addressToRecord(address: SparePartsCheckoutDto['shippingAddress']): Record<string, string> {
+  private addressToRecord(
+    address: SparePartsCheckoutDto["shippingAddress"],
+  ): Record<string, string> {
     return {
       fullName: address.fullName,
       phone: address.phone,
       city: address.city,
       address: address.address,
-      postalCode: address.postalCode ?? '',
-      province: address.province ?? '',
+      postalCode: address.postalCode ?? "",
+      province: address.province ?? "",
     };
   }
 
-  private async resolveCustomer(user: AuthUser): Promise<{ customer: CustomerEntity; userRow: UserEntity | null }> {
+  private async resolveCustomer(
+    user: AuthUser,
+  ): Promise<{ customer: CustomerEntity; userRow: UserEntity | null }> {
     const userRow = await this.users.findOne({ where: { id: user.userId } });
     const customer = await ensureCustomerProfile(this.customers, userRow);
     return { customer, userRow };
   }
 
-  private buildCustomerSnapshot(customer: CustomerEntity, userRow: UserEntity | null): InvoicePartySnapshot {
+  private buildCustomerSnapshot(
+    customer: CustomerEntity,
+    userRow: UserEntity | null,
+  ): InvoicePartySnapshot {
     return {
       customerId: customer.id,
       userId: customer.userId,
       companyName: customer.companyName ?? userRow?.companyName ?? null,
       contactPerson:
         customer.contactPerson ??
-        ([userRow?.firstName, userRow?.lastName].filter(Boolean).join(' ') || null),
+        ([userRow?.firstName, userRow?.lastName].filter(Boolean).join(" ") ||
+          null),
       phone: customer.phone ?? userRow?.phone ?? null,
       email: userRow?.email ?? null,
       city: customer.city,
@@ -75,113 +95,151 @@ export class OrdersService {
     };
   }
 
-  async convertQuotation(user: AuthUser, quotationId: string): Promise<OrderEntity> {
+  async convertQuotation(
+    user: AuthUser,
+    quotationId: string,
+  ): Promise<OrderEntity> {
     return this.dataSource.transaction(async (manager) => {
-    const customer = await manager.getRepository(CustomerEntity).findOne({ where: { userId: user.userId } });
-    const quotation = await manager.getRepository(QuotationEntity).findOne({
-      where: { id: quotationId },
-      ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}),
-    });
-    if (!customer || !quotation || quotation.customerId !== customer.id) throw new NotFoundException('پیش‌فاکتور یافت نشد.');
-    const existingOrder = await manager.getRepository(OrderEntity).findOne({ where: { referenceQuotationId: quotation.id }, withDeleted: true });
-    if (existingOrder) return existingOrder;
-    if (quotation.status !== 'accepted') throw new ConflictException('پیش‌فاکتور باید پیش از تبدیل پذیرفته شده باشد.');
+      const customer = await manager
+        .getRepository(CustomerEntity)
+        .findOne({ where: { userId: user.userId } });
+      const quotation = await manager.getRepository(QuotationEntity).findOne({
+        where: { id: quotationId },
+        ...(manager.connection.options.type === "postgres"
+          ? { lock: { mode: "pessimistic_write" as const } }
+          : {}),
+      });
+      if (!customer || !quotation || quotation.customerId !== customer.id)
+        throw new NotFoundException("پیش‌فاکتور یافت نشد.");
+      const existingOrder = await manager
+        .getRepository(OrderEntity)
+        .findOne({
+          where: { referenceQuotationId: quotation.id },
+          withDeleted: true,
+        });
+      if (existingOrder) return existingOrder;
+      if (quotation.status !== "accepted")
+        throw new ConflictException(
+          "پیش‌فاکتور باید پیش از تبدیل پذیرفته شده باشد.",
+        );
 
-    const userRow = await manager.getRepository(UserEntity).findOne({ where: { id: user.userId } });
-    const order = await manager.getRepository(OrderEntity).save({
-      id: randomUUID(),
-      orderNumber: `ORD-${randomUUID()}`,
-      customerId: customer.id,
-      createdBy: user.userId,
-      status: 'pending',
-      orderType: 'custom',
-      shippingAddress: {},
-      billingAddress: {},
-      subtotal: quotation.subtotal,
-      taxAmount: quotation.taxAmount,
-      shippingCost: 0,
-      discountAmount: quotation.discountAmount,
-      totalAmount: quotation.totalAmount,
-      currency: quotation.currency,
-      paymentStatus: 'unpaid',
-      referenceQuotationId: quotation.id,
-      notes: quotation.notes,
-    });
-    const savedItems = await manager.getRepository(OrderItemEntity).save(
-      quotation.items.map((item) => ({
+      const userRow = await manager
+        .getRepository(UserEntity)
+        .findOne({ where: { id: user.userId } });
+      const order = await manager.getRepository(OrderEntity).save({
         id: randomUUID(),
-        orderId: order.id,
+        orderNumber: `ORD-${randomUUID()}`,
+        customerId: customer.id,
+        createdBy: user.userId,
+        status: "pending",
+        orderType: "custom",
+        shippingAddress: {},
+        billingAddress: {},
+        subtotal: quotation.subtotal,
+        taxAmount: quotation.taxAmount,
+        shippingCost: 0,
+        discountAmount: quotation.discountAmount,
+        totalAmount: quotation.totalAmount,
+        currency: quotation.currency,
+        paymentStatus: "unpaid",
+        referenceQuotationId: quotation.id,
+        notes: quotation.notes,
+      });
+      const savedItems = await manager.getRepository(OrderItemEntity).save(
+        quotation.items.map((item) => ({
+          id: randomUUID(),
+          orderId: order.id,
+          productId: item.productId,
+          itemType: "product",
+          sparePartId: null,
+          titleSnapshot: item.productName,
+          skuSnapshot: null,
+          imageSnapshot: null,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          lineTotal: item.lineTotal,
+          currency: quotation.currency,
+          customizationsJson: item.customizations,
+          status: "pending",
+        })),
+      );
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 30);
+      const lineItems: InvoiceLineItem[] = savedItems.map((item) => ({
+        itemType: "product",
         productId: item.productId,
-        itemType: 'product',
         sparePartId: null,
-        titleSnapshot: item.productName,
-        skuSnapshot: null,
-        imageSnapshot: null,
+        title: item.titleSnapshot || `محصول ${item.productId}`,
+        sku: item.skuSnapshot || item.productId,
+        imageUrl: item.imageSnapshot,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         lineTotal: item.lineTotal,
-        currency: quotation.currency,
-        customizationsJson: item.customizations,
-        status: 'pending',
-      })),
-    );
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
-    const lineItems: InvoiceLineItem[] = savedItems.map((item) => ({
-      itemType: 'product',
-      productId: item.productId,
-      sparePartId: null,
-      title: item.titleSnapshot || `محصول ${item.productId}`,
-      sku: item.skuSnapshot || item.productId,
-      imageUrl: item.imageSnapshot,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      lineTotal: item.lineTotal,
-      currency: item.currency,
-    }));
-    await manager.getRepository(InvoiceEntity).save({
-      id: randomUUID(),
-      invoiceNumber: `INV-${randomUUID()}`,
-      orderId: order.id,
-      quotationId: quotation.id,
-      customerId: customer.id,
-      dueDate,
-      totalBeforeTax: order.subtotal,
-      taxAmount: order.taxAmount,
-      totalAfterTax: order.totalAmount,
-      currency: order.currency,
-      paymentStatus: 'pending',
-      notes: order.notes,
-      lineItemsJson: lineItems,
-      customerSnapshotJson: this.buildCustomerSnapshot(customer, userRow),
-      shippingSnapshotJson: {},
-      billingSnapshotJson: {},
-      paymentMethod: null,
-      paidAt: null,
-    });
-    return order;
+        currency: item.currency,
+      }));
+      await manager.getRepository(InvoiceEntity).save({
+        id: randomUUID(),
+        invoiceNumber: `INV-${randomUUID()}`,
+        orderId: order.id,
+        quotationId: quotation.id,
+        customerId: customer.id,
+        dueDate,
+        totalBeforeTax: order.subtotal,
+        taxAmount: order.taxAmount,
+        totalAfterTax: order.totalAmount,
+        currency: order.currency,
+        paymentStatus: "pending",
+        notes: order.notes,
+        lineItemsJson: lineItems,
+        customerSnapshotJson: this.buildCustomerSnapshot(customer, userRow),
+        shippingSnapshotJson: {},
+        billingSnapshotJson: {},
+        paymentMethod: null,
+        paidAt: null,
+      });
+      return order;
     });
   }
 
   async checkoutSpareParts(
     user: AuthUser,
     dto: SparePartsCheckoutDto,
-  ): Promise<{ order: OrderEntity; invoice: InvoiceEntity; payment?: PaymentEntity | null }> {
-    if (dto.payWithTestGateway && process.env.NODE_ENV === 'production') {
-      throw new BadRequestException('پرداخت آزمایشی در محیط عملیاتی مجاز نیست.');
+  ): Promise<{
+    order: OrderEntity;
+    invoice: InvoiceEntity;
+    payment?: PaymentEntity | null;
+  }> {
+    if (dto.payWithTestGateway && process.env.NODE_ENV === "production") {
+      throw new BadRequestException(
+        "پرداخت آزمایشی در محیط عملیاتی مجاز نیست.",
+      );
     }
     const { customer, userRow } = await this.resolveCustomer(user);
     const qtyById = new Map<string, number>();
     for (const line of dto.items) {
-      qtyById.set(line.sparePartId, (qtyById.get(line.sparePartId) ?? 0) + line.quantity);
+      qtyById.set(
+        line.sparePartId,
+        (qtyById.get(line.sparePartId) ?? 0) + line.quantity,
+      );
     }
-    if ([...qtyById.values()].some((quantity) => !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000)) {
-      throw new BadRequestException('تعداد هر قطعه باید عدد صحیح بین ۱ و ۱۰۰۰ باشد.');
+    if (
+      [...qtyById.values()].some(
+        (quantity) =>
+          !Number.isSafeInteger(quantity) || quantity < 1 || quantity > 1000,
+      )
+    ) {
+      throw new BadRequestException(
+        "تعداد هر قطعه باید عدد صحیح بین ۱ و ۱۰۰۰ باشد.",
+      );
     }
     const partIds = [...qtyById.keys()];
-    const parts = await this.spareParts.find({ where: { id: In(partIds), isActive: true } });
+    const parts = await this.spareParts.find({
+      where: { id: In(partIds), isActive: true },
+    });
     if (parts.length !== partIds.length) {
-      throw new BadRequestException('یک یا چند قطعه در کاتالوگ یافت نشد یا غیرفعال است.');
+      throw new BadRequestException(
+        "یک یا چند قطعه در کاتالوگ یافت نشد یا غیرفعال است.",
+      );
     }
 
     for (const part of parts) {
@@ -192,7 +250,9 @@ export class OrdersService {
         );
       }
       if (part.stockQuantity < qty) {
-        throw new ConflictException(`موجودی «${part.nameFa}» کافی نیست (موجود: ${part.stockQuantity}).`);
+        throw new ConflictException(
+          `موجودی «${part.nameFa}» کافی نیست (موجود: ${part.stockQuantity}).`,
+        );
       }
     }
 
@@ -209,8 +269,12 @@ export class OrdersService {
       const paymentsRepo = manager.getRepository(PaymentEntity);
 
       // Re-lock stock inside transaction
-      const partsQuery = partsRepo.createQueryBuilder('part').where('part.id IN (:...ids)', { ids: partIds }).orderBy('part.id', 'ASC');
-      if (manager.connection.options.type === 'postgres') partsQuery.setLock('pessimistic_write');
+      const partsQuery = partsRepo
+        .createQueryBuilder("part")
+        .where("part.id IN (:...ids)", { ids: partIds })
+        .orderBy("part.id", "ASC");
+      if (manager.connection.options.type === "postgres")
+        partsQuery.setLock("pessimistic_write");
       const lockedParts = await partsQuery.getMany();
       const lockedMap = new Map(lockedParts.map((p) => [p.id, p]));
       let subtotal = 0;
@@ -222,9 +286,16 @@ export class OrdersService {
 
       for (const [id, quantity] of qtyById) {
         const part = lockedMap.get(id);
-        if (!part || !part.isActive) throw new BadRequestException('قطعه نامعتبر است.');
-        if (part.priceNegotiable || !Number.isSafeInteger(part.price) || part.price <= 0) {
-          throw new BadRequestException('قیمت قطعه برای سفارش مستقیم معتبر نیست.');
+        if (!part || !part.isActive)
+          throw new BadRequestException("قطعه نامعتبر است.");
+        if (
+          part.priceNegotiable ||
+          !Number.isSafeInteger(part.price) ||
+          part.price <= 0
+        ) {
+          throw new BadRequestException(
+            "قیمت قطعه برای سفارش مستقیم معتبر نیست.",
+          );
         }
         if (part.stockQuantity < quantity) {
           throw new ConflictException(`موجودی «${part.nameFa}» کافی نیست.`);
@@ -248,8 +319,8 @@ export class OrdersService {
         orderNumber: `SP-${year}-${stamp}`,
         customerId: customer.id,
         createdBy: user.userId,
-        status: 'pending',
-        orderType: 'spare_parts',
+        status: "pending",
+        orderType: "spare_parts",
         shippingAddress: shipping,
         billingAddress: billing,
         subtotal,
@@ -257,8 +328,8 @@ export class OrdersService {
         shippingCost,
         discountAmount,
         totalAmount,
-        currency: 'IRR',
-        paymentStatus: 'unpaid',
+        currency: "IRR",
+        paymentStatus: "unpaid",
         referenceQuotationId: null,
         notes: dto.notes?.trim() || null,
       });
@@ -267,8 +338,8 @@ export class OrdersService {
         prepared.map(({ part, quantity, lineTotal }) => ({
           id: randomUUID(),
           orderId: order.id,
-          productId: '',
-          itemType: 'spare_part',
+          productId: "",
+          itemType: "spare_part",
           sparePartId: part.id,
           titleSnapshot: part.nameFa,
           skuSnapshot: part.partNumber,
@@ -276,23 +347,23 @@ export class OrdersService {
           quantity,
           unitPrice: part.price,
           lineTotal,
-          currency: 'IRR',
+          currency: "IRR",
           customizationsJson: {
-            slug: part.slug ?? '',
-            brand: part.brand ?? '',
-            oemCode: part.oemCode ?? '',
+            slug: part.slug ?? "",
+            brand: part.brand ?? "",
+            oemCode: part.oemCode ?? "",
             warrantyMonths: String(part.warrantyMonths),
           },
-          status: 'pending',
+          status: "pending",
         })),
       );
 
       const lineItems: InvoiceLineItem[] = items.map((item) => ({
-        itemType: 'spare_part',
+        itemType: "spare_part",
         sparePartId: item.sparePartId,
         productId: null,
-        title: item.titleSnapshot || 'قطعه یدکی',
-        sku: item.skuSnapshot || '',
+        title: item.titleSnapshot || "قطعه یدکی",
+        sku: item.skuSnapshot || "",
         imageUrl: item.imageSnapshot,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
@@ -313,8 +384,8 @@ export class OrdersService {
         totalBeforeTax: subtotal,
         taxAmount,
         totalAfterTax: totalAmount,
-        currency: 'IRR',
-        paymentStatus: 'pending',
+        currency: "IRR",
+        paymentStatus: "pending",
         notes: dto.notes?.trim() || null,
         lineItemsJson: lineItems,
         customerSnapshotJson: this.buildCustomerSnapshot(customer, userRow),
@@ -331,19 +402,19 @@ export class OrdersService {
           invoiceId: invoice.id,
           orderId: order.id,
           amount: totalAmount,
-          currency: 'IRR',
-          paymentMethod: 'test_gateway',
+          currency: "IRR",
+          paymentMethod: "test_gateway",
           transactionId: `TEST-${Date.now()}`,
-          paymentStatus: 'completed',
-          notes: 'پرداخت آزمایشی موفق (بدون درگاه واقعی)',
-          processedBy: 'system:test-gateway',
+          paymentStatus: "completed",
+          notes: "پرداخت آزمایشی موفق (بدون درگاه واقعی)",
+          processedBy: "system:test-gateway",
         });
-        invoice.paymentStatus = 'paid';
-        invoice.paymentMethod = 'test_gateway';
+        invoice.paymentStatus = "paid";
+        invoice.paymentMethod = "test_gateway";
         invoice.paidAt = new Date();
         await invoicesRepo.save(invoice);
-        order.paymentStatus = 'paid';
-        order.status = 'processing';
+        order.paymentStatus = "paid";
+        order.status = "processing";
         await ordersRepo.save(order);
       }
 
@@ -354,13 +425,22 @@ export class OrdersService {
   }
 
   findMine(user: AuthUser): Promise<OrderEntity[]> {
-    return this.customers.findOne({ where: { userId: user.userId } }).then((customer) =>
-      customer ? this.orders.find({ where: { customerId: customer.id }, order: { createdAt: 'DESC' } }) : [],
-    );
+    return this.customers
+      .findOne({ where: { userId: user.userId } })
+      .then((customer) =>
+        customer
+          ? this.orders.find({
+              where: { customerId: customer.id },
+              order: { createdAt: "DESC" },
+            })
+          : [],
+      );
   }
 
   async findOneMine(user: AuthUser, idOrNumber: string): Promise<OrderDetail> {
-    const customer = await this.customers.findOne({ where: { userId: user.userId } });
+    const customer = await this.customers.findOne({
+      where: { userId: user.userId },
+    });
     const order = customer
       ? await this.orders.findOne({
           where: [
@@ -369,14 +449,19 @@ export class OrdersService {
           ],
         })
       : null;
-    if (!order) throw new NotFoundException('Order not found');
-    const items = await this.orderItems.find({ where: { orderId: order.id }, order: { createdAt: 'ASC' } });
-    const invoice = await this.invoices.findOne({ where: { orderId: order.id } });
+    if (!order) throw new NotFoundException("Order not found");
+    const items = await this.orderItems.find({
+      where: { orderId: order.id },
+      order: { createdAt: "ASC" },
+    });
+    const invoice = await this.invoices.findOne({
+      where: { orderId: order.id },
+    });
     return Object.assign(order, { items, invoice });
   }
 
   async findAllDetailed(): Promise<OrderDetail[]> {
-    const orders = await this.orders.find({ order: { createdAt: 'DESC' } });
+    const orders = await this.orders.find({ order: { createdAt: "DESC" } });
     if (!orders.length) return [];
     const ids = orders.map((o) => o.id);
     const items = await this.orderItems.find({ where: { orderId: In(ids) } });
@@ -387,7 +472,9 @@ export class OrdersService {
       list.push(item);
       itemsByOrder.set(item.orderId, list);
     }
-    const invoiceByOrder = new Map(invoices.filter((i) => i.orderId).map((i) => [i.orderId!, i]));
+    const invoiceByOrder = new Map(
+      invoices.filter((i) => i.orderId).map((i) => [i.orderId!, i]),
+    );
     return orders.map((order) =>
       Object.assign(order, {
         items: itemsByOrder.get(order.id) ?? [],
@@ -398,31 +485,79 @@ export class OrdersService {
 
   async findOneAdmin(id: string): Promise<OrderDetail> {
     const order = await this.orders.findOne({ where: { id } });
-    if (!order) throw new NotFoundException('Order not found');
-    const items = await this.orderItems.find({ where: { orderId: order.id }, order: { createdAt: 'ASC' } });
-    const invoice = await this.invoices.findOne({ where: { orderId: order.id } });
+    if (!order) throw new NotFoundException("Order not found");
+    const items = await this.orderItems.find({
+      where: { orderId: order.id },
+      order: { createdAt: "ASC" },
+    });
+    const invoice = await this.invoices.findOne({
+      where: { orderId: order.id },
+    });
     return Object.assign(order, { items, invoice });
   }
 
-  async findAll(page = 1, limit = 20, sort = 'createdAt', order: 'asc'|'desc' = 'desc') {
-    const sortMap: Record<string, string> = { createdAt: 'createdAt', orderNumber: 'orderNumber', totalAmount: 'totalAmount', status: 'status' };
-    const [data, total] = await this.orders.findAndCount({ order: { [sortMap[sort] ?? 'createdAt']: order.toUpperCase() as 'ASC'|'DESC' }, skip: (page - 1) * limit, take: limit });
-    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+  async findAll(
+    page = 1,
+    limit = 20,
+    sort = "createdAt",
+    order: "asc" | "desc" = "desc",
+  ) {
+    const sortMap: Record<string, string> = {
+      createdAt: "createdAt",
+      orderNumber: "orderNumber",
+      totalAmount: "totalAmount",
+      status: "status",
+    };
+    const [data, total] = await this.orders.findAndCount({
+      order: {
+        [sortMap[sort] ?? "createdAt"]: order.toUpperCase() as "ASC" | "DESC",
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
-  async updateStatus(id: string, status: OrderStatus, actor: AuditActor): Promise<OrderEntity> {
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+    actor: AuditActor,
+  ): Promise<OrderEntity> {
     const order = await this.orders.findOne({ where: { id } });
-    if (!order) throw new NotFoundException('سفارش یافت نشد.');
+    if (!order) throw new NotFoundException("سفارش یافت نشد.");
     if (order.status === status) return order;
-    if (!orderStatusTransitions[order.status as OrderStatus]?.includes(status)) throw new BadRequestException('تغییر وضعیت سفارش مجاز نیست.');
+    if (!orderStatusTransitions[order.status as OrderStatus]?.includes(status))
+      throw new BadRequestException("تغییر وضعیت سفارش مجاز نیست.");
     const previous = order.status;
-    return this.orders.manager.transaction(async manager => {
-      const locked = await manager.getRepository(OrderEntity).findOne({ where: { id }, ...(manager.connection.options.type === 'postgres' ? { lock: { mode: 'pessimistic_write' as const } } : {}) });
-      if (!locked) throw new NotFoundException('سفارش یافت نشد.');
-      if (locked.status !== previous || !orderStatusTransitions[locked.status as OrderStatus]?.includes(status)) throw new BadRequestException('این تغییر وضعیت دیگر مجاز نیست.');
+    return this.orders.manager.transaction(async (manager) => {
+      const locked = await manager
+        .getRepository(OrderEntity)
+        .findOne({
+          where: { id },
+          ...(manager.connection.options.type === "postgres"
+            ? { lock: { mode: "pessimistic_write" as const } }
+            : {}),
+        });
+      if (!locked) throw new NotFoundException("سفارش یافت نشد.");
+      if (
+        locked.status !== previous ||
+        !orderStatusTransitions[locked.status as OrderStatus]?.includes(status)
+      )
+        throw new BadRequestException("این تغییر وضعیت دیگر مجاز نیست.");
       locked.status = status;
       const saved = await manager.getRepository(OrderEntity).save(locked);
-      await AuditService.record(manager, actor, 'order.status_changed', 'order', id, { status: previous }, { status });
+      await AuditService.record(
+        manager,
+        actor,
+        "order.status_changed",
+        "order",
+        id,
+        { status: previous },
+        { status },
+      );
       return saved;
     });
   }

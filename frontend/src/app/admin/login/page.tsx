@@ -1,19 +1,19 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
-import { IconEye, IconEyeOff } from '@/components/admin/AdminIcons';
-import { login } from '@/lib/api-client';
-import { useAuthStore } from '@/store/auth.store';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { IconEye, IconEyeOff } from "@/components/admin/AdminIcons";
+import { login } from "@/lib/api-client";
+import { useAuthStore } from "@/store/auth.store";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { accessToken, user, setSession, clearSession } = useAuthStore();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -23,26 +23,32 @@ export default function AdminLoginPage() {
 
   useEffect(() => {
     if (!mounted) return;
-    if (accessToken && user?.role === 'admin') {
-      router.replace('/admin');
+    if (accessToken && user?.role === "admin") {
+      router.replace("/admin");
     }
   }, [mounted, accessToken, user, router]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+    setError("");
     setIsSubmitting(true);
     try {
       const response = await login(email, password);
-      if (response.user.role !== 'admin') {
+      if (response.user.role !== "admin") {
         clearSession();
-        setError('این حساب دسترسی مدیریت ندارد. برای ورود مشتریان از پنل مشتریان استفاده کنید.');
+        setError(
+          "این حساب دسترسی مدیریت ندارد. برای ورود مشتریان از پنل مشتریان استفاده کنید.",
+        );
         return;
       }
       setSession(response.accessToken, response.user);
-      router.replace('/admin');
+      router.replace("/admin");
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : 'ورود انجام نشد.');
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "ورود انجام نشد.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -58,7 +64,8 @@ export default function AdminLoginPage() {
           </span>
           <h1 className="ops-login__headline">ورود مدیران سیستم</h1>
           <p className="ops-login__copy">
-            از اینجا کاتالوگ، مشتریان، سفارش‌ها و امور مالی را مدیریت کنید. این صفحه مخصوص مدیران است.
+            از اینجا کاتالوگ، مشتریان، سفارش‌ها و امور مالی را مدیریت کنید. این
+            صفحه مخصوص مدیران است.
           </p>
         </div>
         <p className="ops-login__meta">گروه صنعتی محمدی</p>
@@ -104,7 +111,7 @@ export default function AdminLoginPage() {
                 <input
                   id="admin-password"
                   required
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
                   dir="ltr"
                   value={password}
@@ -114,7 +121,9 @@ export default function AdminLoginPage() {
                 <button
                   type="button"
                   className="ops-password-field__toggle"
-                  aria-label={showPassword ? 'پنهان کردن رمز عبور' : 'نمایش رمز عبور'}
+                  aria-label={
+                    showPassword ? "پنهان کردن رمز عبور" : "نمایش رمز عبور"
+                  }
                   aria-pressed={showPassword}
                   onClick={() => setShowPassword((current) => !current)}
                 >
@@ -129,14 +138,18 @@ export default function AdminLoginPage() {
               </p>
             ) : null}
 
-            <button type="submit" className="ops-btn ops-login__submit" disabled={isSubmitting}>
+            <button
+              type="submit"
+              className="ops-btn ops-login__submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting ? (
                 <>
                   <span className="inline-block h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
                   در حال ورود…
                 </>
               ) : (
-                'ورود به پنل مدیریت'
+                "ورود به پنل مدیریت"
               )}
             </button>
           </form>

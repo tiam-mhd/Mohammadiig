@@ -1,23 +1,30 @@
-import { IsBoolean, IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Min,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ManageCategoryDto {
-  @ApiProperty({ example: 'تجهیزات' })
+  @ApiProperty({ example: "تجهیزات" })
   @IsString()
   @Length(2, 100)
   nameFa!: string;
 
-  @ApiProperty({ example: 'Equipment' })
+  @ApiProperty({ example: "Equipment" })
   @IsString()
   @Length(2, 100)
   nameEn!: string;
 
-  @ApiProperty({ example: 'equipment' })
+  @ApiProperty({ example: "equipment" })
   @IsString()
   @Length(2, 100)
   slug!: string;
 
-  @ApiProperty({ example: 'توضیح کوتاه دسته' })
+  @ApiProperty({ example: "توضیح کوتاه دسته" })
   @IsString()
   @Length(2, 2000)
   descriptionFa!: string;

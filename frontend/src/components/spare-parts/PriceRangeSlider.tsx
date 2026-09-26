@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useId } from 'react';
+import { useId } from "react";
 
 type PriceRangeSliderProps = {
   min: number;
@@ -12,7 +12,7 @@ type PriceRangeSliderProps = {
 };
 
 function formatRial(n: number) {
-  return `${Math.round(n).toLocaleString('fa-IR')} ریال`;
+  return `${Math.round(n).toLocaleString("fa-IR")} ریال`;
 }
 
 export function PriceRangeSlider({
@@ -51,7 +51,10 @@ export function PriceRangeSlider({
         <div className="sp-range__rail" aria-hidden />
         <div
           className="sp-range__fill"
-          style={{ left: `${leftPct}%`, width: `${Math.max(rightPct - leftPct, 0)}%` }}
+          style={{
+            left: `${leftPct}%`,
+            width: `${Math.max(rightPct - leftPct, 0)}%`,
+          }}
           aria-hidden
         />
         <input

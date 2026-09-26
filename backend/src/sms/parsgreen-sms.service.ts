@@ -1,5 +1,9 @@
-import { Injectable, Logger, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+} from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 
 interface ParsgreenSendOtpResponse {
   R_Success?: boolean;
@@ -11,7 +15,7 @@ interface ParsgreenSendOtpResponse {
 @Injectable()
 export class ParsgreenSmsService {
   private readonly logger = new Logger(ParsgreenSmsService.name);
-  private readonly endpoint = 'https://sms.parsgreen.ir/Apiv2/Message/SendOtp';
+  private readonly endpoint = "https://sms.parsgreen.ir/Apiv2/Message/SendOtp";
 
   constructor(private readonly config: ConfigService) {}
 
@@ -21,16 +25,21 @@ export class ParsgreenSmsService {
    * Auth header: `basic apikey:{API_KEY}`
    */
   async sendOtp(mobile: string, code: string): Promise<void> {
-    const apiKey = (this.config.get<string>('PARSGREEN_API_KEY') ?? '').trim();
-    const addName = this.config.get<string>('PARSGREEN_ADD_NAME', 'true') !== 'false';
-    const dryRun = this.config.get<string>('PARSGREEN_DRY_RUN', 'false') === 'true';
-    const isDev = this.config.get<string>('NODE_ENV', 'development') !== 'production';
+    const apiKey = (this.config.get<string>("PARSGREEN_API_KEY") ?? "").trim();
+    const addName =
+      this.config.get<string>("PARSGREEN_ADD_NAME", "true") !== "false";
+    const dryRun =
+      this.config.get<string>("PARSGREEN_DRY_RUN", "false") === "true";
+    const isDev =
+      this.config.get<string>("NODE_ENV", "development") !== "production";
 
     if (!apiKey || dryRun) {
       if (!isDev) {
-        throw new ServiceUnavailableException('سرویس پیامک پیکربندی نشده است.');
+        throw new ServiceUnavailableException("سرویس پیامک پیکربندی نشده است.");
       }
-      this.logger.warn('[Parsgreen] ارسال آزمایشی پیامک؛ کد و شماره در گزارش ثبت نمی‌شوند.');
+      this.logger.warn(
+        "[Parsgreen] ارسال آزمایشی پیامک؛ کد و شماره در گزارش ثبت نمی‌شوند.",
+      );
       return;
     }
 
@@ -38,10 +47,10 @@ export class ParsgreenSmsService {
     try {
       response = await fetch(this.endpoint, {
         signal: AbortSignal.timeout(10000),
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          Accept: 'application/json',
+          "Content-Type": "application/json",
+          Accept: "application/json",
           Authorization: `basic apikey:${apiKey}`,
         },
         body: JSON.stringify({
@@ -51,8 +60,12 @@ export class ParsgreenSmsService {
         }),
       });
     } catch (error) {
-      this.logger.error(`[Parsgreen] network error: ${error instanceof Error ? error.message : error}`);
-      throw new ServiceUnavailableException('ارسال پیامک با خطا مواجه شد. دوباره تلاش کنید.');
+      this.logger.error(
+        `[Parsgreen] network error: ${error instanceof Error ? error.message : error}`,
+      );
+      throw new ServiceUnavailableException(
+        "ارسال پیامک با خطا مواجه شد. دوباره تلاش کنید.",
+      );
     }
 
     const rawText = await response.text();
@@ -60,8 +73,12 @@ export class ParsgreenSmsService {
     try {
       payload = JSON.parse(rawText) as ParsgreenSendOtpResponse;
     } catch {
-      this.logger.error(`[Parsgreen] non-JSON response status=${response.status}`);
-      throw new ServiceUnavailableException('پاسخ نامعتبر از سرویس پیامک دریافت شد.');
+      this.logger.error(
+        `[Parsgreen] non-JSON response status=${response.status}`,
+      );
+      throw new ServiceUnavailableException(
+        "پاسخ نامعتبر از سرویس پیامک دریافت شد.",
+      );
     }
 
     if (!response.ok || payload.R_Success !== true) {
@@ -69,10 +86,10 @@ export class ParsgreenSmsService {
         `[Parsgreen] send failed status=${response.status} code=${payload.R_Code}`,
       );
       throw new ServiceUnavailableException(
-        'ارسال کد تأیید انجام نشد. دوباره تلاش کنید.',
+        "ارسال کد تأیید انجام نشد. دوباره تلاش کنید.",
       );
     }
 
-    this.logger.log('[Parsgreen] پیامک تأیید برای ارسال ثبت شد.');
+    this.logger.log("[Parsgreen] پیامک تأیید برای ارسال ثبت شد.");
   }
 }

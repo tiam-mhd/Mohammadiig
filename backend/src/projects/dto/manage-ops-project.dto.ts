@@ -1,19 +1,29 @@
-import { IsArray, IsBoolean, IsIn, IsInt, IsOptional, IsString, Length, Max, Min } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ManageOpsProjectDto {
-  @ApiProperty({ example: 'بهره‌برداری سالن اصفهان' })
+  @ApiProperty({ example: "بهره‌برداری سالن اصفهان" })
   @IsString()
   @Length(2, 200)
   projectName!: string;
 
-  @ApiPropertyOptional({ example: 'Isfahan Hall Operation' })
+  @ApiPropertyOptional({ example: "Isfahan Hall Operation" })
   @IsOptional()
   @IsString()
   @Length(0, 200)
   nameEn?: string;
 
-  @ApiProperty({ example: 'isfahan-hall-operation' })
+  @ApiProperty({ example: "isfahan-hall-operation" })
   @IsString()
   @Length(2, 120)
   slug!: string;
@@ -29,29 +39,29 @@ export class ManageOpsProjectDto {
   @Length(0, 500)
   summaryFa?: string;
 
-  @ApiProperty({ enum: ['operation', 'partnership', 'investment'] })
-  @IsIn(['operation', 'partnership', 'investment'])
+  @ApiProperty({ enum: ["operation", "partnership", "investment"] })
+  @IsIn(["operation", "partnership", "investment"])
   projectType!: string;
 
-  @ApiPropertyOptional({ example: 'شریک تجاری نمونه' })
+  @ApiPropertyOptional({ example: "شریک تجاری نمونه" })
   @IsOptional()
   @IsString()
   @Length(0, 200)
   clientDisplayName?: string;
 
-  @ApiPropertyOptional({ example: 'ایران' })
+  @ApiPropertyOptional({ example: "ایران" })
   @IsOptional()
   @IsString()
   @Length(0, 80)
   country?: string;
 
-  @ApiPropertyOptional({ example: 'اصفهان' })
+  @ApiPropertyOptional({ example: "اصفهان" })
   @IsOptional()
   @IsString()
   @Length(0, 100)
   province?: string;
 
-  @ApiPropertyOptional({ example: 'اصفهان' })
+  @ApiPropertyOptional({ example: "اصفهان" })
   @IsOptional()
   @IsString()
   @Length(0, 100)
@@ -98,9 +108,11 @@ export class ManageOpsProjectDto {
   @Max(100)
   profitSharingPercentage?: number;
 
-  @ApiPropertyOptional({ enum: ['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'] })
+  @ApiPropertyOptional({
+    enum: ["planning", "in_progress", "on_hold", "completed", "cancelled"],
+  })
   @IsOptional()
-  @IsIn(['planning', 'in_progress', 'on_hold', 'completed', 'cancelled'])
+  @IsIn(["planning", "in_progress", "on_hold", "completed", "cancelled"])
   status?: string;
 
   @ApiPropertyOptional()

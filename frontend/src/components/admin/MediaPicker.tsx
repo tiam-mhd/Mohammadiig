@@ -1,21 +1,41 @@
-'use client';
+"use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import { IconAction, IconClear, IconImage, IconPlus, IconVideo } from '@/components/admin/AdminIcons';
-import { useAdminModalLock } from '@/hooks/useAdminModalLock';
+import {
+  FormEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { createPortal } from "react-dom";
+import {
+  IconAction,
+  IconClear,
+  IconImage,
+  IconPlus,
+  IconVideo,
+} from "@/components/admin/AdminIcons";
+import { useAdminModalLock } from "@/hooks/useAdminModalLock";
 import {
   fetchMediaLibrary,
   MediaAsset,
   uploadMediaAsset,
-} from '@/lib/api-client';
-import { formatBytes, isVideoMedia, resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import {
+  formatBytes,
+  isVideoMedia,
+  resolveMediaUrl,
+  toRelativeMediaPath,
+} from "@/lib/media";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
 function pickStoredUrl(asset: MediaAsset): string {
   // Persist relative `/media/...` so production never receives localhost absolute URLs.
-  return toRelativeMediaPath(asset.url) || toRelativeMediaPath(asset.absoluteUrl);
+  return (
+    toRelativeMediaPath(asset.url) || toRelativeMediaPath(asset.absoluteUrl)
+  );
 }
 
 function pickDisplayUrl(asset: MediaAsset): string {
@@ -28,21 +48,21 @@ export function MediaPicker({
   onClose,
   onSelect,
   multiple = false,
-  accept = 'all',
-  title = 'انتخاب از کتابخانه رسانه',
+  accept = "all",
+  title = "انتخاب از کتابخانه رسانه",
 }: {
   open: boolean;
   onClose: () => void;
   onSelect: (urls: string[], assets: MediaAsset[]) => void;
   multiple?: boolean;
-  accept?: 'all' | 'image' | 'video';
+  accept?: "all" | "image" | "video";
   title?: string;
 }) {
   const token = useAuthStore((s) => s.accessToken);
   const [items, setItems] = useState<MediaAsset[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
-  const [q, setQ] = useState('');
-  const [folder, setFolder] = useState('');
+  const [q, setQ] = useState("");
+  const [folder, setFolder] = useState("");
   const [selected, setSelected] = useState<Record<string, MediaAsset>>({});
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -53,10 +73,10 @@ export function MediaPicker({
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape' && !uploading) onClose();
+      if (event.key === "Escape" && !uploading) onClose();
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, uploading]);
 
   useAdminModalLock(open);
@@ -68,14 +88,14 @@ export function MediaPicker({
       const res = await fetchMediaLibrary(token, {
         q: q || undefined,
         folder: folder || undefined,
-        status: 'active',
-        kind: accept === 'all' ? undefined : accept,
+        status: "active",
+        kind: accept === "all" ? undefined : accept,
         limit: 60,
       });
       setItems(res.data);
       setFolders(res.meta.folders);
     } catch {
-      adminToast.error('دریافت کتابخانه رسانه انجام نشد.');
+      adminToast.error("دریافت کتابخانه رسانه انجام نشد.");
     } finally {
       setBusy(false);
     }
@@ -88,8 +108,8 @@ export function MediaPicker({
   useEffect(() => {
     if (!open) {
       setSelected({});
-      setQ('');
-      setFolder('');
+      setQ("");
+      setFolder("");
       setChoiceOpen(false);
     }
   }, [open]);
@@ -106,13 +126,16 @@ export function MediaPicker({
     });
   }
 
-  async function onUpload(files: FileList | null, kind: 'image' | 'video') {
+  async function onUpload(files: FileList | null, kind: "image" | "video") {
     if (!token || !files?.length) return;
     setUploading(true);
     try {
       const uploaded: MediaAsset[] = [];
       for (const file of Array.from(files)) {
-        const asset = await uploadMediaAsset(token, file, { folder: folder || 'general', kind });
+        const asset = await uploadMediaAsset(token, file, {
+          folder: folder || "general",
+          kind,
+        });
         uploaded.push(asset);
       }
       setItems((current) => [...uploaded, ...current]);
@@ -127,27 +150,29 @@ export function MediaPicker({
       }
       adminToast.success(`${uploaded.length} فایل آپلود شد.`);
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'آپلود انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "آپلود انجام نشد.",
+      );
     } finally {
       setUploading(false);
     }
   }
 
   function startUpload() {
-    if (accept === 'image') {
+    if (accept === "image") {
       imageInputRef.current?.click();
       return;
     }
-    if (accept === 'video') {
+    if (accept === "video") {
       videoInputRef.current?.click();
       return;
     }
     setChoiceOpen(true);
   }
 
-  function chooseUpload(kind: 'image' | 'video') {
+  function chooseUpload(kind: "image" | "video") {
     setChoiceOpen(false);
-    if (kind === 'image') imageInputRef.current?.click();
+    if (kind === "image") imageInputRef.current?.click();
     else videoInputRef.current?.click();
   }
 
@@ -158,10 +183,15 @@ export function MediaPicker({
     onClose();
   }
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!open || typeof document === "undefined") return null;
 
   const body = (
-    <div className="media-picker" role="dialog" aria-modal="true" aria-label={title}>
+    <div
+      className="media-picker"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
       <div className="media-picker__panel">
         <div className="admin-modal__head text-start">
           <div>
@@ -170,7 +200,12 @@ export function MediaPicker({
               فایل موجود را انتخاب کنید یا ابتدا آپلود کنید.
             </p>
           </div>
-          <IconAction label="بستن" tone="ghost" onClick={onClose} disabled={uploading}>
+          <IconAction
+            label="بستن"
+            tone="ghost"
+            onClick={onClose}
+            disabled={uploading}
+          >
             <IconClear />
           </IconAction>
         </div>
@@ -182,7 +217,11 @@ export function MediaPicker({
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
-          <select className="admin-select" value={folder} onChange={(e) => setFolder(e.target.value)}>
+          <select
+            className="admin-select"
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+          >
             <option value="">همه پوشه‌ها</option>
             {folders.map((name) => (
               <option key={name} value={name}>
@@ -190,18 +229,31 @@ export function MediaPicker({
               </option>
             ))}
           </select>
-          <IconAction label="آپلود فایل" tone="primary" disabled={uploading} onClick={startUpload}>
+          <IconAction
+            label="آپلود فایل"
+            tone="primary"
+            disabled={uploading}
+            onClick={startUpload}
+          >
             <IconPlus />
           </IconAction>
         </div>
 
         {choiceOpen ? (
           <div className="media-upload-choice media-upload-choice--picker">
-            <button type="button" className="media-upload-choice__btn" onClick={() => chooseUpload('image')}>
+            <button
+              type="button"
+              className="media-upload-choice__btn"
+              onClick={() => chooseUpload("image")}
+            >
               <IconImage />
               <span>آپلود تصویر</span>
             </button>
-            <button type="button" className="media-upload-choice__btn" onClick={() => chooseUpload('video')}>
+            <button
+              type="button"
+              className="media-upload-choice__btn"
+              onClick={() => chooseUpload("video")}
+            >
               <IconVideo />
               <span>آپلود ویدیو</span>
             </button>
@@ -216,8 +268,8 @@ export function MediaPicker({
           hidden
           disabled={uploading}
           onChange={(e) => {
-            void onUpload(e.target.files, 'image');
-            e.target.value = '';
+            void onUpload(e.target.files, "image");
+            e.target.value = "";
           }}
         />
         <input
@@ -228,14 +280,16 @@ export function MediaPicker({
           hidden
           disabled={uploading}
           onChange={(e) => {
-            void onUpload(e.target.files, 'video');
-            e.target.value = '';
+            void onUpload(e.target.files, "video");
+            e.target.value = "";
           }}
         />
 
         <div className="media-picker__grid" aria-busy={busy}>
           {items.length === 0 && !busy ? (
-            <p className="media-picker__empty">کتابخانه خالی است — اول یک فایل آپلود کنید.</p>
+            <p className="media-picker__empty">
+              کتابخانه خالی است — اول یک فایل آپلود کنید.
+            </p>
           ) : null}
           {items.map((item) => {
             const active = Boolean(selected[item.id]);
@@ -245,7 +299,7 @@ export function MediaPicker({
               <button
                 key={item.id}
                 type="button"
-                className={`media-picker__card ${active ? 'is-selected' : ''}`}
+                className={`media-picker__card ${active ? "is-selected" : ""}`}
                 onClick={() => toggle(item)}
                 onDoubleClick={() => {
                   onSelect([pickStoredUrl(item)], [item]);
@@ -262,8 +316,10 @@ export function MediaPicker({
                   <strong>{item.title || item.originalName}</strong>
                   <small>
                     {formatBytes(item.fileSize)}
-                    {item.width && item.height ? ` · ${item.width}×${item.height}` : ''}
-                    {video ? ' · ویدیو' : ''}
+                    {item.width && item.height
+                      ? ` · ${item.width}×${item.height}`
+                      : ""}
+                    {video ? " · ویدیو" : ""}
                   </small>
                 </span>
               </button>
@@ -272,7 +328,12 @@ export function MediaPicker({
         </div>
 
         <div className="admin-modal__foot">
-          <button type="button" className="ops-btn ops-btn--ghost" onClick={onClose} disabled={uploading}>
+          <button
+            type="button"
+            className="ops-btn ops-btn--ghost"
+            onClick={onClose}
+            disabled={uploading}
+          >
             انصراف
           </button>
           <button
@@ -283,9 +344,9 @@ export function MediaPicker({
           >
             {multiple
               ? selectedList.length
-                ? `انتخاب ${selectedList.length.toLocaleString('fa-IR')} مورد`
-                : 'انتخاب'
-              : 'انتخاب'}
+                ? `انتخاب ${selectedList.length.toLocaleString("fa-IR")} مورد`
+                : "انتخاب"
+              : "انتخاب"}
           </button>
         </div>
       </div>

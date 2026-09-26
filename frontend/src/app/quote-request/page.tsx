@@ -1,12 +1,12 @@
-﻿'use client';
+﻿"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components';
-import { fetchProducts, Product, requestQuotation } from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
-import { useAuthStore } from '@/store/auth.store';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Button } from "@/components";
+import { fetchProducts, Product, requestQuotation } from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
+import { useAuthStore } from "@/store/auth.store";
 
 type Quantities = Record<string, number>;
 
@@ -16,8 +16,10 @@ function clampQuantity(value: number) {
 }
 
 function readProductParam() {
-  if (typeof window === 'undefined') return '';
-  return new URLSearchParams(window.location.search).get('product')?.trim() ?? '';
+  if (typeof window === "undefined") return "";
+  return (
+    new URLSearchParams(window.location.search).get("product")?.trim() ?? ""
+  );
 }
 
 export default function QuoteRequestPage() {
@@ -27,20 +29,21 @@ export default function QuoteRequestPage() {
   const hasHydrated = useAuthStore((state) => state.hasHydrated);
 
   const [ready, setReady] = useState(false);
-  const [productParam, setProductParam] = useState('');
+  const [productParam, setProductParam] = useState("");
   const [products, setProducts] = useState<Product[]>([]);
   const [quantities, setQuantities] = useState<Quantities>({});
-  const [projectCity, setProjectCity] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [venueDetails, setVenueDetails] = useState('');
-  const [notes, setNotes] = useState('');
-  const [loadError, setLoadError] = useState('');
-  const [error, setError] = useState('');
+  const [projectCity, setProjectCity] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [venueDetails, setVenueDetails] = useState("");
+  const [notes, setNotes] = useState("");
+  const [loadError, setLoadError] = useState("");
+  const [error, setError] = useState("");
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState<{ quotationNumber: string; totalAmount: number } | null>(
-    null,
-  );
+  const [success, setSuccess] = useState<{
+    quotationNumber: string;
+    totalAmount: number;
+  } | null>(null);
 
   // Wait for the server session check before presenting authenticated actions.
   useEffect(() => {
@@ -50,11 +53,12 @@ export default function QuoteRequestPage() {
       setReady(true);
       return;
     }
-
   }, [hasHydrated]);
 
   const authReturnPath = useMemo(() => {
-    const query = productParam ? `?product=${encodeURIComponent(productParam)}` : '';
+    const query = productParam
+      ? `?product=${encodeURIComponent(productParam)}`
+      : "";
     return `/quote-request${query}`;
   }, [productParam]);
 
@@ -75,16 +79,18 @@ export default function QuoteRequestPage() {
           }
           if (productParam) {
             const matched = list.find(
-              (product) => product.slug === productParam || product.id === productParam,
+              (product) =>
+                product.slug === productParam || product.id === productParam,
             );
             if (matched) next[matched.id] = Math.max(next[matched.id] ?? 0, 1);
           }
           return next;
         });
-        setLoadError('');
+        setLoadError("");
       })
       .catch(() => {
-        if (!cancelled) setLoadError('بارگذاری محصولات انجام نشد. لطفاً صفحه را تازه کنید.');
+        if (!cancelled)
+          setLoadError("بارگذاری محصولات انجام نشد. لطفاً صفحه را تازه کنید.");
       })
       .finally(() => {
         if (!cancelled) setIsLoadingProducts(false);
@@ -115,8 +121,11 @@ export default function QuoteRequestPage() {
   );
 
   function setQuantity(productId: string, value: number) {
-    setQuantities((current) => ({ ...current, [productId]: clampQuantity(value) }));
-    setError('');
+    setQuantities((current) => ({
+      ...current,
+      [productId]: clampQuantity(value),
+    }));
+    setError("");
     setSuccess(null);
   }
 
@@ -125,12 +134,12 @@ export default function QuoteRequestPage() {
     if (!accessToken) return;
 
     if (selectedItems.length === 0) {
-      setError('حداقل یک محصول را با تعداد بیشتر از صفر انتخاب کنید.');
+      setError("حداقل یک محصول را با تعداد بیشتر از صفر انتخاب کنید.");
       return;
     }
 
     setIsSubmitting(true);
-    setError('');
+    setError("");
     setSuccess(null);
 
     try {
@@ -153,11 +162,15 @@ export default function QuoteRequestPage() {
         for (const id of Object.keys(current)) reset[id] = 0;
         return reset;
       });
-      setNotes('');
-      setVenueDetails('');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setNotes("");
+      setVenueDetails("");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (submissionError) {
-      setError(submissionError instanceof Error ? submissionError.message : 'خطایی رخ داد.');
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "خطایی رخ داد.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -179,10 +192,12 @@ export default function QuoteRequestPage() {
       <div className="bg-canvas quote-page">
         <div className="content-shell section-copy quote-page__gate">
           <p className="caption-up">درخواست قیمت</p>
-          <h1 className="display-feature mt-4 text-ink">خوش آمدید؛ اول وارد حساب شوید</h1>
+          <h1 className="display-feature mt-4 text-ink">
+            خوش آمدید؛ اول وارد حساب شوید
+          </h1>
           <p className="body-lead mt-5 max-w-lg">
-            با ورود یا ثبت‌نام کوتاه، درخواست‌تان ثبت می‌شود و تیم فروش می‌تواند مستقیم با شما هماهنگ
-            کند.
+            با ورود یا ثبت‌نام کوتاه، درخواست‌تان ثبت می‌شود و تیم فروش می‌تواند
+            مستقیم با شما هماهنگ کند.
           </p>
           <div className="quote-page__gate-actions">
             <Link
@@ -191,7 +206,10 @@ export default function QuoteRequestPage() {
             >
               ورود یا ثبت‌نام
             </Link>
-            <Link href="/products" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+            <Link
+              href="/products"
+              className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+            >
               فعلاً محصولات را ببینم
             </Link>
           </div>
@@ -210,10 +228,12 @@ export default function QuoteRequestPage() {
         <header className="quote-page__head">
           <div className="quote-page__intro">
             <p className="caption-up">درخواست قیمت</p>
-            <h1 className="display-feature mt-4 text-ink">بگویید چه نیاز دارید</h1>
+            <h1 className="display-feature mt-4 text-ink">
+              بگویید چه نیاز دارید
+            </h1>
             <p className="body-lead mt-5 max-w-xl">
-              محصول‌ها را انتخاب کنید و چند خط درباره پروژه‌تان بنویسید. ما با دقت بررسی می‌کنیم و
-              پیشنهاد قیمت را برایتان آماده می‌کنیم.
+              محصول‌ها را انتخاب کنید و چند خط درباره پروژه‌تان بنویسید. ما با
+              دقت بررسی می‌کنیم و پیشنهاد قیمت را برایتان آماده می‌کنیم.
             </p>
             {user?.companyName ? (
               <p className="quote-page__account mt-4">
@@ -240,44 +260,70 @@ export default function QuoteRequestPage() {
         {success ? (
           <div className="quote-page__success" role="status">
             <p className="caption-up">با موفقیت ثبت شد</p>
-            <h2 className="display-sm mt-3 text-ink">درخواست‌تان را دریافت کردیم</h2>
+            <h2 className="display-sm mt-3 text-ink">
+              درخواست‌تان را دریافت کردیم
+            </h2>
             <p className="body-lead mt-3 max-w-lg">
-              شماره پیگیری <strong dir="ltr">{success.quotationNumber}</strong> — برآورد اولیه{' '}
-              {success.totalAmount.toLocaleString('fa-IR')} ریال است. به‌زودی تیم فروش با شما هماهنگ
-              می‌کند.
+              شماره پیگیری <strong dir="ltr">{success.quotationNumber}</strong>{" "}
+              — برآورد اولیه {success.totalAmount.toLocaleString("fa-IR")} ریال
+              است. به‌زودی تیم فروش با شما هماهنگ می‌کند.
             </p>
             <div className="quote-page__success-actions">
-              <Button type="button" size="lg" onClick={() => router.push('/account')}>
+              <Button
+                type="button"
+                size="lg"
+                onClick={() => router.push("/account")}
+              >
                 برو به حساب من
               </Button>
-              <Button type="button" size="lg" variant="secondary" onClick={() => setSuccess(null)}>
+              <Button
+                type="button"
+                size="lg"
+                variant="secondary"
+                onClick={() => setSuccess(null)}
+              >
                 یک درخواست دیگر
               </Button>
             </div>
           </div>
         ) : null}
 
-        <form onSubmit={submitRequest} className="quote-page__layout" noValidate>
+        <form
+          onSubmit={submitRequest}
+          className="quote-page__layout"
+          noValidate
+        >
           <div className="quote-page__main">
-            <section className="quote-page__section" aria-labelledby="quote-products-title">
+            <section
+              className="quote-page__section"
+              aria-labelledby="quote-products-title"
+            >
               <div className="quote-page__section-head">
                 <h2 id="quote-products-title" className="display-sm text-ink">
                   چه محصولی می‌خواهید؟
                 </h2>
                 <p className="body-lead mt-2 text-sm">
-                  با دکمه‌های + و − تعداد را تنظیم کنید. هرچه واضح‌تر بگویید، پیشنهاد دقیق‌تری
-                  می‌گیرید.
+                  با دکمه‌های + و − تعداد را تنظیم کنید. هرچه واضح‌تر بگویید،
+                  پیشنهاد دقیق‌تری می‌گیرید.
                 </p>
               </div>
 
               {isLoadingProducts ? (
-                <p className="quote-page__empty">چند لحظه… در حال آوردن محصولات</p>
+                <p className="quote-page__empty">
+                  چند لحظه… در حال آوردن محصولات
+                </p>
               ) : null}
 
-              {loadError ? <p className="field-message field-message--error">{loadError}</p> : null}
+              {loadError ? (
+                <p className="field-message field-message--error">
+                  {loadError}
+                </p>
+              ) : null}
 
               {!isLoadingProducts && !loadError && products.length === 0 ? (
-                <p className="quote-page__empty">الان محصول فعالی برای انتخاب نیست.</p>
+                <p className="quote-page__empty">
+                  الان محصول فعالی برای انتخاب نیست.
+                </p>
               ) : null}
 
               <div className="quote-page__products">
@@ -287,26 +333,37 @@ export default function QuoteRequestPage() {
                   return (
                     <article
                       key={product.id}
-                      className={`quote-product${isSelected ? ' is-selected' : ''}`}
+                      className={`quote-product${isSelected ? " is-selected" : ""}`}
                     >
                       <div className="quote-product__media">
                         {resolveMediaUrl(product.image) ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={resolveMediaUrl(product.image)!} alt={product.name} loading="lazy" />
+                          <img
+                            src={resolveMediaUrl(product.image)!}
+                            alt={product.name}
+                            loading="lazy"
+                          />
                         ) : (
-                          <span className="quote-product__placeholder">بدون تصویر</span>
+                          <span className="quote-product__placeholder">
+                            بدون تصویر
+                          </span>
                         )}
                       </div>
                       <div className="quote-product__body">
-                        <p className="caption-up text-ink/45">{product.category || 'محصول'}</p>
+                        <p className="caption-up text-ink/45">
+                          {product.category || "محصول"}
+                        </p>
                         <h3 className="quote-product__title">{product.name}</h3>
                         <p className="quote-product__price">
                           {product.priceNegotiable
-                            ? 'قیمت توافقی'
-                            : `شروع از ${product.price.toLocaleString('fa-IR')} ریال`}
+                            ? "قیمت توافقی"
+                            : `شروع از ${product.price.toLocaleString("fa-IR")} ریال`}
                         </p>
                       </div>
-                      <div className="quote-product__qty" aria-label={`تعداد ${product.name}`}>
+                      <div
+                        className="quote-product__qty"
+                        aria-label={`تعداد ${product.name}`}
+                      >
                         <button
                           type="button"
                           className="quote-qty-btn"
@@ -324,7 +381,10 @@ export default function QuoteRequestPage() {
                           className="field-input field-input--box quote-qty-input"
                           value={quantity}
                           onChange={(event) =>
-                            setQuantity(product.id, Number(event.target.value || 0))
+                            setQuantity(
+                              product.id,
+                              Number(event.target.value || 0),
+                            )
                           }
                         />
                         <button
@@ -343,14 +403,17 @@ export default function QuoteRequestPage() {
               </div>
             </section>
 
-            <section className="quote-page__section" aria-labelledby="quote-details-title">
+            <section
+              className="quote-page__section"
+              aria-labelledby="quote-details-title"
+            >
               <div className="quote-page__section-head">
                 <h2 id="quote-details-title" className="display-sm text-ink">
                   کمی درباره پروژه‌تان
                 </h2>
                 <p className="body-lead mt-2 text-sm">
-                  پر کردن این بخش اختیاری است؛ ولی همین چند نکته کمک می‌کند پیشنهاد بهتری برایتان
-                  بنویسیم.
+                  پر کردن این بخش اختیاری است؛ ولی همین چند نکته کمک می‌کند
+                  پیشنهاد بهتری برایتان بنویسیم.
                 </p>
               </div>
 
@@ -368,7 +431,9 @@ export default function QuoteRequestPage() {
                 </label>
 
                 <label className="quote-field">
-                  <span className="quote-field__label">شماره تماس برای هماهنگی</span>
+                  <span className="quote-field__label">
+                    شماره تماس برای هماهنگی
+                  </span>
                   <input
                     type="tel"
                     dir="ltr"
@@ -382,7 +447,9 @@ export default function QuoteRequestPage() {
                 </label>
 
                 <label className="quote-field quote-field--wide">
-                  <span className="quote-field__label">ابعاد سالن یا ظرفیت فضا</span>
+                  <span className="quote-field__label">
+                    ابعاد سالن یا ظرفیت فضا
+                  </span>
                   <input
                     type="text"
                     value={venueDetails}
@@ -407,26 +474,32 @@ export default function QuoteRequestPage() {
             </section>
           </div>
 
-          <aside className="quote-page__aside" aria-labelledby="quote-summary-title">
+          <aside
+            className="quote-page__aside"
+            aria-labelledby="quote-summary-title"
+          >
             <div className="quote-summary">
               <h2 id="quote-summary-title" className="display-sm text-ink">
                 خلاصه شما
               </h2>
               <p className="quote-summary__lede">
-                این فقط یک برآورد اولیه است؛ قیمت نهایی را بعد از بررسی اعلام می‌کنیم.
+                این فقط یک برآورد اولیه است؛ قیمت نهایی را بعد از بررسی اعلام
+                می‌کنیم.
               </p>
 
               {selectedItems.length === 0 ? (
-                <p className="quote-summary__empty">هنوز چیزی انتخاب نکرده‌اید — از فهرست محصولات شروع کنید.</p>
+                <p className="quote-summary__empty">
+                  هنوز چیزی انتخاب نکرده‌اید — از فهرست محصولات شروع کنید.
+                </p>
               ) : (
                 <ul className="quote-summary__list">
                   {selectedItems.map((item) => (
                     <li key={item.product.id}>
                       <div>
                         <strong>{item.product.name}</strong>
-                        <span>{item.quantity.toLocaleString('fa-IR')} عدد</span>
+                        <span>{item.quantity.toLocaleString("fa-IR")} عدد</span>
                       </div>
-                      <em>{item.lineTotal.toLocaleString('fa-IR')} ریال</em>
+                      <em>{item.lineTotal.toLocaleString("fa-IR")} ریال</em>
                     </li>
                   ))}
                 </ul>
@@ -434,10 +507,12 @@ export default function QuoteRequestPage() {
 
               <div className="quote-summary__total">
                 <span>برآورد اولیه</span>
-                <strong>{estimatedTotal.toLocaleString('fa-IR')} ریال</strong>
+                <strong>{estimatedTotal.toLocaleString("fa-IR")} ریال</strong>
               </div>
 
-              {error ? <p className="field-message field-message--error">{error}</p> : null}
+              {error ? (
+                <p className="field-message field-message--error">{error}</p>
+              ) : null}
 
               <Button
                 type="submit"

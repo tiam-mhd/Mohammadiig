@@ -15,7 +15,8 @@ import { SiteChrome } from "@/components/SiteChrome";
 
 export const metadata: Metadata = {
   title: "MIG — گروه صنعتی محمدی",
-  description: "طراح و سازنده تجهیزات تفریحی و راهکارهای سرگرمی برای پروژه‌های متمایز.",
+  description:
+    "طراح و سازنده تجهیزات تفریحی و راهکارهای سرگرمی برای پروژه‌های متمایز.",
   keywords: ["ماشین برقی", "تجهیزات تفریحی", "Bumper Cars", "MIG"],
   metadataBase: new URL("https://mohammadiig.ir"),
   openGraph: {
@@ -27,7 +28,11 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html
       lang="fa"
@@ -42,15 +47,60 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(function(){try{var p=location.pathname;if(p==="/admin"||p.indexOf("/admin/")===0){document.documentElement.classList.remove("dark");return;}var mode="dark";try{var raw=localStorage.getItem("theme-store");if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.state&&parsed.state.mode)mode=parsed.state.mode;}}catch(e){}var dark=mode==="dark"||(mode==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",dark);document.documentElement.style.colorScheme=dark?"dark":"light";if(p==="/auth"||p.indexOf("/auth/")===0)return;if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)return;document.documentElement.setAttribute("data-splash","pending");}catch(e){}})();`,
           }}
         />
-        <link rel="preload" as="image" href="/logo-pieces/piece-left.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/logo-pieces/piece-right.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/logo-pieces/piece-top-left.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/logo-pieces/piece-top-right.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/logo-pieces/piece-bottom-left.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/logo-pieces/piece-bottom-right.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/Logo-Gold.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/Background.webp" type="image/webp" />
-        <link rel="preload" as="image" href="/Background-Light.webp" type="image/webp" />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-left.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-right.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-top-left.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-top-right.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-bottom-left.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/logo-pieces/piece-bottom-right.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/Logo-Gold.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/Background.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/Background-Light.webp"
+          type="image/webp"
+        />
       </head>
       <body className="flex min-h-full flex-col bg-canvas text-ink">
         <ThemeProvider>

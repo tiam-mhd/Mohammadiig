@@ -1,48 +1,58 @@
-'use client';
+"use client";
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
-import { AdminModal } from '@/components/admin/AdminModal';
-import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
-import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
-import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
-import { useAdminList } from '@/hooks/useAdminList';
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { DataRow, DataTable, RowActions } from "@/components/admin/DataTable";
+import { AdminFilterBar, AdminToolbar } from "@/components/admin/AdminToolbar";
+import { IconAction, IconEdit, IconTrash } from "@/components/admin/AdminIcons";
+import { useAdminList } from "@/hooks/useAdminList";
 import {
   formatDate,
   formatDateTime,
   formatMoney,
   labelOf,
   QUOTATION_STATUS,
-} from '@/lib/admin-labels';
+} from "@/lib/admin-labels";
 import {
   fetchAdminQuotationsPage,
   QuotationAdminSummary,
   updateQuotationStatus,
-} from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
-const statusOptions = Object.entries(QUOTATION_STATUS).map(([value, label]) => ({ value, label }));
+const statusOptions = Object.entries(QUOTATION_STATUS).map(
+  ([value, label]) => ({ value, label }),
+);
 
 function itemsLabel(item: QuotationAdminSummary) {
-  if (!item.items?.length) return 'بدون قلم';
+  if (!item.items?.length) return "بدون قلم";
   return item.items
-    .map((row) => `${row.productName} × ${row.quantity.toLocaleString('fa-IR')}`)
-    .join('، ');
+    .map(
+      (row) => `${row.productName} × ${row.quantity.toLocaleString("fa-IR")}`,
+    )
+    .join("، ");
 }
 
 export default function AdminQuotationsPage() {
   const token = useAuthStore((state) => state.accessToken);
   const [items, setItems] = useState<QuotationAdminSummary[]>([]);
   const [editing, setEditing] = useState<QuotationAdminSummary | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<QuotationAdminSummary | null>(null);
-  const [statusValue, setStatusValue] = useState('');
+  const [pendingDelete, setPendingDelete] =
+    useState<QuotationAdminSummary | null>(null);
+  const [statusValue, setStatusValue] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [meta, setMeta] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  });
   const [loading, setLoading] = useState(false);
 
   const searchText = useCallback(
@@ -54,17 +64,17 @@ export default function AdminQuotationsPage() {
         item.customerPhone,
         item.notes,
         item.status,
-        QUOTATION_STATUS[item.status] ?? '',
+        QUOTATION_STATUS[item.status] ?? "",
         itemsLabel(item),
       ]
         .filter(Boolean)
-        .join(' '),
+        .join(" "),
     [],
   );
 
   const matchFilter = useCallback(
     (item: QuotationAdminSummary, key: string, value: string) =>
-      key === 'status' ? item.status === value : true,
+      key === "status" ? item.status === value : true,
     [],
   );
 
@@ -74,8 +84,11 @@ export default function AdminQuotationsPage() {
     if (!token) return;
     setLoading(true);
     fetchAdminQuotationsPage(token, { page, limit: 20, search: list.query })
-      .then((result) => { setItems(result.data); setMeta(result.meta); })
-      .catch(() => adminToast.error('دریافت پیش‌فاکتورها انجام نشد.'))
+      .then((result) => {
+        setItems(result.data);
+        setMeta(result.meta);
+      })
+      .catch(() => adminToast.error("دریافت پیش‌فاکتورها انجام نشد."))
       .finally(() => setLoading(false));
   }, [token, page, list.query]);
   useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
@@ -90,12 +103,20 @@ export default function AdminQuotationsPage() {
     if (!token || !editing) return;
     setBusy(true);
     try {
-      const updated = await updateQuotationStatus(token, editing.id, statusValue);
-      setItems((current) => current.map((row) => (row.id === editing.id ? updated : row)));
+      const updated = await updateQuotationStatus(
+        token,
+        editing.id,
+        statusValue,
+      );
+      setItems((current) =>
+        current.map((row) => (row.id === editing.id ? updated : row)),
+      );
       setEditing(null);
-      adminToast.success('وضعیت پیش‌فاکتور به‌روزرسانی شد.');
+      adminToast.success("وضعیت پیش‌فاکتور به‌روزرسانی شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ویرایش انجام نشد.",
+      );
     } finally {
       setBusy(false);
     }
@@ -105,12 +126,20 @@ export default function AdminQuotationsPage() {
     if (!token || !pendingDelete) return;
     setDeleting(true);
     try {
-      const updated = await updateQuotationStatus(token, pendingDelete.id, 'rejected');
-      setItems((current) => current.map((row) => (row.id === pendingDelete.id ? updated : row)));
+      const updated = await updateQuotationStatus(
+        token,
+        pendingDelete.id,
+        "rejected",
+      );
+      setItems((current) =>
+        current.map((row) => (row.id === pendingDelete.id ? updated : row)),
+      );
       setPendingDelete(null);
-      adminToast.success('پیش‌فاکتور رد شد.');
+      adminToast.success("پیش‌فاکتور رد شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'عملیات انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "عملیات انجام نشد.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -119,7 +148,7 @@ export default function AdminQuotationsPage() {
   return (
     <AdminShell eyebrow="فروش" title="پیش‌فاکتورها">
       <AdminToolbar
-        countLabel={`${list.shown.toLocaleString('fa-IR')} از ${list.total.toLocaleString('fa-IR')} مورد`}
+        countLabel={`${list.shown.toLocaleString("fa-IR")} از ${list.total.toLocaleString("fa-IR")} مورد`}
         query={list.query}
         onQueryChange={list.setQuery}
         filtersOpen={list.filtersOpen}
@@ -130,7 +159,7 @@ export default function AdminQuotationsPage() {
       >
         {list.filtersOpen ? (
           <AdminFilterBar
-            fields={[{ key: 'status', label: 'وضعیت', options: statusOptions }]}
+            fields={[{ key: "status", label: "وضعیت", options: statusOptions }]}
             values={list.filters}
             onChange={list.setFilter}
             onClear={list.clearFilters}
@@ -139,37 +168,52 @@ export default function AdminQuotationsPage() {
       </AdminToolbar>
 
       <DataTable
-        headers={['شماره', 'مشتری', 'اقلام', 'مبلغ', 'ثبت', 'وضعیت', 'عملیات']}
+        headers={["شماره", "مشتری", "اقلام", "مبلغ", "ثبت", "وضعیت", "عملیات"]}
         isEmpty={list.filtered.length === 0 && !loading}
         emptyText="پیش‌فاکتوری با این جستجو پیدا نشد."
       >
         {list.filtered.map((item) => (
           <DataRow key={item.id}>
             <td className="text-start">
-              <strong className="font-medium text-[var(--ops-ink)]">{item.quotationNumber}</strong>
+              <strong className="font-medium text-[var(--ops-ink)]">
+                {item.quotationNumber}
+              </strong>
             </td>
             <td className="text-start">
               <div className="font-medium text-[var(--ops-ink)]">
-                {item.customerCompanyName || 'مشتری ناشناس'}
+                {item.customerCompanyName || "مشتری ناشناس"}
               </div>
               <div className="mt-1 text-xs text-[var(--ops-muted)]">
-                {[item.customerContactPerson, item.customerPhone].filter(Boolean).join(' · ') || '—'}
+                {[item.customerContactPerson, item.customerPhone]
+                  .filter(Boolean)
+                  .join(" · ") || "—"}
               </div>
             </td>
             <td className="text-start">
-              <span className="line-clamp-2 text-sm text-[var(--ops-ink-soft)]">{itemsLabel(item)}</span>
+              <span className="line-clamp-2 text-sm text-[var(--ops-ink-soft)]">
+                {itemsLabel(item)}
+              </span>
             </td>
             <td className="text-start">{formatMoney(item.totalAmount)}</td>
             <td className="text-start">{formatDate(item.createdAt)}</td>
             <td>
-              <span className="admin-badge">{labelOf(QUOTATION_STATUS, item.status)}</span>
+              <span className="admin-badge">
+                {labelOf(QUOTATION_STATUS, item.status)}
+              </span>
             </td>
             <td>
               <RowActions>
-                <IconAction label="مشاهده و ویرایش" onClick={() => openEdit(item)}>
+                <IconAction
+                  label="مشاهده و ویرایش"
+                  onClick={() => openEdit(item)}
+                >
                   <IconEdit />
                 </IconAction>
-                <IconAction label="رد کردن" tone="danger" onClick={() => setPendingDelete(item)}>
+                <IconAction
+                  label="رد کردن"
+                  tone="danger"
+                  onClick={() => setPendingDelete(item)}
+                >
                   <IconTrash />
                 </IconAction>
               </RowActions>
@@ -177,11 +221,31 @@ export default function AdminQuotationsPage() {
           </DataRow>
         ))}
       </DataTable>
-      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1 || loading} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {meta.totalPages.toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages || loading} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <button
+          className="admin-button"
+          disabled={page <= 1 || loading}
+          onClick={() => setPage((value) => value - 1)}
+        >
+          قبلی
+        </button>
+        <span>
+          {meta.total.toLocaleString("fa-IR")} مورد · صفحه{" "}
+          {page.toLocaleString("fa-IR")} از{" "}
+          {meta.totalPages.toLocaleString("fa-IR")}
+        </span>
+        <button
+          className="admin-button"
+          disabled={page >= meta.totalPages || loading}
+          onClick={() => setPage((value) => value + 1)}
+        >
+          بعدی
+        </button>
+      </div>
 
       <AdminModal
         open={Boolean(editing)}
-        title={editing ? `پیش‌فاکتور ${editing.quotationNumber}` : 'پیش‌فاکتور'}
+        title={editing ? `پیش‌فاکتور ${editing.quotationNumber}` : "پیش‌فاکتور"}
         description="جزئیات درخواست مشتری را ببینید و وضعیت را به‌روز کنید."
         onClose={() => setEditing(null)}
         onSubmit={saveEdit}
@@ -194,11 +258,12 @@ export default function AdminQuotationsPage() {
               <div className="rounded-xl border border-[var(--ops-line)] bg-[var(--ops-paper)] p-3">
                 <p className="text-xs text-[var(--ops-muted)]">مشتری</p>
                 <p className="mt-1 font-medium text-[var(--ops-ink)]">
-                  {editing.customerCompanyName || '—'}
+                  {editing.customerCompanyName || "—"}
                 </p>
                 <p className="mt-1 text-sm text-[var(--ops-ink-soft)]">
-                  {[editing.customerContactPerson, editing.customerPhone].filter(Boolean).join(' · ') ||
-                    'اطلاعات تماس ثبت نشده'}
+                  {[editing.customerContactPerson, editing.customerPhone]
+                    .filter(Boolean)
+                    .join(" · ") || "اطلاعات تماس ثبت نشده"}
                 </p>
               </div>
               <div className="rounded-xl border border-[var(--ops-line)] bg-[var(--ops-paper)] p-3">
@@ -219,7 +284,9 @@ export default function AdminQuotationsPage() {
               <p className="ops-login__label">اقلام درخواست</p>
               <ul className="mt-2 space-y-2 rounded-xl border border-[var(--ops-line)] bg-[var(--ops-surface)] p-3">
                 {(editing.items ?? []).length === 0 ? (
-                  <li className="text-sm text-[var(--ops-muted)]">قلمی ثبت نشده است.</li>
+                  <li className="text-sm text-[var(--ops-muted)]">
+                    قلمی ثبت نشده است.
+                  </li>
                 ) : (
                   editing.items.map((row) => (
                     <li
@@ -229,7 +296,7 @@ export default function AdminQuotationsPage() {
                       <span className="text-[var(--ops-ink)]">
                         {row.productName}
                         <span className="mt-0.5 block text-xs text-[var(--ops-muted)]">
-                          {row.quantity.toLocaleString('fa-IR')} عدد ×{' '}
+                          {row.quantity.toLocaleString("fa-IR")} عدد ×{" "}
                           {formatMoney(row.unitPrice)}
                         </span>
                       </span>
@@ -245,7 +312,7 @@ export default function AdminQuotationsPage() {
             <div>
               <p className="ops-login__label">یادداشت مشتری</p>
               <p className="mt-2 whitespace-pre-wrap rounded-xl border border-[var(--ops-line)] bg-[var(--ops-paper)] p-3 text-sm leading-7 text-[var(--ops-ink-soft)]">
-                {editing.notes?.trim() || 'یادداشتی ثبت نشده است.'}
+                {editing.notes?.trim() || "یادداشتی ثبت نشده است."}
               </p>
             </div>
 
@@ -274,8 +341,9 @@ export default function AdminQuotationsPage() {
         onClose={() => setAddOpen(false)}
       >
         <p className="text-sm leading-relaxed text-[var(--ops-muted)]">
-          پیش‌فاکتور جدید از صفحه «درخواست قیمت» سایت توسط مشتری ثبت می‌شود. پس از ثبت، جزئیات کامل
-          (مشتری، اقلام، یادداشت و مبلغ) در همین فهرست قابل مشاهده و مدیریت است.
+          پیش‌فاکتور جدید از صفحه «درخواست قیمت» سایت توسط مشتری ثبت می‌شود. پس
+          از ثبت، جزئیات کامل (مشتری، اقلام، یادداشت و مبلغ) در همین فهرست قابل
+          مشاهده و مدیریت است.
         </p>
       </AdminModal>
 

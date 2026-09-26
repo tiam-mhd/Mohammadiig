@@ -4,18 +4,18 @@ export type JalaliParts = { jy: number; jm: number; jd: number };
 export type GregorianParts = { gy: number; gm: number; gd: number };
 
 export const PERSIAN_MONTHS = [
-  'فروردین',
-  'اردیبهشت',
-  'خرداد',
-  'تیر',
-  'مرداد',
-  'شهریور',
-  'مهر',
-  'آبان',
-  'آذر',
-  'دی',
-  'بهمن',
-  'اسفند',
+  "فروردین",
+  "اردیبهشت",
+  "خرداد",
+  "تیر",
+  "مرداد",
+  "شهریور",
+  "مهر",
+  "آبان",
+  "آذر",
+  "دی",
+  "بهمن",
+  "اسفند",
 ] as const;
 
 function div(a: number, b: number) {
@@ -39,7 +39,8 @@ export function jalaaliMonthLength(jy: number, jm: number): number {
 
 function jalCal(jy: number) {
   const breaks = [
-    -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097, 2192, 2262, 2324, 2394, 2456, 3178,
+    -61, 9, 38, 199, 426, 686, 756, 818, 1111, 1181, 1210, 1635, 2060, 2097,
+    2192, 2262, 2324, 2394, 2456, 3178,
   ];
   const bl = breaks.length;
   const gy = jy + 621;
@@ -122,14 +123,14 @@ export function toJalaali(gy: number, gm: number, gd: number): JalaliParts {
   return { jy, jm, jd };
 }
 
-export function toGregorian(jy: number, jm: number, jd: number): GregorianParts {
+export function toGregorian(
+  jy: number,
+  jm: number,
+  jd: number,
+): GregorianParts {
   const r = jalCal(jy);
   const jdn =
-    g2d(r.gy, 3, r.march) +
-    (jm - 1) * 31 -
-    div(jm, 7) * (jm - 7) +
-    jd -
-    1;
+    g2d(r.gy, 3, r.march) + (jm - 1) * 31 - div(jm, 7) * (jm - 7) + jd - 1;
   return d2g(jdn);
 }
 
@@ -138,7 +139,9 @@ export function todayJalali(): JalaliParts {
   return toJalaali(now.getFullYear(), now.getMonth() + 1, now.getDate());
 }
 
-export function parseIsoDate(iso: string | null | undefined): GregorianParts | null {
+export function parseIsoDate(
+  iso: string | null | undefined,
+): GregorianParts | null {
   if (!iso) return null;
   const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso.trim());
   if (!match) return null;
@@ -150,7 +153,7 @@ export function parseIsoDate(iso: string | null | undefined): GregorianParts | n
 }
 
 export function toIsoDate(gy: number, gm: number, gd: number): string {
-  return `${String(gy).padStart(4, '0')}-${String(gm).padStart(2, '0')}-${String(gd).padStart(2, '0')}`;
+  return `${String(gy).padStart(4, "0")}-${String(gm).padStart(2, "0")}-${String(gd).padStart(2, "0")}`;
 }
 
 export function jalaliToIso(jy: number, jm: number, jd: number): string {
@@ -160,15 +163,20 @@ export function jalaliToIso(jy: number, jm: number, jd: number): string {
   return toIsoDate(g.gy, g.gm, g.gd);
 }
 
-export function isoToJalali(iso: string | null | undefined): JalaliParts | null {
+export function isoToJalali(
+  iso: string | null | undefined,
+): JalaliParts | null {
   const g = parseIsoDate(iso);
   if (!g) return null;
   return toJalaali(g.gy, g.gm, g.gd);
 }
 
-export function formatJalali(iso: string | null | undefined, withMonthName = false): string {
+export function formatJalali(
+  iso: string | null | undefined,
+  withMonthName = false,
+): string {
   const j = isoToJalali(iso);
-  if (!j) return '';
+  if (!j) return "";
   const day = toFaDigits(j.jd);
   const year = toFaDigits(j.jy);
   if (withMonthName) {
@@ -179,7 +187,7 @@ export function formatJalali(iso: string | null | undefined, withMonthName = fal
 }
 
 export function toFaDigits(value: number | string): string {
-  return String(value).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)]!);
+  return String(value).replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]!);
 }
 
 export function buildYearRange(minYear = 1300, maxYear?: number): number[] {

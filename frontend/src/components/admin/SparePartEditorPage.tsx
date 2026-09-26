@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ReactNode, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { MediaField } from '@/components/admin/MediaField';
-import { PriceField } from '@/components/admin/PriceField';
+import Link from "next/link";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { MediaField } from "@/components/admin/MediaField";
+import { PriceField } from "@/components/admin/PriceField";
 import {
   createAdminSparePart,
   fetchAdminSparePart,
@@ -13,9 +13,9 @@ import {
   SparePart,
   SparePartCategory,
   updateAdminSparePart,
-} from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
 type EditorForm = {
   partNumber: string;
@@ -41,25 +41,25 @@ type EditorForm = {
 };
 
 const emptyForm: EditorForm = {
-  partNumber: '',
-  nameFa: '',
-  nameEn: '',
-  shortDescription: '',
-  description: '',
-  category: '',
-  compatibleProductsText: '',
-  price: '0',
+  partNumber: "",
+  nameFa: "",
+  nameEn: "",
+  shortDescription: "",
+  description: "",
+  category: "",
+  compatibleProductsText: "",
+  price: "0",
   priceNegotiable: false,
-  stockQuantity: '0',
-  reorderLevel: '5',
-  imageUrl: '',
+  stockQuantity: "0",
+  reorderLevel: "5",
+  imageUrl: "",
   gallery: [],
-  brand: '',
-  oemCode: '',
-  weightGrams: '',
-  dimensions: '',
-  specsText: '',
-  warrantyMonths: '12',
+  brand: "",
+  oemCode: "",
+  weightGrams: "",
+  dimensions: "",
+  specsText: "",
+  warrantyMonths: "12",
   isActive: false,
 };
 
@@ -70,25 +70,27 @@ function parseCompatibleIds(value: string) {
     .filter(Boolean);
 }
 
-function specsToText(specs: SparePart['specs']) {
-  if (!specs?.length) return '';
+function specsToText(specs: SparePart["specs"]) {
+  if (!specs?.length) return "";
   return specs
     .map((spec) => {
       const unit = spec.unit?.trim();
-      return unit ? `${spec.key} | ${spec.value} | ${unit}` : `${spec.key} | ${spec.value}`;
+      return unit
+        ? `${spec.key} | ${spec.value} | ${unit}`
+        : `${spec.key} | ${spec.value}`;
     })
-    .join('\n');
+    .join("\n");
 }
 
 function parseSpecsText(value: string) {
   return value
-    .split('\n')
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const parts = line.split('|').map((part) => part.trim());
-      const key = parts[0] ?? '';
-      const specValue = parts[1] ?? '';
+      const parts = line.split("|").map((part) => part.trim());
+      const key = parts[0] ?? "";
+      const specValue = parts[1] ?? "";
       const unit = parts[2] || undefined;
       return { key, value: specValue, unit };
     })
@@ -99,21 +101,21 @@ function partToForm(part: SparePart): EditorForm {
   return {
     partNumber: part.partNumber,
     nameFa: part.nameFa,
-    nameEn: part.nameEn ?? '',
-    shortDescription: part.shortDescription ?? '',
+    nameEn: part.nameEn ?? "",
+    shortDescription: part.shortDescription ?? "",
     description: part.description,
     category: part.category,
-    compatibleProductsText: (part.compatibleProducts ?? []).join(', '),
+    compatibleProductsText: (part.compatibleProducts ?? []).join(", "),
     price: String(part.price ?? 0),
     priceNegotiable: Boolean(part.priceNegotiable),
     stockQuantity: String(part.stockQuantity ?? 0),
     reorderLevel: String(part.reorderLevel ?? 5),
-    imageUrl: part.imageUrl ?? '',
+    imageUrl: part.imageUrl ?? "",
     gallery: part.gallery ?? [],
-    brand: part.brand ?? '',
-    oemCode: part.oemCode ?? '',
-    weightGrams: part.weightGrams != null ? String(part.weightGrams) : '',
-    dimensions: part.dimensions ?? '',
+    brand: part.brand ?? "",
+    oemCode: part.oemCode ?? "",
+    weightGrams: part.weightGrams != null ? String(part.weightGrams) : "",
+    dimensions: part.dimensions ?? "",
     specsText: specsToText(part.specs),
     warrantyMonths: String(part.warrantyMonths ?? 12),
     isActive: part.isActive ?? true,
@@ -123,7 +125,7 @@ function partToForm(part: SparePart): EditorForm {
 function Metabox({
   title,
   children,
-  className = '',
+  className = "",
 }: {
   title: string;
   children: ReactNode;
@@ -158,7 +160,7 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
     [categories],
   );
 
-  const statusLabel = form.isActive ? 'فعال' : 'پیش‌نویس';
+  const statusLabel = form.isActive ? "فعال" : "پیش‌نویس";
   const stockNum = Number(form.stockQuantity || 0);
   const reorderNum = Number(form.reorderLevel || 0);
   const lowStock = stockNum <= reorderNum;
@@ -181,10 +183,13 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
           if (!next.category && cats[0]) next.category = cats[0].id;
           setForm(next);
         } else if (cats[0]) {
-          setForm((current) => ({ ...current, category: current.category || cats[0].id }));
+          setForm((current) => ({
+            ...current,
+            category: current.category || cats[0].id,
+          }));
         }
       } catch {
-        if (!cancelled) adminToast.error('بارگذاری اطلاعات قطعه انجام نشد.');
+        if (!cancelled) adminToast.error("بارگذاری اطلاعات قطعه انجام نشد.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -207,27 +212,28 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
     const imageUrl = form.imageUrl.trim() || gallery[0] || undefined;
 
     if (partNumber.length < 2) {
-      adminToast.error('شماره قطعه الزامی است.');
+      adminToast.error("شماره قطعه الزامی است.");
       return;
     }
     if (nameFa.length < 2) {
-      adminToast.error('نام فارسی الزامی است.');
+      adminToast.error("نام فارسی الزامی است.");
       return;
     }
     if (nameEn.length < 2) {
-      adminToast.error('نام لاتین الزامی است.');
+      adminToast.error("نام لاتین الزامی است.");
       return;
     }
     if (description.length < 2) {
-      adminToast.error('توضیح الزامی است.');
+      adminToast.error("توضیح الزامی است.");
       return;
     }
     if (!category) {
-      adminToast.error('دسته‌بندی الزامی است.');
+      adminToast.error("دسته‌بندی الزامی است.");
       return;
     }
 
-    const isActive = publishIntent === undefined ? form.isActive : publishIntent;
+    const isActive =
+      publishIntent === undefined ? form.isActive : publishIntent;
     setSaving(true);
     try {
       const payload = {
@@ -246,7 +252,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
         gallery,
         brand: form.brand.trim() || undefined,
         oemCode: form.oemCode.trim() || undefined,
-        weightGrams: form.weightGrams.trim() ? Number(form.weightGrams) : undefined,
+        weightGrams: form.weightGrams.trim()
+          ? Number(form.weightGrams)
+          : undefined,
         dimensions: form.dimensions.trim() || undefined,
         specs: parseSpecsText(form.specsText),
         warrantyMonths: Number(form.warrantyMonths || 0),
@@ -254,15 +262,23 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
       };
       if (isNew) {
         const created = await createAdminSparePart(accessToken, payload);
-        adminToast.success(isActive ? 'قطعه منتشر شد.' : 'پیش‌نویس ذخیره شد.');
+        adminToast.success(isActive ? "قطعه منتشر شد." : "پیش‌نویس ذخیره شد.");
         router.replace(`/admin/spare-parts/${created.id}`);
       } else {
-        const updated = await updateAdminSparePart(accessToken, partId!, payload);
+        const updated = await updateAdminSparePart(
+          accessToken,
+          partId!,
+          payload,
+        );
         setForm(partToForm(updated));
-        adminToast.success(isActive ? 'قطعه منتشر و ذخیره شد.' : 'پیش‌نویس به‌روز شد.');
+        adminToast.success(
+          isActive ? "قطعه منتشر و ذخیره شد." : "پیش‌نویس به‌روز شد.",
+        );
       }
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره قطعه انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ذخیره قطعه انجام نشد.",
+      );
     } finally {
       setSaving(false);
     }
@@ -271,7 +287,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
   if (!accessToken) {
     return (
       <AdminShell eyebrow="پس از فروش" title="قطعه یدکی">
-        <p className="text-sm text-[var(--ops-muted)]">برای مدیریت قطعه وارد شوید.</p>
+        <p className="text-sm text-[var(--ops-muted)]">
+          برای مدیریت قطعه وارد شوید.
+        </p>
       </AdminShell>
     );
   }
@@ -285,16 +303,23 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
   }
 
   return (
-    <AdminShell eyebrow="پس از فروش" title={isNew ? 'افزودن قطعه' : 'ویرایش قطعه'}>
+    <AdminShell
+      eyebrow="پس از فروش"
+      title={isNew ? "افزودن قطعه" : "ویرایش قطعه"}
+    >
       <div className="admin-editor__topbar">
         <Link href="/admin/spare-parts" className="ops-btn ops-btn--ghost">
           ← بازگشت به فهرست
         </Link>
         <div className="admin-editor__topbar-meta">
-          <span className={`admin-badge ${form.isActive ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
+          <span
+            className={`admin-badge ${form.isActive ? "admin-badge--ok" : "admin-badge--warn"}`}
+          >
             {statusLabel}
           </span>
-          {lowStock ? <span className="admin-badge admin-badge--warn">موجودی کم</span> : null}
+          {lowStock ? (
+            <span className="admin-badge admin-badge--warn">موجودی کم</span>
+          ) : null}
         </div>
       </div>
 
@@ -310,7 +335,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 maxLength={150}
                 placeholder="نام قطعه"
                 value={form.nameFa}
-                onChange={(event) => setForm({ ...form, nameFa: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, nameFa: event.target.value })
+                }
               />
             </label>
             <div className="admin-editor__permalink">
@@ -323,7 +350,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 dir="ltr"
                 placeholder="MIG-SP-…"
                 value={form.partNumber}
-                onChange={(event) => setForm({ ...form, partNumber: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, partNumber: event.target.value })
+                }
               />
             </div>
           </div>
@@ -335,7 +364,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 className="ops-field"
                 dir="ltr"
                 value={form.nameEn}
-                onChange={(event) => setForm({ ...form, nameEn: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, nameEn: event.target.value })
+                }
               />
             </label>
             <label className="mt-4 block text-start">
@@ -345,7 +376,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 maxLength={300}
                 placeholder="خلاصهٔ کوتاه برای کارت و فهرست…"
                 value={form.shortDescription}
-                onChange={(event) => setForm({ ...form, shortDescription: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, shortDescription: event.target.value })
+                }
               />
             </label>
             <label className="mt-4 block text-start">
@@ -353,7 +386,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               <textarea
                 className="ops-field admin-editor__body"
                 value={form.description}
-                onChange={(event) => setForm({ ...form, description: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, description: event.target.value })
+                }
                 placeholder="کاربرد، سازگاری و نکات فنی قطعه…"
               />
             </label>
@@ -364,7 +399,12 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 dir="ltr"
                 placeholder="مثلاً id1, id2"
                 value={form.compatibleProductsText}
-                onChange={(event) => setForm({ ...form, compatibleProductsText: event.target.value })}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    compatibleProductsText: event.target.value,
+                  })
+                }
               />
             </label>
           </Metabox>
@@ -376,7 +416,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 <input
                   className="ops-field"
                   value={form.brand}
-                  onChange={(event) => setForm({ ...form, brand: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, brand: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -385,7 +427,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                   className="ops-field"
                   dir="ltr"
                   value={form.oemCode}
-                  onChange={(event) => setForm({ ...form, oemCode: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, oemCode: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -396,7 +440,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                   className="ops-field"
                   dir="ltr"
                   value={form.weightGrams}
-                  onChange={(event) => setForm({ ...form, weightGrams: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, weightGrams: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -406,19 +452,25 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                   dir="ltr"
                   placeholder="مثلاً 120×80×40 mm"
                   value={form.dimensions}
-                  onChange={(event) => setForm({ ...form, dimensions: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, dimensions: event.target.value })
+                  }
                 />
               </label>
             </div>
             <label className="mt-4 block text-start">
-              <span className="ops-login__label">مشخصات (هر خط: کلید | مقدار | واحد)</span>
+              <span className="ops-login__label">
+                مشخصات (هر خط: کلید | مقدار | واحد)
+              </span>
               <textarea
                 className="ops-field admin-editor__body"
                 dir="ltr"
                 rows={6}
-                placeholder={'Material | Steel\nVoltage | 220 | V'}
+                placeholder={"Material | Steel\nVoltage | 220 | V"}
                 value={form.specsText}
-                onChange={(event) => setForm({ ...form, specsText: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, specsText: event.target.value })
+                }
               />
             </label>
           </Metabox>
@@ -438,7 +490,8 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               />
             </div>
             <p className="admin-editor__hint mt-3">
-              اگر تصویر اصلی خالی باشد، اولین تصویر گالری به‌عنوان تصویر اصلی ذخیره می‌شود.
+              اگر تصویر اصلی خالی باشد، اولین تصویر گالری به‌عنوان تصویر اصلی
+              ذخیره می‌شود.
             </p>
           </Metabox>
 
@@ -452,7 +505,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                   className="ops-field"
                   dir="ltr"
                   value={form.stockQuantity}
-                  onChange={(event) => setForm({ ...form, stockQuantity: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, stockQuantity: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -463,14 +518,18 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                   className="ops-field"
                   dir="ltr"
                   value={form.reorderLevel}
-                  onChange={(event) => setForm({ ...form, reorderLevel: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, reorderLevel: event.target.value })
+                  }
                 />
               </label>
             </div>
-            <p className={`admin-editor__hint mt-3 ${lowStock ? 'text-[var(--ops-warn)]' : ''}`}>
+            <p
+              className={`admin-editor__hint mt-3 ${lowStock ? "text-[var(--ops-warn)]" : ""}`}
+            >
               {lowStock
-                ? 'موجودی به حد سفارش مجدد رسیده یا پایین‌تر است.'
-                : 'وقتی موجودی به حد سفارش مجدد برسد، در فهرست هشدار داده می‌شود.'}
+                ? "موجودی به حد سفارش مجدد رسیده یا پایین‌تر است."
+                : "وقتی موجودی به حد سفارش مجدد برسد، در فهرست هشدار داده می‌شود."}
             </p>
           </Metabox>
         </div>
@@ -479,8 +538,14 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
           <Metabox title="انتشار" className="admin-metabox--sticky">
             <div className="admin-editor__publish-meta">
               <p>
-                وضعیت:{' '}
-                <strong className={form.isActive ? 'text-[var(--ops-ok)]' : 'text-[var(--ops-warn)]'}>
+                وضعیت:{" "}
+                <strong
+                  className={
+                    form.isActive
+                      ? "text-[var(--ops-ok)]"
+                      : "text-[var(--ops-warn)]"
+                  }
+                >
                   {statusLabel}
                 </strong>
               </p>
@@ -488,8 +553,13 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 <span className="ops-login__label">تغییر وضعیت</span>
                 <select
                   className="admin-select admin-select--wide"
-                  value={form.isActive ? 'published' : 'draft'}
-                  onChange={(event) => setForm({ ...form, isActive: event.target.value === 'published' })}
+                  value={form.isActive ? "published" : "draft"}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      isActive: event.target.value === "published",
+                    })
+                  }
                 >
                   <option value="draft">پیش‌نویس</option>
                   <option value="published">فعال / منتشرشده</option>
@@ -497,11 +567,25 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               </label>
             </div>
             <div className="admin-editor__publish-actions">
-              <button type="button" className="ops-btn ops-btn--ghost" disabled={saving} onClick={() => void persist(false)}>
-                {saving ? '…' : 'ذخیره پیش‌نویس'}
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                disabled={saving}
+                onClick={() => void persist(false)}
+              >
+                {saving ? "…" : "ذخیره پیش‌نویس"}
               </button>
-              <button type="button" className="ops-btn" disabled={saving} onClick={() => void persist(true)}>
-                {saving ? 'در حال ذخیره…' : form.isActive || !isNew ? 'انتشار / به‌روزرسانی' : 'انتشار'}
+              <button
+                type="button"
+                className="ops-btn"
+                disabled={saving}
+                onClick={() => void persist(true)}
+              >
+                {saving
+                  ? "در حال ذخیره…"
+                  : form.isActive || !isNew
+                    ? "انتشار / به‌روزرسانی"
+                    : "انتشار"}
               </button>
             </div>
           </Metabox>
@@ -512,9 +596,13 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               <select
                 className="admin-select admin-select--wide"
                 value={form.category}
-                onChange={(event) => setForm({ ...form, category: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, category: event.target.value })
+                }
               >
-                {categoryOptions.length === 0 ? <option value="">دسته‌ای ثبت نشده</option> : null}
+                {categoryOptions.length === 0 ? (
+                  <option value="">دسته‌ای ثبت نشده</option>
+                ) : null}
                 {categoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
@@ -530,7 +618,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
                 className="ops-field"
                 dir="ltr"
                 value={form.warrantyMonths}
-                onChange={(event) => setForm({ ...form, warrantyMonths: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, warrantyMonths: event.target.value })
+                }
               />
             </label>
           </Metabox>
@@ -541,7 +631,9 @@ export function SparePartEditorPage({ partId }: { partId?: string }) {
               value={form.price}
               negotiable={form.priceNegotiable}
               onValueChange={(price) => setForm({ ...form, price })}
-              onNegotiableChange={(priceNegotiable) => setForm({ ...form, priceNegotiable })}
+              onNegotiableChange={(priceNegotiable) =>
+                setForm({ ...form, priceNegotiable })
+              }
             />
           </Metabox>
         </aside>

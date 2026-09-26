@@ -1,7 +1,7 @@
-﻿'use client';
+﻿"use client";
 
-import Link from 'next/link';
-import { Reveal } from './Reveal';
+import Link from "next/link";
+import { Reveal } from "./Reveal";
 
 type ModelBandProps = {
   image: string;
@@ -11,7 +11,13 @@ type ModelBandProps = {
   index: string;
 };
 
-export function ModelBand({ image, name, tagline, href, index }: ModelBandProps) {
+export function ModelBand({
+  image,
+  name,
+  tagline,
+  href,
+  index,
+}: ModelBandProps) {
   return (
     <section className="model-band relative flex min-h-[68svh] overflow-hidden md:min-h-[72svh]">
       <div className="absolute inset-0">
@@ -19,7 +25,7 @@ export function ModelBand({ image, name, tagline, href, index }: ModelBandProps)
           src={image}
           alt={name}
           className="h-full w-full object-cover"
-          style={{ objectPosition: 'center' }}
+          style={{ objectPosition: "center" }}
           loading="lazy"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-black/15" />

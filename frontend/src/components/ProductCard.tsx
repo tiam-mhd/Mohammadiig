@@ -2,11 +2,11 @@
  * ProductCard — clear product photo first, copy below
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { resolveMediaUrl } from '@/lib/media';
+import React from "react";
+import Link from "next/link";
+import { resolveMediaUrl } from "@/lib/media";
 
 interface ProductCardProps {
   id: string;
@@ -60,7 +60,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               <>
                 <span className="pcard__price-label">شروع از</span>
                 <span className="pcard__price-value">
-                  {price.toLocaleString('fa-IR')}
+                  {price.toLocaleString("fa-IR")}
                   <span className="pcard__price-unit">ریال</span>
                 </span>
               </>

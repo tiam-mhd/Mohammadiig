@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useState } from 'react';
-import { CartBagIcon } from '@/components/icons/CartBagIcon';
-import { formatCartMoney } from '@/components/spare-parts/formatSparePartPrice';
-import { checkoutSpareParts } from '@/lib/api-client';
-import { useAuthStore } from '@/store/auth.store';
-import { useCartStore } from '@/store/cart.store';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent, useEffect, useState } from "react";
+import { CartBagIcon } from "@/components/icons/CartBagIcon";
+import { formatCartMoney } from "@/components/spare-parts/formatSparePartPrice";
+import { checkoutSpareParts } from "@/lib/api-client";
+import { useAuthStore } from "@/store/auth.store";
+import { useCartStore } from "@/store/cart.store";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -19,15 +19,15 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((s) => s.clear);
 
   const [ready, setReady] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [province, setProvince] = useState('');
-  const [city, setCity] = useState('');
-  const [address, setAddress] = useState('');
-  const [postalCode, setPostalCode] = useState('');
-  const [notes, setNotes] = useState('');
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [province, setProvince] = useState("");
+  const [city, setCity] = useState("");
+  const [address, setAddress] = useState("");
+  const [postalCode, setPostalCode] = useState("");
+  const [notes, setNotes] = useState("");
   const [payWithTestGateway, setPayWithTestGateway] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -40,33 +40,36 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (!ready) return;
     const name =
-      [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
+      [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
       user?.companyName ||
-      '';
+      "";
     if (name && !fullName) setFullName(name);
     if (user?.phone && !phone) setPhone(user.phone);
   }, [ready, user, fullName, phone]);
 
-  const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
-  const currency = lines[0]?.currency || 'IRR';
+  const subtotal = lines.reduce(
+    (sum, line) => sum + line.unitPrice * line.quantity,
+    0,
+  );
+  const currency = lines[0]?.currency || "IRR";
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!accessToken) {
-      router.push(`/auth?next=${encodeURIComponent('/checkout')}`);
+      router.push(`/auth?next=${encodeURIComponent("/checkout")}`);
       return;
     }
     if (lines.length === 0) {
-      setError('سبد خرید خالی است.');
+      setError("سبد خرید خالی است.");
       return;
     }
     if (!fullName.trim() || !phone.trim() || !city.trim() || !address.trim()) {
-      setError('نام، تلفن، شهر و آدرس الزامی است.');
+      setError("نام، تلفن، شهر و آدرس الزامی است.");
       return;
     }
 
     setSubmitting(true);
-    setError('');
+    setError("");
     try {
       const result = await checkoutSpareParts(accessToken, {
         items: lines.map((line) => ({
@@ -75,7 +78,7 @@ export default function CheckoutPage() {
         })),
         shippingAddress: {
           fullName: fullName.trim(),
-          phone: phone.trim().replace(/\s+/g, ''),
+          phone: phone.trim().replace(/\s+/g, ""),
           city: city.trim(),
           address: address.trim(),
           postalCode: postalCode.trim() || undefined,
@@ -85,17 +88,21 @@ export default function CheckoutPage() {
         payWithTestGateway,
       });
       clearCart();
-      const invoiceRef = result.invoice?.id || result.invoice?.invoiceNumber || '';
+      const invoiceRef =
+        result.invoice?.id || result.invoice?.invoiceNumber || "";
       router.push(
-        `/checkout/success?invoice=${encodeURIComponent(invoiceRef)}&order=${encodeURIComponent(result.order?.id || result.order?.orderNumber || '')}&paid=${payWithTestGateway ? '1' : '0'}`,
+        `/checkout/success?invoice=${encodeURIComponent(invoiceRef)}&order=${encodeURIComponent(result.order?.id || result.order?.orderNumber || "")}&paid=${payWithTestGateway ? "1" : "0"}`,
       );
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'ثبت سفارش انجام نشد.';
+      const message =
+        err instanceof Error ? err.message : "ثبت سفارش انجام نشد.";
       if (/نشست|منقضی|نامعتبر|وارد شوید|Authentication|token/i.test(message)) {
         clearSession();
-        setError('نشست منقضی شده است. دوباره وارد شوید و پرداخت را تکرار کنید.');
+        setError(
+          "نشست منقضی شده است. دوباره وارد شوید و پرداخت را تکرار کنید.",
+        );
         window.setTimeout(() => {
-          router.push(`/auth?next=${encodeURIComponent('/checkout')}`);
+          router.push(`/auth?next=${encodeURIComponent("/checkout")}`);
         }, 900);
         return;
       }
@@ -126,7 +133,7 @@ export default function CheckoutPage() {
             برای ثبت سفارش قطعات ابتدا وارد حساب کاربری شوید.
           </p>
           <Link
-            href={`/auth?next=${encodeURIComponent('/checkout')}`}
+            href={`/auth?next=${encodeURIComponent("/checkout")}`}
             className="btn-pill mt-10 inline-flex"
           >
             ورود
@@ -154,7 +161,10 @@ export default function CheckoutPage() {
     <div className="sp-checkout sp-checkout--soft bg-canvas">
       <div className="sp-shop__glow" aria-hidden />
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/cart" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/cart"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← بازگشت به سبد
         </Link>
 
@@ -162,7 +172,8 @@ export default function CheckoutPage() {
           <p className="caption-up">پرداخت</p>
           <h1 className="display-feature mt-4 text-ink">تکمیل سفارش</h1>
           <p className="body-lead mt-5 max-w-md">
-            آدرس ارسال را وارد کنید؛ سفارش و فاکتور ثبت می‌شود و پرداخت از پنل حساب پیگیری خواهد شد.
+            آدرس ارسال را وارد کنید؛ سفارش و فاکتور ثبت می‌شود و پرداخت از پنل
+            حساب پیگیری خواهد شد.
           </p>
         </div>
 
@@ -242,7 +253,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {process.env.NODE_ENV === 'development' ? (
+            {process.env.NODE_ENV === "development" ? (
               <div className="sp-checkout__panel mt-4">
                 <label className="sp-checkout__pay-opt">
                   <input
@@ -252,7 +263,9 @@ export default function CheckoutPage() {
                     onChange={(e) => setPayWithTestGateway(e.target.checked)}
                   />
                   <span>
-                    <strong className="font-ui text-sm text-ink">پرداخت با درگاه آزمایشی</strong>
+                    <strong className="font-ui text-sm text-ink">
+                      پرداخت با درگاه آزمایشی
+                    </strong>
                     <span className="mt-1 block font-ui text-xs text-muted">
                       فقط در محیط توسعه؛ فاکتور بلافاصله پرداخت‌شده ثبت می‌شود.
                     </span>
@@ -269,7 +282,9 @@ export default function CheckoutPage() {
               disabled={submitting}
             >
               <CartBagIcon className="sp-action-icon" />
-              <span>{submitting ? 'در حال ثبت…' : 'ثبت سفارش و صدور فاکتور'}</span>
+              <span>
+                {submitting ? "در حال ثبت…" : "ثبت سفارش و صدور فاکتور"}
+              </span>
             </button>
           </form>
 
@@ -282,12 +297,15 @@ export default function CheckoutPage() {
                     <span className="min-w-0 text-ink">
                       {line.nameFa}
                       <span className="text-muted">
-                        {' '}
-                        × {line.quantity.toLocaleString('fa-IR')}
+                        {" "}
+                        × {line.quantity.toLocaleString("fa-IR")}
                       </span>
                     </span>
                     <span className="shrink-0 text-muted">
-                      {formatCartMoney(line.unitPrice * line.quantity, line.currency)}
+                      {formatCartMoney(
+                        line.unitPrice * line.quantity,
+                        line.currency,
+                      )}
                     </span>
                   </li>
                 ))}

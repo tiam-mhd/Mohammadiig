@@ -1,13 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { FormEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
-import { IconAction, IconPlus, IconTrash } from '@/components/admin/AdminIcons';
-import { MediaField } from '@/components/admin/MediaField';
-import { PriceField } from '@/components/admin/PriceField';
+import Link from "next/link";
+import {
+  FormEvent,
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { useRouter } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
+import { IconAction, IconPlus, IconTrash } from "@/components/admin/AdminIcons";
+import { MediaField } from "@/components/admin/MediaField";
+import { PriceField } from "@/components/admin/PriceField";
 import {
   Product,
   ProductCategory,
@@ -28,16 +35,16 @@ import {
   updateProduct,
   updateProductSpecification,
   updateProductVariant,
-} from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
 const APPEARANCE_DEFAULTS = [
-  { key: 'رنگ بدنه', unit: '' },
-  { key: 'ابعاد', unit: 'سانتی‌متر' },
-  { key: 'وزن تقریبی', unit: 'کیلوگرم' },
-  { key: 'متریال بدنه', unit: '' },
-  { key: 'ظرفیت / نفرات', unit: 'نفر' },
+  { key: "رنگ بدنه", unit: "" },
+  { key: "ابعاد", unit: "سانتی‌متر" },
+  { key: "وزن تقریبی", unit: "کیلوگرم" },
+  { key: "متریال بدنه", unit: "" },
+  { key: "ظرفیت / نفرات", unit: "نفر" },
 ] as const;
 
 type EditorForm = {
@@ -73,13 +80,13 @@ type VariantDraft = {
 };
 
 const emptyForm: EditorForm = {
-  nameFa: '',
-  nameEn: '',
-  slug: '',
-  sku: '',
-  descriptionShortFa: '',
-  descriptionLongFa: '',
-  category: '',
+  nameFa: "",
+  nameEn: "",
+  slug: "",
+  sku: "",
+  descriptionShortFa: "",
+  descriptionLongFa: "",
+  category: "",
   priceBase: 0,
   priceNegotiable: false,
   images: [],
@@ -88,19 +95,19 @@ const emptyForm: EditorForm = {
 };
 
 const emptySpecDraft: SpecDraft = {
-  specificationKey: '',
-  specificationValue: '',
-  unit: '',
+  specificationKey: "",
+  specificationValue: "",
+  unit: "",
 };
 
 const emptyVariantDraft: VariantDraft = {
-  skuVariant: '',
-  variantNameFa: '',
-  variantNameEn: '',
-  variantCode: '',
-  priceBase: '',
-  priceAdjustment: '0',
-  stockQuantity: '0',
+  skuVariant: "",
+  variantNameFa: "",
+  variantNameEn: "",
+  variantCode: "",
+  priceBase: "",
+  priceAdjustment: "0",
+  stockQuantity: "0",
   isActive: true,
 };
 
@@ -108,14 +115,17 @@ function suggestSlug(title: string): string {
   return title
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\u0600-\u06FFa-z0-9-]/gi, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/\s+/g, "-")
+    .replace(/[^\u0600-\u06FFa-z0-9-]/gi, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
     .slice(0, 200);
 }
 
-function productToForm(product: Product, categories: ProductCategory[]): EditorForm {
+function productToForm(
+  product: Product,
+  categories: ProductCategory[],
+): EditorForm {
   const matched =
     categories.find(
       (category) =>
@@ -126,15 +136,19 @@ function productToForm(product: Product, categories: ProductCategory[]): EditorF
 
   return {
     nameFa: product.name,
-    nameEn: product.nameEn || '',
+    nameEn: product.nameEn || "",
     slug: product.slug,
-    sku: product.sku || '',
-    descriptionShortFa: product.description || '',
-    descriptionLongFa: product.descriptionLong || '',
+    sku: product.sku || "",
+    descriptionShortFa: product.description || "",
+    descriptionLongFa: product.descriptionLong || "",
     category: matched,
     priceBase: product.price,
     priceNegotiable: Boolean(product.priceNegotiable),
-    images: product.images?.length ? product.images : product.image ? [product.image] : [],
+    images: product.images?.length
+      ? product.images
+      : product.image
+        ? [product.image]
+        : [],
     isActive: product.isActive ?? false,
     isFeatured: product.isFeatured,
   };
@@ -144,7 +158,7 @@ function Metabox({
   title,
   children,
   actions,
-  className = '',
+  className = "",
 }: {
   title: string;
   children: ReactNode;
@@ -155,7 +169,9 @@ function Metabox({
     <section className={`admin-metabox ${className}`.trim()}>
       <header className="admin-metabox__head">
         <h2 className="admin-metabox__title">{title}</h2>
-        {actions ? <div className="admin-metabox__actions">{actions}</div> : null}
+        {actions ? (
+          <div className="admin-metabox__actions">{actions}</div>
+        ) : null}
       </header>
       <div className="admin-metabox__body">{children}</div>
     </section>
@@ -171,37 +187,47 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   const [slugLocked, setSlugLocked] = useState(!isNew);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [sourceProducts, setSourceProducts] = useState<Product[]>([]);
-  const [specifications, setSpecifications] = useState<ProductSpecification[]>([]);
+  const [specifications, setSpecifications] = useState<ProductSpecification[]>(
+    [],
+  );
   const [variants, setVariants] = useState<ProductVariant[]>([]);
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [techDraft, setTechDraft] = useState<SpecDraft>(emptySpecDraft);
-  const [appearanceDraft, setAppearanceDraft] = useState<SpecDraft>(emptySpecDraft);
-  const [variantDraft, setVariantDraft] = useState<VariantDraft>(emptyVariantDraft);
+  const [appearanceDraft, setAppearanceDraft] =
+    useState<SpecDraft>(emptySpecDraft);
+  const [variantDraft, setVariantDraft] =
+    useState<VariantDraft>(emptyVariantDraft);
   const [editingVariantId, setEditingVariantId] = useState<string | null>(null);
-  const [copySourceId, setCopySourceId] = useState('');
+  const [copySourceId, setCopySourceId] = useState("");
   const [copyTechnical, setCopyTechnical] = useState(true);
   const [copyAppearance, setCopyAppearance] = useState(true);
   const [copying, setCopying] = useState(false);
-  const [pendingDeleteSpec, setPendingDeleteSpec] = useState<ProductSpecification | null>(null);
-  const [pendingDeleteVariant, setPendingDeleteVariant] = useState<ProductVariant | null>(null);
+  const [pendingDeleteSpec, setPendingDeleteSpec] =
+    useState<ProductSpecification | null>(null);
+  const [pendingDeleteVariant, setPendingDeleteVariant] =
+    useState<ProductVariant | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const categoryOptions = useMemo(
-    () => categories.map((category) => ({ value: category.id, label: category.nameFa })),
+    () =>
+      categories.map((category) => ({
+        value: category.id,
+        label: category.nameFa,
+      })),
     [categories],
   );
 
   const technicalSpecs = useMemo(
-    () => specifications.filter((item) => item.specCategory === 'technical'),
+    () => specifications.filter((item) => item.specCategory === "technical"),
     [specifications],
   );
   const appearanceSpecs = useMemo(
-    () => specifications.filter((item) => item.specCategory === 'appearance'),
+    () => specifications.filter((item) => item.specCategory === "appearance"),
     [specifications],
   );
 
-  const statusLabel = form.isActive ? 'منتشرشده' : 'پیش‌نویس';
+  const statusLabel = form.isActive ? "منتشرشده" : "پیش‌نویس";
 
   const loadExtensions = useCallback(
     async (id: string) => {
@@ -224,7 +250,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
       try {
         const [cats, others] = await Promise.all([
           fetchCategories(),
-          fetchAdminProducts(accessToken!, 'active'),
+          fetchAdminProducts(accessToken!, "active"),
         ]);
         if (cancelled) return;
         setCategories(cats);
@@ -239,7 +265,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
           await loadExtensions(productId);
         }
       } catch {
-        if (!cancelled) adminToast.error('بارگذاری اطلاعات محصول انجام نشد.');
+        if (!cancelled) adminToast.error("بارگذاری اطلاعات محصول انجام نشد.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -266,15 +292,16 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     const nameFa = form.nameFa.trim();
     const slug = form.slug.trim();
     if (nameFa.length < 2) {
-      adminToast.error('عنوان محصول الزامی است.');
+      adminToast.error("عنوان محصول الزامی است.");
       return;
     }
     if (slug.length < 2) {
-      adminToast.error('آدرس محصول (slug) الزامی است.');
+      adminToast.error("آدرس محصول (slug) الزامی است.");
       return;
     }
 
-    const isActive = publishIntent === undefined ? form.isActive : publishIntent;
+    const isActive =
+      publishIntent === undefined ? form.isActive : publishIntent;
     setSaving(true);
     try {
       const payload = {
@@ -293,24 +320,31 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
       };
       if (isNew) {
         const created = await createProduct(accessToken, payload);
-        adminToast.success(isActive ? 'محصول منتشر شد.' : 'پیش‌نویس ذخیره شد.');
+        adminToast.success(isActive ? "محصول منتشر شد." : "پیش‌نویس ذخیره شد.");
         router.replace(`/admin/products/${created.id}`);
       } else {
         const updated = await updateProduct(accessToken, productId!, payload);
         setForm(productToForm(updated, categories));
-        adminToast.success(isActive ? 'محصول منتشر و ذخیره شد.' : 'پیش‌نویس به‌روز شد.');
+        adminToast.success(
+          isActive ? "محصول منتشر و ذخیره شد." : "پیش‌نویس به‌روز شد.",
+        );
       }
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره محصول انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ذخیره محصول انجام نشد.",
+      );
     } finally {
       setSaving(false);
     }
   }
 
-  async function addSpecification(category: ProductSpecCategory, draft: SpecDraft) {
+  async function addSpecification(
+    category: ProductSpecCategory,
+    draft: SpecDraft,
+  ) {
     if (!accessToken || !productId) return;
     if (!draft.specificationKey.trim()) {
-      adminToast.error('عنوان مشخصات الزامی است.');
+      adminToast.error("عنوان مشخصات الزامی است.");
       return;
     }
     try {
@@ -320,21 +354,29 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         unit: draft.unit.trim() || null,
         specCategory: category,
       });
-      setSpecifications((current) => [...current, created].sort((a, b) => a.displayOrder - b.displayOrder));
-      if (category === 'technical') setTechDraft(emptySpecDraft);
+      setSpecifications((current) =>
+        [...current, created].sort((a, b) => a.displayOrder - b.displayOrder),
+      );
+      if (category === "technical") setTechDraft(emptySpecDraft);
       else setAppearanceDraft(emptySpecDraft);
-      adminToast.success('مشخصات افزوده شد.');
+      adminToast.success("مشخصات افزوده شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'افزودن مشخصات انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "افزودن مشخصات انجام نشد.",
+      );
     }
   }
 
   async function ensureAppearanceDefaults() {
     if (!accessToken || !productId) return;
-    const existingKeys = new Set(appearanceSpecs.map((item) => item.specificationKey));
-    const missing = APPEARANCE_DEFAULTS.filter((item) => !existingKeys.has(item.key));
+    const existingKeys = new Set(
+      appearanceSpecs.map((item) => item.specificationKey),
+    );
+    const missing = APPEARANCE_DEFAULTS.filter(
+      (item) => !existingKeys.has(item.key),
+    );
     if (missing.length === 0) {
-      adminToast.success('همه پیش‌فرض‌های ظاهری از قبل هستند.');
+      adminToast.success("همه پیش‌فرض‌های ظاهری از قبل هستند.");
       return;
     }
     try {
@@ -343,33 +385,50 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
         created.push(
           await createProductSpecification(accessToken, productId, {
             specificationKey: item.key,
-            specificationValue: '',
+            specificationValue: "",
             unit: item.unit || null,
-            specCategory: 'appearance',
+            specCategory: "appearance",
           }),
         );
       }
-      setSpecifications((current) => [...current, ...created].sort((a, b) => a.displayOrder - b.displayOrder));
-      adminToast.success(`${created.length.toLocaleString('fa-IR')} پیش‌فرض ظاهری اضافه شد.`);
+      setSpecifications((current) =>
+        [...current, ...created].sort(
+          (a, b) => a.displayOrder - b.displayOrder,
+        ),
+      );
+      adminToast.success(
+        `${created.length.toLocaleString("fa-IR")} پیش‌فرض ظاهری اضافه شد.`,
+      );
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'افزودن پیش‌فرض‌ها انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "افزودن پیش‌فرض‌ها انجام نشد.",
+      );
     }
   }
 
   async function saveSpecification(spec: ProductSpecification) {
     if (!accessToken || !productId) return;
     try {
-      const updated = await updateProductSpecification(accessToken, productId, spec.id, {
-        specificationKey: spec.specificationKey,
-        specificationValue: spec.specificationValue,
-        unit: spec.unit,
-        specCategory: spec.specCategory as ProductSpecCategory,
-        displayOrder: spec.displayOrder,
-      });
-      setSpecifications((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-      adminToast.success('مشخصات ذخیره شد.');
+      const updated = await updateProductSpecification(
+        accessToken,
+        productId,
+        spec.id,
+        {
+          specificationKey: spec.specificationKey,
+          specificationValue: spec.specificationValue,
+          unit: spec.unit,
+          specCategory: spec.specCategory as ProductSpecCategory,
+          displayOrder: spec.displayOrder,
+        },
+      );
+      setSpecifications((current) =>
+        current.map((item) => (item.id === updated.id ? updated : item)),
+      );
+      adminToast.success("مشخصات ذخیره شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره مشخصات انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ذخیره مشخصات انجام نشد.",
+      );
     }
   }
 
@@ -377,12 +436,20 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     if (!accessToken || !productId || !pendingDeleteSpec) return;
     setDeleting(true);
     try {
-      await deleteProductSpecification(accessToken, productId, pendingDeleteSpec.id);
-      setSpecifications((current) => current.filter((item) => item.id !== pendingDeleteSpec.id));
+      await deleteProductSpecification(
+        accessToken,
+        productId,
+        pendingDeleteSpec.id,
+      );
+      setSpecifications((current) =>
+        current.filter((item) => item.id !== pendingDeleteSpec.id),
+      );
       setPendingDeleteSpec(null);
-      adminToast.success('مشخصات حذف شد.');
+      adminToast.success("مشخصات حذف شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'حذف مشخصات انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "حذف مشخصات انجام نشد.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -391,19 +458,26 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   async function runCopySpecs() {
     if (!accessToken || !productId || !copySourceId) return;
     const categoriesToCopy: ProductSpecCategory[] = [];
-    if (copyTechnical) categoriesToCopy.push('technical');
-    if (copyAppearance) categoriesToCopy.push('appearance');
+    if (copyTechnical) categoriesToCopy.push("technical");
+    if (copyAppearance) categoriesToCopy.push("appearance");
     if (categoriesToCopy.length === 0) {
-      adminToast.error('حداقل یک دسته را برای کپی انتخاب کنید.');
+      adminToast.error("حداقل یک دسته را برای کپی انتخاب کنید.");
       return;
     }
     setCopying(true);
     try {
-      const next = await copyProductSpecs(accessToken, productId, copySourceId, categoriesToCopy);
+      const next = await copyProductSpecs(
+        accessToken,
+        productId,
+        copySourceId,
+        categoriesToCopy,
+      );
       setSpecifications(next);
-      adminToast.success('مشخصات از محصول مبدأ منتقل شد.');
+      adminToast.success("مشخصات از محصول مبدأ منتقل شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'کپی مشخصات انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "کپی مشخصات انجام نشد.",
+      );
     } finally {
       setCopying(false);
     }
@@ -417,25 +491,39 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
       variantNameFa: variantDraft.variantNameFa,
       variantNameEn: variantDraft.variantNameEn || variantDraft.variantNameFa,
       variantCode: variantDraft.variantCode || null,
-      priceBase: variantDraft.priceBase === '' ? null : Number(variantDraft.priceBase),
+      priceBase:
+        variantDraft.priceBase === "" ? null : Number(variantDraft.priceBase),
       priceAdjustment: Number(variantDraft.priceAdjustment || 0),
       stockQuantity: Number(variantDraft.stockQuantity || 0),
       isActive: variantDraft.isActive,
     };
     try {
       if (editingVariantId) {
-        const updated = await updateProductVariant(accessToken, productId, editingVariantId, payload);
-        setVariants((current) => current.map((item) => (item.id === updated.id ? updated : item)));
-        adminToast.success('مدل ویرایش شد.');
+        const updated = await updateProductVariant(
+          accessToken,
+          productId,
+          editingVariantId,
+          payload,
+        );
+        setVariants((current) =>
+          current.map((item) => (item.id === updated.id ? updated : item)),
+        );
+        adminToast.success("مدل ویرایش شد.");
       } else {
-        const created = await createProductVariant(accessToken, productId, payload);
+        const created = await createProductVariant(
+          accessToken,
+          productId,
+          payload,
+        );
         setVariants((current) => [...current, created]);
-        adminToast.success('مدل افزوده شد.');
+        adminToast.success("مدل افزوده شد.");
       }
       setVariantDraft(emptyVariantDraft);
       setEditingVariantId(null);
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره مدل انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ذخیره مدل انجام نشد.",
+      );
     }
   }
 
@@ -443,12 +531,20 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
     if (!accessToken || !productId || !pendingDeleteVariant) return;
     setDeleting(true);
     try {
-      await deleteProductVariant(accessToken, productId, pendingDeleteVariant.id);
-      setVariants((current) => current.filter((item) => item.id !== pendingDeleteVariant.id));
+      await deleteProductVariant(
+        accessToken,
+        productId,
+        pendingDeleteVariant.id,
+      );
+      setVariants((current) =>
+        current.filter((item) => item.id !== pendingDeleteVariant.id),
+      );
       setPendingDeleteVariant(null);
-      adminToast.success('مدل حذف شد.');
+      adminToast.success("مدل حذف شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'حذف مدل انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "حذف مدل انجام نشد.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -470,7 +566,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 onChange={(event) =>
                   setSpecifications((current) =>
                     current.map((item) =>
-                      item.id === spec.id ? { ...item, specificationKey: event.target.value } : item,
+                      item.id === spec.id
+                        ? { ...item, specificationKey: event.target.value }
+                        : item,
                     ),
                   )
                 }
@@ -484,7 +582,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 onChange={(event) =>
                   setSpecifications((current) =>
                     current.map((item) =>
-                      item.id === spec.id ? { ...item, specificationValue: event.target.value } : item,
+                      item.id === spec.id
+                        ? { ...item, specificationValue: event.target.value }
+                        : item,
                     ),
                   )
                 }
@@ -494,21 +594,31 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               <span className="ops-login__label">واحد</span>
               <input
                 className="ops-field"
-                value={spec.unit ?? ''}
+                value={spec.unit ?? ""}
                 onChange={(event) =>
                   setSpecifications((current) =>
                     current.map((item) =>
-                      item.id === spec.id ? { ...item, unit: event.target.value || null } : item,
+                      item.id === spec.id
+                        ? { ...item, unit: event.target.value || null }
+                        : item,
                     ),
                   )
                 }
               />
             </label>
             <div className="admin-editor__spec-actions">
-              <button type="button" className="ops-btn ops-btn--ghost" onClick={() => void saveSpecification(spec)}>
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                onClick={() => void saveSpecification(spec)}
+              >
                 ذخیره
               </button>
-              <IconAction label="حذف" tone="danger" onClick={() => setPendingDeleteSpec(spec)}>
+              <IconAction
+                label="حذف"
+                tone="danger"
+                onClick={() => setPendingDeleteSpec(spec)}
+              >
                 <IconTrash />
               </IconAction>
             </div>
@@ -521,7 +631,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   if (!accessToken) {
     return (
       <AdminShell eyebrow="کاتالوگ" title="محصول">
-        <p className="text-sm text-[var(--ops-muted)]">برای مدیریت محصول وارد شوید.</p>
+        <p className="text-sm text-[var(--ops-muted)]">
+          برای مدیریت محصول وارد شوید.
+        </p>
       </AdminShell>
     );
   }
@@ -535,17 +647,26 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
   }
 
   return (
-    <AdminShell eyebrow="کاتالوگ" title={isNew ? 'افزودن محصول' : 'ویرایش محصول'}>
+    <AdminShell
+      eyebrow="کاتالوگ"
+      title={isNew ? "افزودن محصول" : "ویرایش محصول"}
+    >
       <div className="admin-editor__topbar">
         <Link href="/admin/products" className="ops-btn ops-btn--ghost">
           ← بازگشت به فهرست
         </Link>
         <div className="admin-editor__topbar-meta">
-          <span className={`admin-badge ${form.isActive ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
+          <span
+            className={`admin-badge ${form.isActive ? "admin-badge--ok" : "admin-badge--warn"}`}
+          >
             {statusLabel}
           </span>
           {!isNew && form.isActive ? (
-            <Link href={`/products/${form.slug}`} className="ops-btn ops-btn--ghost" target="_blank">
+            <Link
+              href={`/products/${form.slug}`}
+              className="ops-btn ops-btn--ghost"
+              target="_blank"
+            >
               مشاهده در سایت
             </Link>
           ) : null}
@@ -594,7 +715,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 </button>
               ) : null}
             </div>
-            <p className="admin-editor__hint">فقط عنوان و آدرس اجباری‌اند؛ بقیه فیلدها اختیاری‌اند.</p>
+            <p className="admin-editor__hint">
+              فقط عنوان و آدرس اجباری‌اند؛ بقیه فیلدها اختیاری‌اند.
+            </p>
           </div>
 
           <Metabox title="توضیحات">
@@ -605,7 +728,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 maxLength={500}
                 placeholder="یک جمله برای کارت محصول و نتایج جستجو"
                 value={form.descriptionShortFa}
-                onChange={(event) => setForm({ ...form, descriptionShortFa: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, descriptionShortFa: event.target.value })
+                }
               />
             </label>
             <label className="mt-4 block text-start">
@@ -614,20 +739,28 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 className="ops-field admin-editor__body"
                 maxLength={8000}
                 value={form.descriptionLongFa}
-                onChange={(event) => setForm({ ...form, descriptionLongFa: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, descriptionLongFa: event.target.value })
+                }
                 placeholder="جزئیات کامل محصول، کاربرد، نکات نصب و بهره‌برداری…"
               />
             </label>
           </Metabox>
 
           <Metabox title="گالری تصاویر">
-            <MediaField label="تصاویر محصول" multiple value={form.images} onChange={(images) => setForm({ ...form, images })} />
+            <MediaField
+              label="تصاویر محصول"
+              multiple
+              value={form.images}
+              onChange={(images) => setForm({ ...form, images })}
+            />
           </Metabox>
 
           {isNew ? (
             <Metabox title="مشخصات و مدل‌ها">
               <p className="admin-editor__hint">
-                پس از ذخیرهٔ پیش‌نویس یا انتشار، بخش مشخصات فنی، ظاهری و مدل‌ها فعال می‌شود.
+                پس از ذخیرهٔ پیش‌نویس یا انتشار، بخش مشخصات فنی، ظاهری و مدل‌ها
+                فعال می‌شود.
               </p>
             </Metabox>
           ) : (
@@ -640,7 +773,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                     <input
                       className="ops-field"
                       value={techDraft.specificationKey}
-                      onChange={(event) => setTechDraft({ ...techDraft, specificationKey: event.target.value })}
+                      onChange={(event) =>
+                        setTechDraft({
+                          ...techDraft,
+                          specificationKey: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -648,7 +786,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                     <input
                       className="ops-field"
                       value={techDraft.specificationValue}
-                      onChange={(event) => setTechDraft({ ...techDraft, specificationValue: event.target.value })}
+                      onChange={(event) =>
+                        setTechDraft({
+                          ...techDraft,
+                          specificationValue: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -656,14 +799,18 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                     <input
                       className="ops-field"
                       value={techDraft.unit}
-                      onChange={(event) => setTechDraft({ ...techDraft, unit: event.target.value })}
+                      onChange={(event) =>
+                        setTechDraft({ ...techDraft, unit: event.target.value })
+                      }
                     />
                   </label>
                   <div className="admin-editor__spec-actions">
                     <button
                       type="button"
                       className="ops-btn"
-                      onClick={() => void addSpecification('technical', techDraft)}
+                      onClick={() =>
+                        void addSpecification("technical", techDraft)
+                      }
                     >
                       <span className="inline-flex items-center gap-2">
                         <IconPlus />
@@ -677,7 +824,11 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               <Metabox
                 title="مشخصات ظاهری"
                 actions={
-                  <button type="button" className="ops-btn ops-btn--ghost" onClick={() => void ensureAppearanceDefaults()}>
+                  <button
+                    type="button"
+                    className="ops-btn ops-btn--ghost"
+                    onClick={() => void ensureAppearanceDefaults()}
+                  >
                     افزودن پیش‌فرض‌ها
                   </button>
                 }
@@ -690,7 +841,10 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       value={appearanceDraft.specificationKey}
                       onChange={(event) =>
-                        setAppearanceDraft({ ...appearanceDraft, specificationKey: event.target.value })
+                        setAppearanceDraft({
+                          ...appearanceDraft,
+                          specificationKey: event.target.value,
+                        })
                       }
                     />
                   </label>
@@ -700,7 +854,10 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       value={appearanceDraft.specificationValue}
                       onChange={(event) =>
-                        setAppearanceDraft({ ...appearanceDraft, specificationValue: event.target.value })
+                        setAppearanceDraft({
+                          ...appearanceDraft,
+                          specificationValue: event.target.value,
+                        })
                       }
                     />
                   </label>
@@ -709,14 +866,21 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                     <input
                       className="ops-field"
                       value={appearanceDraft.unit}
-                      onChange={(event) => setAppearanceDraft({ ...appearanceDraft, unit: event.target.value })}
+                      onChange={(event) =>
+                        setAppearanceDraft({
+                          ...appearanceDraft,
+                          unit: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <div className="admin-editor__spec-actions">
                     <button
                       type="button"
                       className="ops-btn"
-                      onClick={() => void addSpecification('appearance', appearanceDraft)}
+                      onClick={() =>
+                        void addSpecification("appearance", appearanceDraft)
+                      }
                     >
                       افزودن
                     </button>
@@ -749,7 +913,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       <input
                         type="checkbox"
                         checked={copyTechnical}
-                        onChange={(event) => setCopyTechnical(event.target.checked)}
+                        onChange={(event) =>
+                          setCopyTechnical(event.target.checked)
+                        }
                       />
                       مشخصات فنی
                     </label>
@@ -757,7 +923,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       <input
                         type="checkbox"
                         checked={copyAppearance}
-                        onChange={(event) => setCopyAppearance(event.target.checked)}
+                        onChange={(event) =>
+                          setCopyAppearance(event.target.checked)
+                        }
                       />
                       مشخصات ظاهری
                     </label>
@@ -769,7 +937,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                   disabled={copying || !copySourceId}
                   onClick={() => void runCopySpecs()}
                 >
-                  {copying ? 'در حال کپی…' : 'انتقال مشخصات'}
+                  {copying ? "در حال کپی…" : "انتقال مشخصات"}
                 </button>
               </Metabox>
 
@@ -779,14 +947,25 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 ) : (
                   <div className="admin-editor__variant-list">
                     {variants.map((variant) => (
-                      <div key={variant.id} className="admin-editor__variant-row">
+                      <div
+                        key={variant.id}
+                        className="admin-editor__variant-row"
+                      >
                         <div className="text-start">
-                          <strong className="block">{variant.variantNameFa}</strong>
-                          <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
+                          <strong className="block">
+                            {variant.variantNameFa}
+                          </strong>
+                          <span
+                            className="text-xs text-[var(--ops-muted)]"
+                            dir="ltr"
+                          >
                             {variant.skuVariant}
-                            {variant.variantCode ? ` · ${variant.variantCode}` : ''}
-                            {' · '}
-                            موجودی {variant.stockQuantity.toLocaleString('fa-IR')}
+                            {variant.variantCode
+                              ? ` · ${variant.variantCode}`
+                              : ""}
+                            {" · "}
+                            موجودی{" "}
+                            {variant.stockQuantity.toLocaleString("fa-IR")}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -798,18 +977,31 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                               setVariantDraft({
                                 skuVariant: variant.skuVariant,
                                 variantNameFa: variant.variantNameFa,
-                                variantNameEn: variant.variantNameEn || variant.variantNameFa,
-                                variantCode: variant.variantCode || '',
-                                priceBase: variant.priceBase == null ? '' : String(variant.priceBase),
-                                priceAdjustment: String(variant.priceAdjustment ?? 0),
-                                stockQuantity: String(variant.stockQuantity ?? 0),
+                                variantNameEn:
+                                  variant.variantNameEn ||
+                                  variant.variantNameFa,
+                                variantCode: variant.variantCode || "",
+                                priceBase:
+                                  variant.priceBase == null
+                                    ? ""
+                                    : String(variant.priceBase),
+                                priceAdjustment: String(
+                                  variant.priceAdjustment ?? 0,
+                                ),
+                                stockQuantity: String(
+                                  variant.stockQuantity ?? 0,
+                                ),
                                 isActive: variant.isActive ?? true,
                               });
                             }}
                           >
                             ویرایش
                           </button>
-                          <IconAction label="حذف" tone="danger" onClick={() => setPendingDeleteVariant(variant)}>
+                          <IconAction
+                            label="حذف"
+                            tone="danger"
+                            onClick={() => setPendingDeleteVariant(variant)}
+                          >
                             <IconTrash />
                           </IconAction>
                         </div>
@@ -818,7 +1010,10 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                   </div>
                 )}
 
-                <form onSubmit={saveVariant} className="admin-form-grid two mt-4">
+                <form
+                  onSubmit={saveVariant}
+                  className="admin-form-grid two mt-4"
+                >
                   <label className="block text-start">
                     <span className="ops-login__label">کد مدل (SKU)</span>
                     <input
@@ -826,7 +1021,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.skuVariant}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, skuVariant: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          skuVariant: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -835,7 +1035,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.variantCode}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, variantCode: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          variantCode: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -844,7 +1049,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       required
                       className="ops-field"
                       value={variantDraft.variantNameFa}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, variantNameFa: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          variantNameFa: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -853,7 +1063,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.variantNameEn}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, variantNameEn: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          variantNameEn: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -864,7 +1079,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.priceBase}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, priceBase: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          priceBase: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -874,7 +1094,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.priceAdjustment}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, priceAdjustment: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          priceAdjustment: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="block text-start">
@@ -885,20 +1110,30 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                       className="ops-field"
                       dir="ltr"
                       value={variantDraft.stockQuantity}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, stockQuantity: event.target.value })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          stockQuantity: event.target.value,
+                        })
+                      }
                     />
                   </label>
                   <label className="flex items-end gap-2 pb-2 text-sm">
                     <input
                       type="checkbox"
                       checked={variantDraft.isActive}
-                      onChange={(event) => setVariantDraft({ ...variantDraft, isActive: event.target.checked })}
+                      onChange={(event) =>
+                        setVariantDraft({
+                          ...variantDraft,
+                          isActive: event.target.checked,
+                        })
+                      }
                     />
                     مدل فعال باشد
                   </label>
                   <div className="flex flex-wrap gap-2 sm:col-span-2">
                     <button type="submit" className="ops-btn">
-                      {editingVariantId ? 'ذخیره مدل' : 'افزودن مدل'}
+                      {editingVariantId ? "ذخیره مدل" : "افزودن مدل"}
                     </button>
                     {editingVariantId ? (
                       <button
@@ -923,8 +1158,14 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
           <Metabox title="انتشار" className="admin-metabox--sticky">
             <div className="admin-editor__publish-meta">
               <p>
-                وضعیت:{' '}
-                <strong className={form.isActive ? 'text-[var(--ops-ok)]' : 'text-[var(--ops-warn)]'}>
+                وضعیت:{" "}
+                <strong
+                  className={
+                    form.isActive
+                      ? "text-[var(--ops-ok)]"
+                      : "text-[var(--ops-warn)]"
+                  }
+                >
                   {statusLabel}
                 </strong>
               </p>
@@ -932,8 +1173,13 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 <span className="ops-login__label">تغییر وضعیت</span>
                 <select
                   className="admin-select admin-select--wide"
-                  value={form.isActive ? 'published' : 'draft'}
-                  onChange={(event) => setForm({ ...form, isActive: event.target.value === 'published' })}
+                  value={form.isActive ? "published" : "draft"}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      isActive: event.target.value === "published",
+                    })
+                  }
                 >
                   <option value="draft">پیش‌نویس</option>
                   <option value="published">منتشرشده</option>
@@ -941,8 +1187,13 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               </label>
             </div>
             <div className="admin-editor__publish-actions">
-              <button type="button" className="ops-btn ops-btn--ghost" disabled={saving} onClick={() => void persist(false)}>
-                {saving ? '…' : 'ذخیره پیش‌نویس'}
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                disabled={saving}
+                onClick={() => void persist(false)}
+              >
+                {saving ? "…" : "ذخیره پیش‌نویس"}
               </button>
               <button
                 type="button"
@@ -950,11 +1201,16 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 disabled={saving}
                 onClick={() => void persist(true)}
               >
-                {saving ? 'در حال ذخیره…' : form.isActive || !isNew ? 'انتشار / به‌روزرسانی' : 'انتشار'}
+                {saving
+                  ? "در حال ذخیره…"
+                  : form.isActive || !isNew
+                    ? "انتشار / به‌روزرسانی"
+                    : "انتشار"}
               </button>
             </div>
             <p className="admin-editor__hint mt-3">
-              پیش‌نویس در سایت عمومی دیده نمی‌شود. هر وقت آماده بودید، منتشر کنید.
+              پیش‌نویس در سایت عمومی دیده نمی‌شود. هر وقت آماده بودید، منتشر
+              کنید.
             </p>
           </Metabox>
 
@@ -964,7 +1220,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               <select
                 className="admin-select admin-select--wide"
                 value={form.category}
-                onChange={(event) => setForm({ ...form, category: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, category: event.target.value })
+                }
               >
                 <option value="">بدون دسته (اختیاری)</option>
                 {categoryOptions.map((option) => (
@@ -981,8 +1239,12 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               label="قیمت پایه (ریال)"
               value={form.priceBase}
               negotiable={form.priceNegotiable}
-              onValueChange={(priceBase) => setForm({ ...form, priceBase: Number(priceBase) || 0 })}
-              onNegotiableChange={(priceNegotiable) => setForm({ ...form, priceNegotiable })}
+              onValueChange={(priceBase) =>
+                setForm({ ...form, priceBase: Number(priceBase) || 0 })
+              }
+              onNegotiableChange={(priceNegotiable) =>
+                setForm({ ...form, priceNegotiable })
+              }
             />
             <label className="mt-3 block text-start">
               <span className="ops-login__label">کد کالا (SKU)</span>
@@ -991,7 +1253,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 dir="ltr"
                 placeholder="خالی = ساخت خودکار از آدرس"
                 value={form.sku}
-                onChange={(event) => setForm({ ...form, sku: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, sku: event.target.value })
+                }
               />
             </label>
             <label className="mt-3 block text-start">
@@ -1001,7 +1265,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
                 dir="ltr"
                 placeholder="اختیاری"
                 value={form.nameEn}
-                onChange={(event) => setForm({ ...form, nameEn: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, nameEn: event.target.value })
+                }
               />
             </label>
           </Metabox>
@@ -1011,7 +1277,9 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
               <input
                 type="checkbox"
                 checked={form.isFeatured}
-                onChange={(event) => setForm({ ...form, isFeatured: event.target.checked })}
+                onChange={(event) =>
+                  setForm({ ...form, isFeatured: event.target.checked })
+                }
               />
               محصول ویژه در صفحه اصلی
             </label>
@@ -1021,7 +1289,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
 
       <AdminConfirmModal
         open={Boolean(pendingDeleteSpec)}
-        description={`مشخصه «${pendingDeleteSpec?.specificationKey ?? ''}» حذف شود؟`}
+        description={`مشخصه «${pendingDeleteSpec?.specificationKey ?? ""}» حذف شود؟`}
         confirmLabel="بله، حذف شود"
         busy={deleting}
         onClose={() => setPendingDeleteSpec(null)}
@@ -1029,7 +1297,7 @@ export function ProductEditorPage({ productId }: { productId?: string }) {
       />
       <AdminConfirmModal
         open={Boolean(pendingDeleteVariant)}
-        description={`مدل «${pendingDeleteVariant?.variantNameFa ?? ''}» حذف شود؟`}
+        description={`مدل «${pendingDeleteVariant?.variantNameFa ?? ""}» حذف شود؟`}
         confirmLabel="بله، حذف شود"
         busy={deleting}
         onClose={() => setPendingDeleteVariant(null)}

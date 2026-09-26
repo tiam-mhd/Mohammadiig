@@ -1,10 +1,22 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayUnique, IsArray, IsBoolean, IsIn, IsOptional, IsString } from 'class-validator';
-import { ALL_DATASET_KEYS, BackupDatasetKey, RestoreConflictMode } from '../backup.datasets';
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import {
+  ArrayUnique,
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+} from "class-validator";
+import {
+  ALL_DATASET_KEYS,
+  BackupDatasetKey,
+  RestoreConflictMode,
+} from "../backup.datasets";
 
 export class ExportBackupDto {
   @ApiPropertyOptional({
-    description: 'Dataset keys to include. Omit or pass ["all"] for everything.',
+    description:
+      'Dataset keys to include. Omit or pass ["all"] for everything.',
     type: [String],
   })
   @IsOptional()
@@ -13,13 +25,17 @@ export class ExportBackupDto {
   @IsString({ each: true })
   datasets?: string[];
 
-  @ApiPropertyOptional({ description: 'Include soft-deleted rows', default: true })
+  @ApiPropertyOptional({
+    description: "Include soft-deleted rows",
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   includeSoftDeleted?: boolean;
 
   @ApiPropertyOptional({
-    description: 'When media dataset is selected, pack binary files into the ZIP',
+    description:
+      "When media dataset is selected, pack binary files into the ZIP",
     default: true,
   })
   @IsOptional()
@@ -29,7 +45,8 @@ export class ExportBackupDto {
 
 export class RestoreBackupOptionsDto {
   @ApiPropertyOptional({
-    description: 'Datasets to restore from the archive. Omit to restore all present in the file.',
+    description:
+      "Datasets to restore from the archive. Omit to restore all present in the file.",
     type: [String],
   })
   @IsOptional()
@@ -39,11 +56,11 @@ export class RestoreBackupOptionsDto {
   datasets?: string[];
 
   @ApiProperty({
-    enum: ['skip', 'overwrite', 'replace'],
+    enum: ["skip", "overwrite", "replace"],
     description:
-      'skip = keep existing IDs; overwrite = update existing IDs; replace = wipe selected datasets then import',
+      "skip = keep existing IDs; overwrite = update existing IDs; replace = wipe selected datasets then import",
   })
-  @IsIn(['skip', 'overwrite', 'replace'])
+  @IsIn(["skip", "overwrite", "replace"])
   mode!: RestoreConflictMode;
 
   @ApiPropertyOptional({ default: false })
@@ -52,7 +69,7 @@ export class RestoreBackupOptionsDto {
   dryRun?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Restore media binary files when media dataset is included',
+    description: "Restore media binary files when media dataset is included",
     default: true,
   })
   @IsOptional()
@@ -60,7 +77,7 @@ export class RestoreBackupOptionsDto {
   restoreMediaFiles?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Do not overwrite the currently logged-in admin user row',
+    description: "Do not overwrite the currently logged-in admin user row",
     default: true,
   })
   @IsOptional()
@@ -68,10 +85,12 @@ export class RestoreBackupOptionsDto {
   protectCurrentAdmin?: boolean;
 }
 
-export function normalizeDatasetSelection(raw: string[] | undefined): BackupDatasetKey[] | 'all' {
-  if (!raw || raw.length === 0) return 'all';
-  if (raw.length === 1 && raw[0] === 'all') return 'all';
+export function normalizeDatasetSelection(
+  raw: string[] | undefined,
+): BackupDatasetKey[] | "all" {
+  if (!raw || raw.length === 0) return "all";
+  if (raw.length === 1 && raw[0] === "all") return "all";
   const allowed = new Set<string>(ALL_DATASET_KEYS);
   const keys = raw.filter((k): k is BackupDatasetKey => allowed.has(k));
-  return keys.length ? keys : 'all';
+  return keys.length ? keys : "all";
 }

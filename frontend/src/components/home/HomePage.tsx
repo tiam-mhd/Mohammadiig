@@ -1,20 +1,20 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   motion,
   useReducedMotion,
   useScroll,
   useTransform,
-} from 'framer-motion';
-import gsap from 'gsap';
-import { useGSAP } from '@gsap/react';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { GlassButton } from '@/components/GlassButton';
-import { SmoothScroll } from '@/components/SmoothScroll';
-import { GlassPanel } from '@/components/home/GlassPanel';
-import { ProductRailCard } from '@/components/home/ProductRailCard';
+} from "framer-motion";
+import gsap from "gsap";
+import { useGSAP } from "@gsap/react";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { GlassButton } from "@/components/GlassButton";
+import { SmoothScroll } from "@/components/SmoothScroll";
+import { GlassPanel } from "@/components/home/GlassPanel";
+import { ProductRailCard } from "@/components/home/ProductRailCard";
 import {
   fetchPortfolioWorks,
   fetchProducts,
@@ -22,16 +22,16 @@ import {
   type PortfolioWork,
   type Product,
   type ServiceSummary,
-} from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
-import { useTheme } from '@/hooks/useTheme';
+} from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
+import { useTheme } from "@/hooks/useTheme";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-const BG_DARK = '/Background.webp';
-const BG_LIGHT = '/Background-Light.webp';
-const BG_CTA_DARK = '/Background-cta.webp';
-const BG_CTA_LIGHT = '/Background-cta-Light.webp';
+const BG_DARK = "/Background.webp";
+const BG_LIGHT = "/Background-Light.webp";
+const BG_CTA_DARK = "/Background-cta.webp";
+const BG_CTA_LIGHT = "/Background-cta-Light.webp";
 
 function useSceneBackgrounds() {
   const { isDark } = useTheme();
@@ -42,7 +42,7 @@ function useSceneBackgrounds() {
 }
 
 function productImage(product: Product | undefined): string {
-  if (!product) return '';
+  if (!product) return "";
   return resolveMediaUrl(product.image || product.images?.[0]);
 }
 
@@ -53,8 +53,8 @@ function useAfterSplash(ready: boolean) {
     if (!ready) return;
 
     const idle = () => {
-      const v = document.documentElement.getAttribute('data-splash');
-      return !v || v === 'done';
+      const v = document.documentElement.getAttribute("data-splash");
+      return !v || v === "done";
     };
 
     if (idle()) {
@@ -70,7 +70,7 @@ function useAfterSplash(ready: boolean) {
     });
     obs.observe(document.documentElement, {
       attributes: true,
-      attributeFilter: ['data-splash'],
+      attributeFilter: ["data-splash"],
     });
 
     const t = window.setTimeout(() => setGo(true), 8500);
@@ -90,9 +90,9 @@ function HomeHero() {
   const { scene } = useSceneBackgrounds();
   const { scrollYProgress } = useScroll({
     target: heroRef,
-    offset: ['start start', 'end start'],
+    offset: ["start start", "end start"],
   });
-  const mediaY = useTransform(scrollYProgress, [0, 1], ['0%', '18%']);
+  const mediaY = useTransform(scrollYProgress, [0, 1], ["0%", "18%"]);
   const mediaScale = useTransform(scrollYProgress, [0, 1], [1, 1.12]);
   const copyOpacity = useTransform(scrollYProgress, [0, 0.55], [1, 0]);
   const copyY = useTransform(scrollYProgress, [0, 0.55], [0, -40]);
@@ -119,9 +119,9 @@ function HomeHero() {
           transition={{ duration: 2.2, ease }}
         />
         <div className="home-hero__scrim" />
-          <div className="home-hero__vignette" aria-hidden />
-          <div className="home-hero__grain" aria-hidden />
-        </motion.div>
+        <div className="home-hero__vignette" aria-hidden />
+        <div className="home-hero__grain" aria-hidden />
+      </motion.div>
 
       <motion.div
         className="content-shell home-hero__content"
@@ -160,7 +160,8 @@ function HomeHero() {
             animate={afterSplash ? { opacity: 1, y: 0 } : { opacity: 0, y: 18 }}
             transition={{ duration: 0.9, delay: 0.58, ease }}
           >
-            از انتخاب دستگاه تا نصب و پشتیبانی؛ کنار صاحبان شهربازی و مجموعه‌های تفریحی.
+            از انتخاب دستگاه تا نصب و پشتیبانی؛ کنار صاحبان شهربازی و مجموعه‌های
+            تفریحی.
           </motion.p>
 
           <motion.div
@@ -230,25 +231,22 @@ export function HomePage() {
     () =>
       products.map((product, i) => ({
         id: product.id,
-        index: String(i + 1).padStart(2, '0'),
+        index: String(i + 1).padStart(2, "0"),
         name: product.name,
         tagline: product.description || product.category,
         href: `/products/${product.slug}`,
         image: productImage(product),
       })),
-    [products]
+    [products],
   );
 
   const featuredImage = productImage(featuredProduct ?? undefined);
-  const proofWork =
-    portfolio.find((w) => w.isFeatured) ?? portfolio[0] ?? null;
+  const proofWork = portfolio.find((w) => w.isFeatured) ?? portfolio[0] ?? null;
   const proofImage =
     resolveMediaUrl(proofWork?.coverImageUrl || proofWork?.gallery?.[0]) ||
     fallbackScene;
   const pillarsScene =
-    featuredImage ||
-    resolveMediaUrl(proofWork?.coverImageUrl) ||
-    fallbackScene;
+    featuredImage || resolveMediaUrl(proofWork?.coverImageUrl) || fallbackScene;
 
   useGSAP(
     () => {
@@ -258,70 +256,74 @@ export function HomePage() {
 
       const mm = gsap.matchMedia();
 
-      gsap.utils.toArray<HTMLElement>(root.querySelectorAll('[data-reveal]')).forEach((el) => {
-        /* opacity-only — transform kills backdrop-filter on glass children */
-        gsap.fromTo(
-          el,
-          { autoAlpha: 0 },
-          {
-            autoAlpha: 1,
-            duration: 1.05,
-            ease: 'power2.out',
-            clearProps: 'transform',
-            scrollTrigger: {
-              trigger: el,
-              start: 'top 88%',
-              toggleActions: 'play none none none',
+      gsap.utils
+        .toArray<HTMLElement>(root.querySelectorAll("[data-reveal]"))
+        .forEach((el) => {
+          /* opacity-only — transform kills backdrop-filter on glass children */
+          gsap.fromTo(
+            el,
+            { autoAlpha: 0 },
+            {
+              autoAlpha: 1,
+              duration: 1.05,
+              ease: "power2.out",
+              clearProps: "transform",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 88%",
+                toggleActions: "play none none none",
+              },
             },
-          }
-        );
-      });
-
-      gsap.utils.toArray<HTMLElement>(root.querySelectorAll('[data-parallax]')).forEach((el) => {
-        const speed = Number(el.dataset.parallax || 12);
-        gsap.to(el, {
-          yPercent: speed,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: el.closest('section') || el,
-            start: 'top bottom',
-            end: 'bottom top',
-            scrub: true,
-          },
+          );
         });
-      });
 
-      const pillarsGrid = root.querySelector('.home-pillars__grid');
+      gsap.utils
+        .toArray<HTMLElement>(root.querySelectorAll("[data-parallax]"))
+        .forEach((el) => {
+          const speed = Number(el.dataset.parallax || 12);
+          gsap.to(el, {
+            yPercent: speed,
+            ease: "none",
+            scrollTrigger: {
+              trigger: el.closest("section") || el,
+              start: "top bottom",
+              end: "bottom top",
+              scrub: true,
+            },
+          });
+        });
+
+      const pillarsGrid = root.querySelector(".home-pillars__grid");
       if (pillarsGrid) {
         gsap.fromTo(
-          root.querySelectorAll('.home-glass-card'),
+          root.querySelectorAll(".home-glass-card"),
           { autoAlpha: 0 },
           {
             autoAlpha: 1,
             duration: 0.95,
             stagger: 0.14,
-            ease: 'power2.out',
-            clearProps: 'transform',
+            ease: "power2.out",
+            clearProps: "transform",
             scrollTrigger: {
               trigger: pillarsGrid,
-              start: 'top 80%',
+              start: "top 80%",
             },
-          }
+          },
         );
       }
 
-      const statNum = root.querySelector('.home-legacy__stat-num');
+      const statNum = root.querySelector(".home-legacy__stat-num");
       if (statNum) {
         const counter = { val: 0 };
         gsap.to(counter, {
           val: 40,
           duration: 1.8,
-          ease: 'power2.out',
+          ease: "power2.out",
           snap: { val: 1 },
           scrollTrigger: {
-            trigger: '.home-legacy',
-            start: 'top 72%',
-            toggleActions: 'play none none none',
+            trigger: ".home-legacy",
+            start: "top 72%",
+            toggleActions: "play none none none",
           },
           onUpdate: () => {
             statNum.textContent = String(counter.val);
@@ -329,12 +331,15 @@ export function HomePage() {
         });
       }
 
-      mm.add('(min-width: 900px)', () => {
+      mm.add("(min-width: 900px)", () => {
         const track = trackRef.current;
-        const viewport = root.querySelector('.home-rail__viewport') as HTMLElement | null;
+        const viewport = root.querySelector(
+          ".home-rail__viewport",
+        ) as HTMLElement | null;
         if (!track || !viewport) return;
 
-        const getDistance = () => Math.max(0, track.scrollWidth - viewport.clientWidth);
+        const getDistance = () =>
+          Math.max(0, track.scrollWidth - viewport.clientWidth);
 
         /*
           Track چسبیده به راست (right:0) → از ابتدا محصول ۰۱ دیده می‌شود.
@@ -347,11 +352,11 @@ export function HomePage() {
           { x: 0 },
           {
             x: () => getDistance(),
-            ease: 'none',
+            ease: "none",
             immediateRender: true,
             scrollTrigger: {
               trigger: viewport,
-              start: 'top top',
+              start: "top top",
               end: () => `+=${getDistance()}`,
               pin: true,
               pinSpacing: true,
@@ -363,34 +368,35 @@ export function HomePage() {
                 gsap.set(track, { x: 0 });
               },
             },
-          }
+          },
         );
 
         const refresh = () => ScrollTrigger.refresh();
-        const imgs = Array.from(track.querySelectorAll('img'));
+        const imgs = Array.from(track.querySelectorAll("img"));
         imgs.forEach((img) => {
-          if (!img.complete) img.addEventListener('load', refresh, { once: true });
+          if (!img.complete)
+            img.addEventListener("load", refresh, { once: true });
         });
-        window.addEventListener('load', refresh);
-        window.addEventListener('resize', refresh);
+        window.addEventListener("load", refresh);
+        window.addEventListener("resize", refresh);
         requestAnimationFrame(() => {
           requestAnimationFrame(refresh);
         });
 
         return () => {
-          window.removeEventListener('load', refresh);
-          window.removeEventListener('resize', refresh);
+          window.removeEventListener("load", refresh);
+          window.removeEventListener("resize", refresh);
           tween.scrollTrigger?.kill();
           tween.kill();
-          gsap.set(track, { clearProps: 'transform' });
+          gsap.set(track, { clearProps: "transform" });
         };
       });
 
       ScrollTrigger.refresh();
 
       const splashIdle = () => {
-        const v = document.documentElement.getAttribute('data-splash');
-        return !v || v === 'done';
+        const v = document.documentElement.getAttribute("data-splash");
+        return !v || v === "done";
       };
       if (!splashIdle()) {
         const obs = new MutationObserver(() => {
@@ -401,7 +407,7 @@ export function HomePage() {
         });
         obs.observe(document.documentElement, {
           attributes: true,
-          attributeFilter: ['data-splash'],
+          attributeFilter: ["data-splash"],
         });
       }
     },
@@ -414,7 +420,7 @@ export function HomePage() {
         services.length,
         portfolio.length,
       ],
-    }
+    },
   );
 
   return (
@@ -434,9 +440,12 @@ export function HomePage() {
               <div className="home-legacy__goldline" aria-hidden />
             </div>
             <div className="home-legacy__copy" data-reveal>
-              <h2 className="home-legacy__title">بیش از چهل سال در صنعت تفریحات و شهربازی</h2>
+              <h2 className="home-legacy__title">
+                بیش از چهل سال در صنعت تفریحات و شهربازی
+              </h2>
               <p className="home-legacy__body">
-                از کارخانه تا شهربازی؛ تجربه واقعی تولید، نصب، بهره‌برداری و نگهداری دستگاه‌ها —
+                از کارخانه تا شهربازی؛ تجربه واقعی تولید، نصب، بهره‌برداری و
+                نگهداری دستگاه‌ها —
               </p>
               <GlassButton href="/portfolio">نمونه‌کارها</GlassButton>
             </div>
@@ -456,7 +465,8 @@ export function HomePage() {
                   <h2 className="home-section-title">خدمات گروه صنعتی محمدی</h2>
                 </div>
                 <p className="home-section-lede home-pillars__lede">
-                  از ساخت و نصب تا آموزش و پشتیبانی — یک مسیر کامل برای صاحبان شهربازی.
+                  از ساخت و نصب تا آموزش و پشتیبانی — یک مسیر کامل برای صاحبان
+                  شهربازی.
                 </p>
               </div>
 
@@ -469,7 +479,7 @@ export function HomePage() {
                     className={`home-glass-card home-glass-card--${(i % 3) + 1}`}
                   >
                     <span className="home-glass-card__index" lang="en">
-                      {String(i + 1).padStart(2, '0')}
+                      {String(i + 1).padStart(2, "0")}
                     </span>
                     <h3 className="home-glass-card__title">{item.nameFa}</h3>
                     <p className="home-glass-card__body">{item.description}</p>
@@ -513,7 +523,9 @@ export function HomePage() {
               >
                 <div data-reveal>
                   <p className="home-kicker home-kicker--gold">محصول شاخص</p>
-                  <h2 className="home-feature__title">{featuredProduct.name}</h2>
+                  <h2 className="home-feature__title">
+                    {featuredProduct.name}
+                  </h2>
                   <p className="home-feature__body">
                     {featuredProduct.description || featuredProduct.category}
                   </p>
@@ -533,7 +545,8 @@ export function HomePage() {
               <p className="home-kicker">محصولات</p>
               <h2 className="home-section-title">برای هر فضا، دستگاه مناسب</h2>
               <p className="home-section-lede">
-                سالن حرفه‌ای، فضای کودک، یا پشتیبانی قطعات — مسیر را با نیاز مجموعه شما شروع می‌کنیم.
+                سالن حرفه‌ای، فضای کودک، یا پشتیبانی قطعات — مسیر را با نیاز
+                مجموعه شما شروع می‌کنیم.
               </p>
             </div>
 
@@ -543,7 +556,7 @@ export function HomePage() {
                   <ProductRailCard key={product.id} {...product} />
                 ))}
                 <GlassPanel
-                  mode={featuredImage ? 'frost' : 'backdrop'}
+                  mode={featuredImage ? "frost" : "backdrop"}
                   frostSrc={featuredImage || undefined}
                   className="home-rail__end"
                   bodyClassName="home-rail__end-inner"
@@ -576,7 +589,7 @@ export function HomePage() {
                   <h2 className="home-section-title">{proofWork.titleFa}</h2>
                   <p className="home-section-lede">
                     {proofWork.summaryFa ||
-                      'از سالن ماشین برخوردی تا فضاهای خانوادگی؛ کار واقعی با صاحبان مجموعه.'}
+                      "از سالن ماشین برخوردی تا فضاهای خانوادگی؛ کار واقعی با صاحبان مجموعه."}
                   </p>
                   <div className="home-proof__actions">
                     <GlassButton href={`/portfolio/${proofWork.slug}`}>
@@ -602,12 +615,16 @@ export function HomePage() {
             <GlassPanel mode="backdrop" className="home-close__panel">
               <div data-reveal>
                 <p className="home-kicker home-kicker--gold">قدم بعدی</p>
-                <h2 className="home-close__title">برای مجموعه خودتان آماده‌اید؟</h2>
+                <h2 className="home-close__title">
+                  برای مجموعه خودتان آماده‌اید؟
+                </h2>
                 <p className="home-close__body">
-                  ابعاد فضا، ظرفیت بازدیدکننده و بودجه را بگویید؛ پیشنهاد دستگاه و برآورد قیمت را
-                  برایتان می‌فرستیم.
+                  ابعاد فضا، ظرفیت بازدیدکننده و بودجه را بگویید؛ پیشنهاد دستگاه
+                  و برآورد قیمت را برایتان می‌فرستیم.
                 </p>
-                <GlassButton href="/quote-request">درخواست مشاوره رایگان</GlassButton>
+                <GlassButton href="/quote-request">
+                  درخواست مشاوره رایگان
+                </GlassButton>
               </div>
             </GlassPanel>
           </div>

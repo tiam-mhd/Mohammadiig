@@ -1,71 +1,95 @@
-'use client';
+"use client";
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { AdminConfirmModal } from '@/components/admin/AdminConfirmModal';
-import { AdminModal } from '@/components/admin/AdminModal';
-import { DataRow, DataTable, RowActions } from '@/components/admin/DataTable';
-import { AdminFilterBar, AdminToolbar } from '@/components/admin/AdminToolbar';
-import { IconAction, IconEdit, IconTrash } from '@/components/admin/AdminIcons';
-import { useAdminList } from '@/hooks/useAdminList';
-import { formatDateTime, labelOf, USER_ROLE } from '@/lib/admin-labels';
+import { FormEvent, useCallback, useEffect, useState } from "react";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { AdminConfirmModal } from "@/components/admin/AdminConfirmModal";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { DataRow, DataTable, RowActions } from "@/components/admin/DataTable";
+import { AdminFilterBar, AdminToolbar } from "@/components/admin/AdminToolbar";
+import { IconAction, IconEdit, IconTrash } from "@/components/admin/AdminIcons";
+import { useAdminList } from "@/hooks/useAdminList";
+import { formatDateTime, labelOf, USER_ROLE } from "@/lib/admin-labels";
 import {
   fetchAdminUsersPage,
   register,
   updateUserActive,
   updateUserRole,
   UserAdminSummary,
-} from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
-const roleOptions = Object.entries(USER_ROLE).map(([value, label]) => ({ value, label }));
+const roleOptions = Object.entries(USER_ROLE).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 const emptyForm = {
-  email: '',
-  password: '',
-  firstName: '',
-  lastName: '',
-  companyName: '',
-  phone: '',
-  role: 'customer',
+  email: "",
+  password: "",
+  firstName: "",
+  lastName: "",
+  companyName: "",
+  phone: "",
+  role: "customer",
 };
 
 export default function AdminUsersPage() {
   const token = useAuthStore((state) => state.accessToken);
   const [users, setUsers] = useState<UserAdminSummary[]>([]);
   const [editing, setEditing] = useState<UserAdminSummary | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<UserAdminSummary | null>(null);
-  const [role, setRole] = useState('customer');
+  const [pendingDelete, setPendingDelete] = useState<UserAdminSummary | null>(
+    null,
+  );
+  const [role, setRole] = useState("customer");
   const [isActive, setIsActive] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [page, setPage] = useState(1);
-  const [meta, setMeta] = useState({ page: 1, limit: 20, total: 0, totalPages: 1 });
+  const [meta, setMeta] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1,
+  });
 
   const searchText = useCallback(
     (item: UserAdminSummary) =>
-      `${item.email} ${item.firstName ?? ''} ${item.lastName ?? ''} ${item.companyName ?? ''} ${USER_ROLE[item.role] ?? item.role}`,
+      `${item.email} ${item.firstName ?? ""} ${item.lastName ?? ""} ${item.companyName ?? ""} ${USER_ROLE[item.role] ?? item.role}`,
     [],
   );
-  const matchFilter = useCallback((item: UserAdminSummary, key: string, value: string) => {
-    if (key === 'role') return item.role === value;
-    if (key === 'active') return value === 'yes' ? item.isActive : !item.isActive;
-    return true;
-  }, []);
+  const matchFilter = useCallback(
+    (item: UserAdminSummary, key: string, value: string) => {
+      if (key === "role") return item.role === value;
+      if (key === "active")
+        return value === "yes" ? item.isActive : !item.isActive;
+      return true;
+    },
+    [],
+  );
   const list = useAdminList(users, searchText, matchFilter);
 
   async function reload() {
     if (!token) return;
-    const next = await fetchAdminUsersPage(token, { page, limit: 20, search: list.query });
-    setUsers(next.data); setMeta(next.meta);
+    const next = await fetchAdminUsersPage(token, {
+      page,
+      limit: 20,
+      search: list.query,
+    });
+    setUsers(next.data);
+    setMeta(next.meta);
   }
 
   useEffect(() => {
     if (!token) return;
-    fetchAdminUsersPage(token, { page, limit: 20, search: list.query }).then((result) => { setUsers(result.data); setMeta(result.meta); }).catch(() => adminToast.error('دریافت کاربران انجام نشد.'));
+    fetchAdminUsersPage(token, { page, limit: 20, search: list.query })
+      .then((result) => {
+        setUsers(result.data);
+        setMeta(result.meta);
+      })
+      .catch(() => adminToast.error("دریافت کاربران انجام نشد."));
   }, [token, page, list.query]);
   useEffect(() => setPage(1), [list.query, JSON.stringify(list.filters)]);
 
@@ -76,11 +100,15 @@ export default function AdminUsersPage() {
     try {
       let updated = await updateUserRole(token, editing.id, role);
       updated = await updateUserActive(token, editing.id, isActive);
-      setUsers((current) => current.map((item) => (item.id === editing.id ? updated : item)));
+      setUsers((current) =>
+        current.map((item) => (item.id === editing.id ? updated : item)),
+      );
       setEditing(null);
-      adminToast.success('کاربر به‌روزرسانی شد.');
+      adminToast.success("کاربر به‌روزرسانی شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ویرایش انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ویرایش انجام نشد.",
+      );
     } finally {
       setBusy(false);
     }
@@ -91,11 +119,15 @@ export default function AdminUsersPage() {
     setDeleting(true);
     try {
       const updated = await updateUserActive(token, pendingDelete.id, false);
-      setUsers((current) => current.map((item) => (item.id === pendingDelete.id ? updated : item)));
+      setUsers((current) =>
+        current.map((item) => (item.id === pendingDelete.id ? updated : item)),
+      );
       setPendingDelete(null);
-      adminToast.success('کاربر غیرفعال شد.');
+      adminToast.success("کاربر غیرفعال شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'حذف انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "حذف انجام نشد.",
+      );
     } finally {
       setDeleting(false);
     }
@@ -114,15 +146,17 @@ export default function AdminUsersPage() {
         companyName: form.companyName,
         phone: form.phone || undefined,
       });
-      if (form.role !== 'customer') {
+      if (form.role !== "customer") {
         await updateUserRole(token, created.user.id, form.role);
       }
       await reload();
       setAddOpen(false);
       setForm(emptyForm);
-      adminToast.success('کاربر جدید ثبت شد.');
+      adminToast.success("کاربر جدید ثبت شد.");
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ثبت کاربر انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ثبت کاربر انجام نشد.",
+      );
     } finally {
       setBusy(false);
     }
@@ -131,7 +165,7 @@ export default function AdminUsersPage() {
   return (
     <AdminShell eyebrow="دسترسی" title="کاربران">
       <AdminToolbar
-        countLabel={`${list.shown.toLocaleString('fa-IR')} از ${list.total.toLocaleString('fa-IR')} مورد`}
+        countLabel={`${list.shown.toLocaleString("fa-IR")} از ${list.total.toLocaleString("fa-IR")} مورد`}
         query={list.query}
         onQueryChange={list.setQuery}
         filtersOpen={list.filtersOpen}
@@ -143,13 +177,13 @@ export default function AdminUsersPage() {
         {list.filtersOpen ? (
           <AdminFilterBar
             fields={[
-              { key: 'role', label: 'نقش', options: roleOptions },
+              { key: "role", label: "نقش", options: roleOptions },
               {
-                key: 'active',
-                label: 'وضعیت',
+                key: "active",
+                label: "وضعیت",
                 options: [
-                  { value: 'yes', label: 'فعال' },
-                  { value: 'no', label: 'غیرفعال' },
+                  { value: "yes", label: "فعال" },
+                  { value: "no", label: "غیرفعال" },
                 ],
               },
             ]}
@@ -161,27 +195,39 @@ export default function AdminUsersPage() {
       </AdminToolbar>
 
       <DataTable
-        headers={['نام', 'ایمیل', 'شرکت', 'نقش', 'وضعیت', 'آخرین ورود', 'عملیات']}
+        headers={[
+          "نام",
+          "ایمیل",
+          "شرکت",
+          "نقش",
+          "وضعیت",
+          "آخرین ورود",
+          "عملیات",
+        ]}
         isEmpty={list.filtered.length === 0}
         emptyText="کاربری با این جستجو پیدا نشد."
       >
         {list.filtered.map((user) => {
           const fullName =
             user.firstName || user.lastName
-              ? `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
-              : '—';
+              ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
+              : "—";
 
           return (
             <DataRow key={user.id}>
               <td className="text-start">
-                <strong className="font-medium text-[var(--ops-ink)]">{fullName}</strong>
+                <strong className="font-medium text-[var(--ops-ink)]">
+                  {fullName}
+                </strong>
               </td>
               <td dir="ltr">{user.email}</td>
-              <td>{user.companyName ?? '—'}</td>
+              <td>{user.companyName ?? "—"}</td>
               <td>{labelOf(USER_ROLE, user.role)}</td>
               <td>
-                <span className={`admin-badge ${user.isActive ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
-                  {user.isActive ? 'فعال' : 'غیرفعال'}
+                <span
+                  className={`admin-badge ${user.isActive ? "admin-badge--ok" : "admin-badge--warn"}`}
+                >
+                  {user.isActive ? "فعال" : "غیرفعال"}
                 </span>
               </td>
               <td>{formatDateTime(user.lastLoginAt)}</td>
@@ -197,7 +243,11 @@ export default function AdminUsersPage() {
                   >
                     <IconEdit />
                   </IconAction>
-                  <IconAction label="حذف" tone="danger" onClick={() => setPendingDelete(user)}>
+                  <IconAction
+                    label="حذف"
+                    tone="danger"
+                    onClick={() => setPendingDelete(user)}
+                  >
                     <IconTrash />
                   </IconAction>
                 </RowActions>
@@ -206,7 +256,27 @@ export default function AdminUsersPage() {
           );
         })}
       </DataTable>
-      <div className="mt-4 flex items-center justify-between text-sm"><button className="admin-button" disabled={page <= 1} onClick={() => setPage((value) => value - 1)}>قبلی</button><span>{meta.total.toLocaleString('fa-IR')} مورد · صفحه {page.toLocaleString('fa-IR')} از {meta.totalPages.toLocaleString('fa-IR')}</span><button className="admin-button" disabled={page >= meta.totalPages} onClick={() => setPage((value) => value + 1)}>بعدی</button></div>
+      <div className="mt-4 flex items-center justify-between text-sm">
+        <button
+          className="admin-button"
+          disabled={page <= 1}
+          onClick={() => setPage((value) => value - 1)}
+        >
+          قبلی
+        </button>
+        <span>
+          {meta.total.toLocaleString("fa-IR")} مورد · صفحه{" "}
+          {page.toLocaleString("fa-IR")} از{" "}
+          {meta.totalPages.toLocaleString("fa-IR")}
+        </span>
+        <button
+          className="admin-button"
+          disabled={page >= meta.totalPages}
+          onClick={() => setPage((value) => value + 1)}
+        >
+          بعدی
+        </button>
+      </div>
 
       <AdminModal
         open={Boolean(editing)}
@@ -254,23 +324,35 @@ export default function AdminUsersPage() {
         <div className="admin-form-grid two">
           {(
             [
-              ['firstName', 'نام'],
-              ['lastName', 'نام خانوادگی'],
-              ['companyName', 'نام شرکت'],
-              ['phone', 'تلفن'],
-              ['email', 'ایمیل'],
-              ['password', 'رمز عبور'],
+              ["firstName", "نام"],
+              ["lastName", "نام خانوادگی"],
+              ["companyName", "نام شرکت"],
+              ["phone", "تلفن"],
+              ["email", "ایمیل"],
+              ["password", "رمز عبور"],
             ] as const
           ).map(([key, label]) => (
             <label key={key} className="block text-start">
               <span className="ops-login__label">{label}</span>
               <input
-                required={key !== 'phone'}
-                type={key === 'password' ? 'password' : key === 'email' ? 'email' : 'text'}
+                required={key !== "phone"}
+                type={
+                  key === "password"
+                    ? "password"
+                    : key === "email"
+                      ? "email"
+                      : "text"
+                }
                 className="ops-field"
-                dir={key === 'email' || key === 'password' || key === 'phone' ? 'ltr' : 'rtl'}
+                dir={
+                  key === "email" || key === "password" || key === "phone"
+                    ? "ltr"
+                    : "rtl"
+                }
                 value={form[key]}
-                onChange={(event) => setForm({ ...form, [key]: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, [key]: event.target.value })
+                }
               />
             </label>
           ))}
@@ -279,7 +361,9 @@ export default function AdminUsersPage() {
             <select
               className="admin-select admin-select--wide"
               value={form.role}
-              onChange={(event) => setForm({ ...form, role: event.target.value })}
+              onChange={(event) =>
+                setForm({ ...form, role: event.target.value })
+              }
             >
               {roleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -294,7 +378,7 @@ export default function AdminUsersPage() {
       <AdminConfirmModal
         open={Boolean(pendingDelete)}
         title="غیرفعال‌سازی کاربر"
-        description={`کاربر «${pendingDelete?.email ?? ''}» غیرفعال شود؟`}
+        description={`کاربر «${pendingDelete?.email ?? ""}» غیرفعال شود؟`}
         confirmLabel="بله، غیرفعال شود"
         busyLabel="در حال غیرفعال‌سازی…"
         busy={deleting}

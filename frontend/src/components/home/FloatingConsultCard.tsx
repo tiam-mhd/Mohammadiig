@@ -1,7 +1,7 @@
-﻿'use client';
+﻿"use client";
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import Link from "next/link";
 
 /** باکس مشاوره شناور — ثابت روی کل صفحه هنگام اسکرول */
 export function FloatingConsultCard() {
@@ -17,7 +17,7 @@ export function FloatingConsultCard() {
 
   return (
     <aside
-      className={`float-card float-card--fixed ${visible ? 'float-card--shown' : ''}`}
+      className={`float-card float-card--fixed ${visible ? "float-card--shown" : ""}`}
       aria-label="مشاوره پروژه"
     >
       <button

@@ -3,33 +3,38 @@
  * نور لبه موس را در کل صفحه دنبال می‌کند؛ بدون تغییر سایز
  */
 
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, {
   ElementType,
   ReactNode,
   useEffect,
   useRef,
   useState,
-} from 'react';
-import { MenuThemeToggle } from '@/components/MenuThemeToggle';
-import { CartBagIcon } from '@/components/icons/CartBagIcon';
-import { useCartStore } from '@/store/cart.store';
+} from "react";
+import { MenuThemeToggle } from "@/components/MenuThemeToggle";
+import { CartBagIcon } from "@/components/icons/CartBagIcon";
+import { useCartStore } from "@/store/cart.store";
 
 const menuItems = [
-  { href: '/products', label: 'محصولات' },
-  { href: '/portfolio', label: 'نمونه‌کارها' },
-  { href: '/projects', label: 'بهره‌برداری' },
-  { href: '/services', label: 'خدمات' },
-  { href: '/spare-parts', label: 'قطعات یدکی' },
-  { href: '/quote-request', label: 'استعلام' },
+  { href: "/products", label: "محصولات" },
+  { href: "/portfolio", label: "نمونه‌کارها" },
+  { href: "/projects", label: "بهره‌برداری" },
+  { href: "/services", label: "خدمات" },
+  { href: "/spare-parts", label: "قطعات یدکی" },
+  { href: "/quote-request", label: "استعلام" },
 ];
 
 function IconMenu({ open }: { open: boolean }) {
   return (
-    <svg className="site-header__icon" viewBox="0 0 24 24" fill="none" aria-hidden>
+    <svg
+      className="site-header__icon"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
       {open ? (
         <path
           d="M7 7l10 10M17 7L7 17"
@@ -39,9 +44,24 @@ function IconMenu({ open }: { open: boolean }) {
         />
       ) : (
         <>
-          <path d="M6 8h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          <path d="M6 12h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-          <path d="M6 16h12" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+          <path
+            d="M6 8h12"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6 12h12"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
+          <path
+            d="M6 16h12"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+          />
         </>
       )}
     </svg>
@@ -53,15 +73,15 @@ type GlassBubbleProps = {
   onClick?: () => void;
   children: ReactNode;
   as?: ElementType;
-  'aria-label'?: string;
-  'aria-expanded'?: boolean;
+  "aria-label"?: string;
+  "aria-expanded"?: boolean;
 };
 
 function GlassBubble({
-  className = '',
+  className = "",
   onClick,
   children,
-  as: Tag = 'div',
+  as: Tag = "div",
   ...aria
 }: GlassBubbleProps) {
   const ref = useRef<HTMLElement | null>(null);
@@ -74,17 +94,18 @@ function GlassBubble({
       const r = el.getBoundingClientRect();
       const cx = r.left + r.width / 2;
       const cy = r.top + r.height / 2;
-      const angle = (Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI;
-      el.style.setProperty('--glow-angle', `${angle}deg`);
+      const angle =
+        (Math.atan2(e.clientY - cy, e.clientX - cx) * 180) / Math.PI;
+      el.style.setProperty("--glow-angle", `${angle}deg`);
       // فاصله نرمال‌شده برای شدت نور (حتی خارج از المان)
       const dist = Math.hypot(e.clientX - cx, e.clientY - cy);
       const reach = Math.max(r.width, r.height) * 2.8;
       const intensity = Math.max(0.35, 1 - dist / reach);
-      el.style.setProperty('--glow-intensity', intensity.toFixed(3));
+      el.style.setProperty("--glow-intensity", intensity.toFixed(3));
     };
 
-    window.addEventListener('pointermove', track, { passive: true });
-    return () => window.removeEventListener('pointermove', track);
+    window.addEventListener("pointermove", track, { passive: true });
+    return () => window.removeEventListener("pointermove", track);
   }, []);
 
   return (
@@ -92,7 +113,7 @@ function GlassBubble({
       ref={ref as never}
       className={`mig-glass ${className}`.trim()}
       onClick={onClick}
-      type={Tag === 'button' ? 'button' : undefined}
+      type={Tag === "button" ? "button" : undefined}
       {...aria}
     >
       <span className="mig-glass__fill" aria-hidden />
@@ -116,18 +137,18 @@ export const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : '';
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [open]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
+      if (e.key === "Escape") setOpen(false);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   return (
@@ -137,7 +158,7 @@ export const Header: React.FC = () => {
           <GlassBubble
             as="button"
             className="site-header__orb"
-            aria-label={open ? 'بستن منو' : 'باز کردن منو'}
+            aria-label={open ? "بستن منو" : "باز کردن منو"}
             aria-expanded={open}
             onClick={() => setOpen((v) => !v)}
           >
@@ -165,12 +186,12 @@ export const Header: React.FC = () => {
             as="button"
             className="site-header__orb site-header__orb--cart"
             aria-label="سبد خرید"
-            onClick={() => router.push('/cart')}
+            onClick={() => router.push("/cart")}
           >
             <CartBagIcon />
             {cartCount > 0 ? (
               <span className="sp-cart-badge" aria-hidden>
-                {cartCount > 99 ? '۹۹+' : cartCount.toLocaleString('fa-IR')}
+                {cartCount > 99 ? "۹۹+" : cartCount.toLocaleString("fa-IR")}
               </span>
             ) : null}
           </GlassBubble>
@@ -179,7 +200,9 @@ export const Header: React.FC = () => {
 
       <div
         className={`menu-overlay fixed inset-0 z-40 transition-[opacity,visibility] duration-[900ms] ease-[cubic-bezier(0.22,0.61,0.36,1)] ${
-          open ? 'menu-overlay--open visible opacity-100' : 'invisible opacity-0'
+          open
+            ? "menu-overlay--open visible opacity-100"
+            : "invisible opacity-0"
         }`}
         aria-hidden={!open}
       >
@@ -193,12 +216,12 @@ export const Header: React.FC = () => {
               onClick={() => setOpen(false)}
               className="group min-h-11 text-center"
               style={{
-                transitionDelay: open ? `${140 + i * 70}ms` : '0ms',
+                transitionDelay: open ? `${140 + i * 70}ms` : "0ms",
                 opacity: open ? 1 : 0,
-                transform: open ? 'translateY(0)' : 'translateY(10px)',
-                transitionProperty: 'opacity, transform',
-                transitionDuration: '900ms',
-                transitionTimingFunction: 'cubic-bezier(0.22, 0.61, 0.36, 1)',
+                transform: open ? "translateY(0)" : "translateY(10px)",
+                transitionProperty: "opacity, transform",
+                transitionDuration: "900ms",
+                transitionTimingFunction: "cubic-bezier(0.22, 0.61, 0.36, 1)",
               }}
             >
               <span className="display-section block transition-opacity duration-500 group-hover:opacity-55">
@@ -211,8 +234,8 @@ export const Header: React.FC = () => {
           className="menu-overlay__foot"
           style={{
             opacity: open ? 1 : 0,
-            transition: 'opacity 700ms cubic-bezier(0.22, 0.61, 0.36, 1)',
-            transitionDelay: open ? '420ms' : '0ms',
+            transition: "opacity 700ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+            transitionDelay: open ? "420ms" : "0ms",
           }}
         >
           <MenuThemeToggle />

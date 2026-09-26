@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ProductEditorPage } from '@/components/admin/ProductEditorPage';
+import { ProductEditorPage } from "@/components/admin/ProductEditorPage";
 
 export default function AdminNewProductPage() {
   return <ProductEditorPage />;

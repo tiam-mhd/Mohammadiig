@@ -1,20 +1,16 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-} from '@nestjs/common';
-import { createHash } from 'node:crypto';
-import { existsSync, promises as fs, createReadStream } from 'node:fs';
-import { dirname, extname, join, posix } from 'node:path';
-import { tmpdir } from 'node:os';
-import AdmZip from 'adm-zip';
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
+import { createHash } from "node:crypto";
+import { existsSync, promises as fs, createReadStream } from "node:fs";
+import { dirname, extname, join, posix } from "node:path";
+import { tmpdir } from "node:os";
+import AdmZip from "adm-zip";
 import {
   DataSource,
   EntityTarget,
   ObjectLiteral,
   QueryRunner,
   Repository,
-} from 'typeorm';
+} from "typeorm";
 import {
   ALL_DATASET_KEYS,
   BACKUP_DATASET_MAP,
@@ -23,16 +19,33 @@ import {
   RestoreConflictMode,
   sortDatasetsForClear,
   sortDatasetsForRestore,
-} from './backup.datasets';
-import { normalizeDatasetSelection } from './dto/backup.dto';
-import { ensureDir, normalizeMediaList, resolveMediaRoot, safeJoinMedia, toRelativeMediaPath } from '../media/media-paths';
-import { AuditService } from '../audit/audit.service';
+} from "./backup.datasets";
+import { normalizeDatasetSelection } from "./dto/backup.dto";
+import {
+  ensureDir,
+  normalizeMediaList,
+  resolveMediaRoot,
+  safeJoinMedia,
+  toRelativeMediaPath,
+} from "../media/media-paths";
+import { AuditService } from "../audit/audit.service";
 
-const FORMAT = 'mohammadiig-backup';
+const FORMAT = "mohammadiig-backup";
 const VERSION = 1;
 const MAX_BACKUP_BYTES = 128 * 1024 * 1024;
 const MAX_BACKUP_ENTRY_BYTES = 64 * 1024 * 1024;
-const FORBIDDEN_ARCHIVE_EXTENSIONS = new Set(['.exe', '.dll', '.so', '.sh', '.bat', '.cmd', '.ps1', '.js', '.php', '.py']);
+const FORBIDDEN_ARCHIVE_EXTENSIONS = new Set([
+  ".exe",
+  ".dll",
+  ".so",
+  ".sh",
+  ".bat",
+  ".cmd",
+  ".ps1",
+  ".js",
+  ".php",
+  ".py",
+]);
 
 type BackupManifest = {
   format: typeof FORMAT;
@@ -113,9 +126,10 @@ export class BackupService {
       let total = 0;
       for (const table of dataset.tables) {
         const repo = this.repo(table.entity);
-        const count = table.softDelete && includeSoftDeleted
-          ? await repo.count({ withDeleted: true })
-          : await repo.count();
+        const count =
+          table.softDelete && includeSoftDeleted
+            ? await repo.count({ withDeleted: true })
+            : await repo.count();
         tableCounts[table.name] = count;
         total += count;
       }
@@ -137,18 +151,22 @@ export class BackupService {
     datasets?: string[];
     includeSoftDeleted?: boolean;
     includeMediaFiles?: boolean;
-  }): Promise<{ filePath: string; fileName: string; manifest: BackupManifest }> {
+  }): Promise<{
+    filePath: string;
+    fileName: string;
+    manifest: BackupManifest;
+  }> {
     const selection = normalizeDatasetSelection(options.datasets);
     const keys =
-      selection === 'all'
+      selection === "all"
         ? ALL_DATASET_KEYS
         : sortDatasetsForRestore(selection);
     const includeSoftDeleted = options.includeSoftDeleted !== false;
     const includeMediaFiles = options.includeMediaFiles !== false;
 
     const notes: string[] = [];
-    if (keys.includes('users')) {
-      notes.push('این بک‌آپ شامل هش رمز عبور کاربران است.');
+    if (keys.includes("users")) {
+      notes.push("این بک‌آپ شامل هش رمز عبور کاربران است.");
     }
 
     const payloads: DatasetPayload[] = [];
@@ -161,10 +179,13 @@ export class BackupService {
       let datasetTotal = 0;
       for (const table of def.tables) {
         const repo = this.repo(table.entity);
-        const rows = table.softDelete && includeSoftDeleted
-          ? await repo.find({ withDeleted: true })
-          : await repo.find();
-        const plain = rows.map((row) => this.serializeRow(row as ObjectLiteral));
+        const rows =
+          table.softDelete && includeSoftDeleted
+            ? await repo.find({ withDeleted: true })
+            : await repo.find();
+        const plain = rows.map((row) =>
+          this.serializeRow(row as ObjectLiteral),
+        );
         tables.push({ name: table.name, rows: plain });
         tableCounts[table.name] = plain.length;
         datasetTotal += plain.length;
@@ -181,32 +202,43 @@ export class BackupService {
       counts,
       tableCounts,
       includeSoftDeleted,
-      includeMediaFiles: includeMediaFiles && keys.includes('media'),
+      includeMediaFiles: includeMediaFiles && keys.includes("media"),
       notes: notes.length ? notes : undefined,
     };
 
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileName = `mig-backup-${stamp}.zip`;
     const filePath = join(tmpdir(), fileName);
 
     const zip = new AdmZip();
-    const dataBuffer = Buffer.from(JSON.stringify({ datasets: payloads }), 'utf8');
-    manifest.dataSha256 = createHash('sha256').update(dataBuffer).digest('hex');
-    zip.addFile('manifest.json', Buffer.from(JSON.stringify(manifest, null, 2), 'utf8'));
-    zip.addFile('data.json', dataBuffer);
+    const dataBuffer = Buffer.from(
+      JSON.stringify({ datasets: payloads }),
+      "utf8",
+    );
+    manifest.dataSha256 = createHash("sha256").update(dataBuffer).digest("hex");
+    zip.addFile(
+      "manifest.json",
+      Buffer.from(JSON.stringify(manifest, null, 2), "utf8"),
+    );
+    zip.addFile("data.json", dataBuffer);
 
     if (manifest.includeMediaFiles) {
       const mediaRoot = resolveMediaRoot();
-      const mediaPayload = payloads.find((p) => p.key === 'media');
-      const assetsTable = mediaPayload?.tables.find((t) => t.name === 'media_assets');
+      const mediaPayload = payloads.find((p) => p.key === "media");
+      const assetsTable = mediaPayload?.tables.find(
+        (t) => t.name === "media_assets",
+      );
       for (const row of assetsTable?.rows ?? []) {
-        const relativePath = String(row.relativePath ?? '');
+        const relativePath = String(row.relativePath ?? "");
         if (!relativePath) continue;
         try {
           const abs = safeJoinMedia(mediaRoot, relativePath);
           if (!existsSync(abs)) continue;
           const buffer = await fs.readFile(abs);
-          zip.addFile(`media-files/${relativePath.replace(/\\/g, '/')}`, buffer);
+          zip.addFile(
+            `media-files/${relativePath.replace(/\\/g, "/")}`,
+            buffer,
+          );
         } catch (error) {
           this.logger.warn(`Skip media file ${relativePath}: ${String(error)}`);
         }
@@ -224,7 +256,7 @@ export class BackupService {
       availableDatasets: manifest.datasets.map((key) => ({
         key,
         labelFa: BACKUP_DATASET_MAP[key]?.labelFa ?? key,
-        groupFa: BACKUP_DATASET_MAP[key]?.groupFa ?? 'سایر',
+        groupFa: BACKUP_DATASET_MAP[key]?.groupFa ?? "سایر",
         count: manifest.counts[key] ?? 0,
         inFile: true,
         warningFa: BACKUP_DATASET_MAP[key]?.warningFa ?? null,
@@ -253,12 +285,14 @@ export class BackupService {
     const { manifest, payloads, zip } = this.readArchive(file);
     const selection = normalizeDatasetSelection(options.datasets);
     const requested =
-      selection === 'all'
+      selection === "all"
         ? manifest.datasets
         : selection.filter((k) => manifest.datasets.includes(k));
 
     if (!requested.length) {
-      throw new BadRequestException('هیچ دیتاست معتبری برای بازیابی انتخاب نشده است');
+      throw new BadRequestException(
+        "هیچ دیتاست معتبری برای بازیابی انتخاب نشده است",
+      );
     }
 
     const warnings: string[] = [];
@@ -295,9 +329,12 @@ export class BackupService {
     };
     let safetyBackupPath: string | null = null;
     if (!dryRun) {
-      const safety = await this.createExportArchive({ includeSoftDeleted: true, includeMediaFiles: false });
+      const safety = await this.createExportArchive({
+        includeSoftDeleted: true,
+        includeMediaFiles: false,
+      });
       safetyBackupPath = safety.filePath;
-      report.warnings.push('پیش از بازیابی، یک بک‌آپ ایمنی خودکار ایجاد شد.');
+      report.warnings.push("پیش از بازیابی، یک بک‌آپ ایمنی خودکار ایجاد شد.");
     }
 
     const queryRunner = this.dataSource.createQueryRunner();
@@ -307,21 +344,24 @@ export class BackupService {
     try {
       await this.disableForeignKeys(queryRunner);
 
-      if (mode === 'replace' && !dryRun) {
+      if (mode === "replace" && !dryRun) {
         for (const key of sortDatasetsForClear(ordered)) {
           const def = BACKUP_DATASET_MAP[key];
           for (const table of [...def.tables].reverse()) {
             const stats = this.emptyStats(table.name);
             const repo = queryRunner.manager.getRepository(table.entity);
-            if (key === 'users' && protectCurrentAdmin && currentUserId) {
+            if (key === "users" && protectCurrentAdmin && currentUserId) {
               const deleted = await repo
                 .createQueryBuilder()
                 .delete()
-                .where('id != :id', { id: currentUserId })
+                .where("id != :id", { id: currentUserId })
                 .execute();
               stats.cleared = deleted.affected ?? 0;
             } else {
-              const deleted = await repo.createQueryBuilder().delete().execute();
+              const deleted = await repo
+                .createQueryBuilder()
+                .delete()
+                .execute();
               stats.cleared = deleted.affected ?? 0;
             }
             report.tables.push(stats);
@@ -335,7 +375,9 @@ export class BackupService {
         const def = BACKUP_DATASET_MAP[key];
 
         for (const tableDef of def.tables) {
-          const tableData = payload.tables.find((t) => t.name === tableDef.name);
+          const tableData = payload.tables.find(
+            (t) => t.name === tableDef.name,
+          );
           const rows = tableData?.rows ?? [];
           // Find existing stats from replace clear, or create new
           let stats = report.tables.find((t) => t.table === tableDef.name);
@@ -347,20 +389,22 @@ export class BackupService {
           const repo = queryRunner.manager.getRepository(tableDef.entity);
 
           for (const raw of rows) {
-            const row = this.sanitizeRestoredMediaFields(this.deserializeRow(raw));
-            const id = String(row.id ?? '');
+            const row = this.sanitizeRestoredMediaFields(
+              this.deserializeRow(raw),
+            );
+            const id = String(row.id ?? "");
             if (!id) {
               stats.skipped += 1;
-              stats.errors.push('ردیف بدون شناسه رد شد');
+              stats.errors.push("ردیف بدون شناسه رد شد");
               continue;
             }
 
             if (
-              key === 'users' &&
+              key === "users" &&
               protectCurrentAdmin &&
               currentUserId &&
               id === currentUserId &&
-              mode !== 'skip'
+              mode !== "skip"
             ) {
               // Still allow skip path; for overwrite/replace keep current admin intact
               stats.skipped += 1;
@@ -369,15 +413,18 @@ export class BackupService {
 
             try {
               const existing = tableDef.softDelete
-                ? await repo.findOne({ where: { id } as never, withDeleted: true })
+                ? await repo.findOne({
+                    where: { id } as never,
+                    withDeleted: true,
+                  })
                 : await repo.findOne({ where: { id } as never });
 
               if (dryRun) {
-                if (mode === 'replace') {
+                if (mode === "replace") {
                   stats.inserted += 1;
                 } else if (!existing) {
                   stats.inserted += 1;
-                } else if (mode === 'skip') {
+                } else if (mode === "skip") {
                   stats.skipped += 1;
                 } else {
                   stats.updated += 1;
@@ -388,7 +435,7 @@ export class BackupService {
               if (!existing) {
                 await repo.save(repo.create(row));
                 stats.inserted += 1;
-              } else if (mode === 'skip') {
+              } else if (mode === "skip") {
                 stats.skipped += 1;
               } else {
                 // overwrite or replace (after clear, usually insert path; still handle leftovers)
@@ -405,17 +452,25 @@ export class BackupService {
         }
       }
 
-      if (ordered.includes('media') && restoreMediaFiles && manifest.includeMediaFiles) {
+      if (
+        ordered.includes("media") &&
+        restoreMediaFiles &&
+        manifest.includeMediaFiles
+      ) {
         const mediaRoot = resolveMediaRoot();
-        const mediaPayload = payloads.find((p) => p.key === 'media');
-        const assets = mediaPayload?.tables.find((t) => t.name === 'media_assets')?.rows ?? [];
+        const mediaPayload = payloads.find((p) => p.key === "media");
+        const assets =
+          mediaPayload?.tables.find((t) => t.name === "media_assets")?.rows ??
+          [];
         for (const row of assets) {
-          const relativePath = String(row.relativePath ?? '');
+          const relativePath = String(row.relativePath ?? "");
           if (!relativePath) {
             report.mediaFilesSkipped += 1;
             continue;
           }
-          const entry = zip.getEntry(`media-files/${relativePath.replace(/\\/g, '/')}`);
+          const entry = zip.getEntry(
+            `media-files/${relativePath.replace(/\\/g, "/")}`,
+          );
           if (!entry) {
             report.mediaFilesSkipped += 1;
             continue;
@@ -454,11 +509,19 @@ export class BackupService {
     }
 
     if (!options.dryRun && options.currentUserId) {
-      await AuditService.record(this.dataSource.manager, { userId: options.currentUserId }, 'backup.restored', 'backup', manifest.createdAt, null, {
-        datasets: report.datasets,
-        tables: report.tables.length,
-        mediaFilesRestored: report.mediaFilesRestored,
-      });
+      await AuditService.record(
+        this.dataSource.manager,
+        { userId: options.currentUserId },
+        "backup.restored",
+        "backup",
+        manifest.createdAt,
+        null,
+        {
+          datasets: report.datasets,
+          tables: report.tables.length,
+          mediaFilesRestored: report.mediaFilesRestored,
+        },
+      );
     }
     return report;
   }
@@ -481,59 +544,78 @@ export class BackupService {
     zip: AdmZip;
   } {
     if (!file?.buffer?.length) {
-      throw new BadRequestException('فایل بک‌آپ ارسال نشده است');
+      throw new BadRequestException("فایل بک‌آپ ارسال نشده است");
     }
     if (file.size > MAX_BACKUP_BYTES || file.buffer.length > MAX_BACKUP_BYTES) {
-      throw new BadRequestException('حجم فایل بک‌آپ بیشتر از حد مجاز است');
+      throw new BadRequestException("حجم فایل بک‌آپ بیشتر از حد مجاز است");
     }
     let zip: AdmZip;
     try {
       zip = new AdmZip(file.buffer);
     } catch {
-      throw new BadRequestException('فایل ZIP نامعتبر است');
+      throw new BadRequestException("فایل ZIP نامعتبر است");
     }
 
     let totalUncompressed = 0;
     for (const entry of zip.getEntries()) {
-      const normalized = posix.normalize(entry.entryName.replace(/\\/g, '/'));
-      if (normalized.startsWith('../') || normalized.startsWith('/') || normalized !== entry.entryName.replace(/\\/g, '/')) {
-        throw new BadRequestException('مسیر یکی از فایل‌های ZIP ناامن است');
+      const normalized = posix.normalize(entry.entryName.replace(/\\/g, "/"));
+      if (
+        normalized.startsWith("../") ||
+        normalized.startsWith("/") ||
+        normalized !== entry.entryName.replace(/\\/g, "/")
+      ) {
+        throw new BadRequestException("مسیر یکی از فایل‌های ZIP ناامن است");
       }
-      if (entry.header.size > MAX_BACKUP_ENTRY_BYTES) throw new BadRequestException('یکی از فایل‌های داخل ZIP بیش از حد بزرگ است');
-      if (FORBIDDEN_ARCHIVE_EXTENSIONS.has(extname(normalized).toLowerCase())) throw new BadRequestException('فایل اجرایی داخل ZIP مجاز نیست');
+      if (entry.header.size > MAX_BACKUP_ENTRY_BYTES)
+        throw new BadRequestException(
+          "یکی از فایل‌های داخل ZIP بیش از حد بزرگ است",
+        );
+      if (FORBIDDEN_ARCHIVE_EXTENSIONS.has(extname(normalized).toLowerCase()))
+        throw new BadRequestException("فایل اجرایی داخل ZIP مجاز نیست");
       totalUncompressed += entry.header.size;
-      if (totalUncompressed > MAX_BACKUP_BYTES * 2) throw new BadRequestException('حجم محتوای ZIP بیش از حد مجاز است');
+      if (totalUncompressed > MAX_BACKUP_BYTES * 2)
+        throw new BadRequestException("حجم محتوای ZIP بیش از حد مجاز است");
     }
 
-    const manifestEntry = zip.getEntry('manifest.json');
-    const dataEntry = zip.getEntry('data.json');
+    const manifestEntry = zip.getEntry("manifest.json");
+    const dataEntry = zip.getEntry("data.json");
     if (!manifestEntry || !dataEntry) {
-      throw new BadRequestException('ساختار بک‌آپ ناقص است (manifest/data)');
+      throw new BadRequestException("ساختار بک‌آپ ناقص است (manifest/data)");
     }
 
     let manifest: BackupManifest;
     let payloads: DatasetPayload[];
     try {
-      manifest = JSON.parse(manifestEntry.getData().toString('utf8')) as BackupManifest;
+      manifest = JSON.parse(
+        manifestEntry.getData().toString("utf8"),
+      ) as BackupManifest;
       const dataBuffer = dataEntry.getData();
-      if (manifest.dataSha256 && createHash('sha256').update(dataBuffer).digest('hex') !== manifest.dataSha256) {
-        throw new BadRequestException('صحت داده‌های بک‌آپ تأیید نشد');
+      if (
+        manifest.dataSha256 &&
+        createHash("sha256").update(dataBuffer).digest("hex") !==
+          manifest.dataSha256
+      ) {
+        throw new BadRequestException("صحت داده‌های بک‌آپ تأیید نشد");
       }
-      const data = JSON.parse(dataBuffer.toString('utf8')) as { datasets: DatasetPayload[] };
+      const data = JSON.parse(dataBuffer.toString("utf8")) as {
+        datasets: DatasetPayload[];
+      };
       payloads = data.datasets ?? [];
     } catch {
-      throw new BadRequestException('خواندن محتوای بک‌آپ ممکن نشد');
+      throw new BadRequestException("خواندن محتوای بک‌آپ ممکن نشد");
     }
 
     if (manifest.format !== FORMAT) {
-      throw new BadRequestException('این فایل بک‌آپ سامانه محمدی نیست');
+      throw new BadRequestException("این فایل بک‌آپ سامانه محمدی نیست");
     }
     if (!manifest.version || manifest.version > VERSION) {
-      throw new BadRequestException('نسخه بک‌آپ پشتیبانی نمی‌شود');
+      throw new BadRequestException("نسخه بک‌آپ پشتیبانی نمی‌شود");
     }
 
     const known = new Set<string>(ALL_DATASET_KEYS);
-    manifest.datasets = (manifest.datasets ?? []).filter((k): k is BackupDatasetKey => known.has(k));
+    manifest.datasets = (manifest.datasets ?? []).filter(
+      (k): k is BackupDatasetKey => known.has(k),
+    );
     payloads = payloads.filter((p) => known.has(p.key));
 
     return { manifest, payloads, zip };
@@ -552,9 +634,11 @@ export class BackupService {
     return out;
   }
 
-  private deserializeRow(row: Record<string, unknown>): Record<string, unknown> {
+  private deserializeRow(
+    row: Record<string, unknown>,
+  ): Record<string, unknown> {
     const out: Record<string, unknown> = { ...row };
-    for (const key of ['createdAt', 'updatedAt', 'deletedAt', 'lastLoginAt']) {
+    for (const key of ["createdAt", "updatedAt", "deletedAt", "lastLoginAt"]) {
       if (out[key] === undefined) continue;
       // keep string dates; TypeORM accepts ISO strings for date columns in most drivers
     }
@@ -562,21 +646,33 @@ export class BackupService {
   }
 
   /** Strip absolute hosts from media columns so restored backups stay portable. */
-  private sanitizeRestoredMediaFields(row: Record<string, unknown>): Record<string, unknown> {
+  private sanitizeRestoredMediaFields(
+    row: Record<string, unknown>,
+  ): Record<string, unknown> {
     const out: Record<string, unknown> = { ...row };
-    for (const key of ['url', 'thumbnailImageUrl', 'coverImageUrl', 'imageUrl', 'fileUrl'] as const) {
-      if (typeof out[key] === 'string') {
+    for (const key of [
+      "url",
+      "thumbnailImageUrl",
+      "coverImageUrl",
+      "imageUrl",
+      "fileUrl",
+    ] as const) {
+      if (typeof out[key] === "string") {
         out[key] = toRelativeMediaPath(out[key] as string) || out[key];
       }
     }
-    for (const key of ['gallery'] as const) {
+    for (const key of ["gallery"] as const) {
       if (Array.isArray(out[key])) {
-        out[key] = normalizeMediaList(out[key] as Array<string | null | undefined>);
-      } else if (typeof out[key] === 'string' && (out[key] as string).trim()) {
+        out[key] = normalizeMediaList(
+          out[key] as Array<string | null | undefined>,
+        );
+      } else if (typeof out[key] === "string" && (out[key] as string).trim()) {
         try {
           const parsed = JSON.parse(out[key] as string) as unknown;
           if (Array.isArray(parsed)) {
-            out[key] = normalizeMediaList(parsed as Array<string | null | undefined>);
+            out[key] = normalizeMediaList(
+              parsed as Array<string | null | undefined>,
+            );
           }
         } catch {
           /* leave as-is */
@@ -587,31 +683,44 @@ export class BackupService {
   }
 
   private emptyStats(table: string): RestoreTableStats {
-    return { table, inserted: 0, updated: 0, skipped: 0, cleared: 0, errors: [] };
+    return {
+      table,
+      inserted: 0,
+      updated: 0,
+      skipped: 0,
+      cleared: 0,
+      errors: [],
+    };
   }
 
   private async disableForeignKeys(queryRunner: QueryRunner) {
-    if (this.dataSource.options.type === 'better-sqlite3' || this.dataSource.options.type === 'sqlite') {
-      await queryRunner.query('PRAGMA foreign_keys = OFF');
+    if (
+      this.dataSource.options.type === "better-sqlite3" ||
+      this.dataSource.options.type === "sqlite"
+    ) {
+      await queryRunner.query("PRAGMA foreign_keys = OFF");
       return;
     }
-    if (this.dataSource.options.type === 'postgres') {
+    if (this.dataSource.options.type === "postgres") {
       await queryRunner.query("SET session_replication_role = 'replica'");
     }
   }
 
   private async enableForeignKeys(queryRunner: QueryRunner) {
-    if (this.dataSource.options.type === 'better-sqlite3' || this.dataSource.options.type === 'sqlite') {
-      await queryRunner.query('PRAGMA foreign_keys = ON');
+    if (
+      this.dataSource.options.type === "better-sqlite3" ||
+      this.dataSource.options.type === "sqlite"
+    ) {
+      await queryRunner.query("PRAGMA foreign_keys = ON");
       return;
     }
-    if (this.dataSource.options.type === 'postgres') {
+    if (this.dataSource.options.type === "postgres") {
       await queryRunner.query("SET session_replication_role = 'origin'");
     }
   }
 
   /** Hash helper kept for future integrity checks */
   checksum(buffer: Buffer): string {
-    return createHash('sha256').update(buffer).digest('hex');
+    return createHash("sha256").update(buffer).digest("hex");
   }
 }

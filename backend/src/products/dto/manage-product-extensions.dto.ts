@@ -9,25 +9,25 @@ import {
   IsString,
   Length,
   Min,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 
-export const PRODUCT_SPEC_CATEGORIES = ['technical', 'appearance'] as const;
+export const PRODUCT_SPEC_CATEGORIES = ["technical", "appearance"] as const;
 export type ProductSpecCategory = (typeof PRODUCT_SPEC_CATEGORIES)[number];
 
 export class ManageProductSpecificationDto {
-  @ApiProperty({ example: 'توان موتور' })
+  @ApiProperty({ example: "توان موتور" })
   @IsString()
   @Length(1, 100)
   specificationKey!: string;
 
-  @ApiProperty({ example: '۲.۵' })
+  @ApiProperty({ example: "۲.۵" })
   @IsString()
   @Length(0, 255)
   specificationValue!: string;
 
-  @ApiPropertyOptional({ example: 'کیلووات' })
+  @ApiPropertyOptional({ example: "کیلووات" })
   @IsOptional()
   @IsString()
   @Length(0, 50)
@@ -67,22 +67,22 @@ export class CopyProductSpecsDto {
 }
 
 export class ManageProductVariantDto {
-  @ApiProperty({ example: 'MIG-BC-STD' })
+  @ApiProperty({ example: "MIG-BC-STD" })
   @IsString()
   @Length(2, 50)
   skuVariant!: string;
 
-  @ApiProperty({ example: 'استاندارد' })
+  @ApiProperty({ example: "استاندارد" })
   @IsString()
   @Length(2, 100)
   variantNameFa!: string;
 
-  @ApiProperty({ example: 'Standard' })
+  @ApiProperty({ example: "Standard" })
   @IsString()
   @Length(2, 100)
   variantNameEn!: string;
 
-  @ApiPropertyOptional({ example: 'STD' })
+  @ApiPropertyOptional({ example: "STD" })
   @IsOptional()
   @IsString()
   @Length(0, 50)

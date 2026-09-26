@@ -1,18 +1,32 @@
-'use client';
+"use client";
 
-import { useCallback } from 'react';
-import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
-import { formatMoney, labelOf, PAYMENT_METHOD, PAYMENT_STATUS } from '@/lib/admin-labels';
-import { fetchAdminPayments, fetchAdminPaymentsPage, PaymentAdminSummary, updatePaymentStatus } from '@/lib/api-client';
+import { useCallback } from "react";
+import { AdminStatusResourcePage } from "@/components/admin/AdminStatusResourcePage";
+import {
+  formatMoney,
+  labelOf,
+  PAYMENT_METHOD,
+  PAYMENT_STATUS,
+} from "@/lib/admin-labels";
+import {
+  fetchAdminPayments,
+  fetchAdminPaymentsPage,
+  PaymentAdminSummary,
+  updatePaymentStatus,
+} from "@/lib/api-client";
 
 const statusOptions = Object.entries(PAYMENT_STATUS)
-  .filter(([value]) => ['pending', 'processing', 'completed', 'failed', 'cancelled'].includes(value))
+  .filter(([value]) =>
+    ["pending", "processing", "completed", "failed", "cancelled"].includes(
+      value,
+    ),
+  )
   .map(([value, label]) => ({ value, label }));
 
 export default function AdminPaymentsPage() {
   const searchText = useCallback(
     (item: PaymentAdminSummary) =>
-      `${item.invoiceId} ${item.paymentMethod} ${item.paymentStatus} ${item.transactionId ?? ''} ${PAYMENT_STATUS[item.paymentStatus] ?? ''}`,
+      `${item.invoiceId} ${item.paymentMethod} ${item.paymentStatus} ${item.transactionId ?? ""} ${PAYMENT_STATUS[item.paymentStatus] ?? ""}`,
     [],
   );
 
@@ -21,26 +35,27 @@ export default function AdminPaymentsPage() {
       eyebrow="مالی"
       title="پرداخت‌ها"
       resourceLabel="پرداخت"
-      headers={['فاکتور', 'مبلغ', 'روش پرداخت', 'پیگیری']}
+      headers={["فاکتور", "مبلغ", "روش پرداخت", "پیگیری"]}
       columns={[
         {
-          header: 'فاکتور',
+          header: "فاکتور",
           cell: (item) => (
             <span className="text-xs" dir="ltr">
               {item.invoiceId.slice(0, 10)}…
             </span>
           ),
         },
-        { header: 'مبلغ', cell: (item) => formatMoney(item.amount) },
+        { header: "مبلغ", cell: (item) => formatMoney(item.amount) },
         {
-          header: 'روش',
-          cell: (item) => labelOf(PAYMENT_METHOD, item.paymentMethod, item.paymentMethod),
+          header: "روش",
+          cell: (item) =>
+            labelOf(PAYMENT_METHOD, item.paymentMethod, item.paymentMethod),
         },
         {
-          header: 'پیگیری',
+          header: "پیگیری",
           cell: (item) => (
             <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
-              {item.transactionId ?? '—'}
+              {item.transactionId ?? "—"}
             </span>
           ),
         },

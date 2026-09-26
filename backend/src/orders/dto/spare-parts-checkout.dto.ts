@@ -1,4 +1,4 @@
-import { Type, Transform } from 'class-transformer';
+import { Type, Transform } from "class-transformer";
 import {
   ArrayMinSize,
   IsArray,
@@ -9,8 +9,8 @@ import {
   Length,
   Min,
   ValidateNested,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class SparePartCheckoutItemDto {
   @ApiProperty()
@@ -34,7 +34,11 @@ export class CheckoutAddressDto {
   @ApiProperty()
   @IsString()
   @Length(8, 20)
-  @Transform(({ value }) => String(value ?? '').replace(/\s+/g, '').trim())
+  @Transform(({ value }) =>
+    String(value ?? "")
+      .replace(/\s+/g, "")
+      .trim(),
+  )
   phone!: string;
 
   @ApiProperty()
@@ -85,9 +89,14 @@ export class SparePartsCheckoutDto {
   @Length(0, 2000)
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'If true, immediately run test payment after creating invoice' })
+  @ApiPropertyOptional({
+    description: "If true, immediately run test payment after creating invoice",
+  })
   @IsOptional()
-  @Transform(({ value }) => value === true || value === 'true' || value === 1 || value === '1')
+  @Transform(
+    ({ value }) =>
+      value === true || value === "true" || value === 1 || value === "1",
+  )
   @IsBoolean()
   payWithTestGateway?: boolean;
 }

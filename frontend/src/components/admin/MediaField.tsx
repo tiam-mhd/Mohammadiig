@@ -1,9 +1,13 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { IconAction, IconClear } from '@/components/admin/AdminIcons';
-import { MediaPicker } from '@/components/admin/MediaPicker';
-import { isVideoMedia, resolveMediaUrl, toRelativeMediaPath } from '@/lib/media';
+import { useState } from "react";
+import { IconAction, IconClear } from "@/components/admin/AdminIcons";
+import { MediaPicker } from "@/components/admin/MediaPicker";
+import {
+  isVideoMedia,
+  resolveMediaUrl,
+  toRelativeMediaPath,
+} from "@/lib/media";
 
 type SingleProps = {
   multiple?: false;
@@ -19,20 +23,20 @@ type MultiProps = {
 
 type MediaFieldProps = {
   label: string;
-  accept?: 'all' | 'image' | 'video';
+  accept?: "all" | "image" | "video";
   placeholder?: string;
 } & (SingleProps | MultiProps);
 
 function looksLikeVideo(url: string): boolean {
   return (
     isVideoMedia(
-      url.includes('.mp4')
-        ? 'video/mp4'
-        : url.includes('.webm')
-          ? 'video/webm'
-          : url.includes('.mov')
-            ? 'video/quicktime'
-            : '',
+      url.includes(".mp4")
+        ? "video/mp4"
+        : url.includes(".webm")
+          ? "video/webm"
+          : url.includes(".mov")
+            ? "video/quicktime"
+            : "",
     ) || /\.(mp4|webm|mov|ogv)(\?|$)/i.test(url)
   );
 }
@@ -40,8 +44,8 @@ function looksLikeVideo(url: string): boolean {
 export function MediaField(props: MediaFieldProps) {
   const {
     label,
-    accept = 'image',
-    placeholder = 'از کتابخانه انتخاب شود یا آدرس وارد شود',
+    accept = "image",
+    placeholder = "از کتابخانه انتخاب شود یا آدرس وارد شود",
   } = props;
   const multiple = props.multiple === true;
   const [open, setOpen] = useState(false);
@@ -57,17 +61,26 @@ export function MediaField(props: MediaFieldProps) {
       props.onChange(props.value.filter((_, i) => i !== index));
       return;
     }
-    props.onChange('');
+    props.onChange("");
   }
 
   function applySelection(selected: string[]) {
-    const normalized = selected.map((item) => toRelativeMediaPath(item)).filter(Boolean);
+    const normalized = selected
+      .map((item) => toRelativeMediaPath(item))
+      .filter(Boolean);
     if (multiple) {
-      const merged = Array.from(new Set([...props.value.map((item) => toRelativeMediaPath(item)).filter(Boolean), ...normalized]));
+      const merged = Array.from(
+        new Set([
+          ...props.value
+            .map((item) => toRelativeMediaPath(item))
+            .filter(Boolean),
+          ...normalized,
+        ]),
+      );
       props.onChange(merged);
       return;
     }
-    props.onChange(normalized[0] ?? '');
+    props.onChange(normalized[0] ?? "");
   }
 
   function commitTypedUrl(raw: string) {
@@ -79,7 +92,11 @@ export function MediaField(props: MediaFieldProps) {
     <div className="media-field block text-start">
       <div className="media-field__head">
         <span className="ops-login__label">{label}</span>
-        <button type="button" className="ops-btn ops-btn--ghost shrink-0" onClick={() => setOpen(true)}>
+        <button
+          type="button"
+          className="ops-btn ops-btn--ghost shrink-0"
+          onClick={() => setOpen(true)}
+        >
           کتابخانه
         </button>
       </div>
@@ -96,7 +113,9 @@ export function MediaField(props: MediaFieldProps) {
       ) : null}
 
       {urls.length > 0 ? (
-        <div className={`media-field__gallery ${multiple ? 'is-multi' : 'is-single'}`}>
+        <div
+          className={`media-field__gallery ${multiple ? "is-multi" : "is-single"}`}
+        >
           {urls.map((url, index) => {
             const src = resolveMediaUrl(url);
             const video = looksLikeVideo(url);

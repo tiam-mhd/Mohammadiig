@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 /** Prevent page scroll jump / white gap when an admin modal is open. */
 export function useAdminModalLock(open: boolean) {
@@ -16,11 +16,11 @@ export function useAdminModalLock(open: boolean) {
       insetInline: document.body.style.insetInline,
     };
 
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
+    document.body.style.overflow = "hidden";
+    document.body.style.position = "fixed";
     document.body.style.top = `-${scrollY}px`;
-    document.body.style.width = '100%';
-    document.body.style.insetInline = '0';
+    document.body.style.width = "100%";
+    document.body.style.insetInline = "0";
 
     return () => {
       document.body.style.overflow = previous.overflow;
@@ -36,6 +36,6 @@ export function useAdminModalLock(open: boolean) {
 /** True when a nested overlay (media picker / lightbox) should own Escape. */
 export function isNestedAdminOverlayOpen(): boolean {
   return Boolean(
-    document.querySelector('.media-picker, .media-library__lightbox'),
+    document.querySelector(".media-picker, .media-library__lightbox"),
   );
 }

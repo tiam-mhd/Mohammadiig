@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
-import type { AdminFilterOption } from '@/hooks/useAdminList';
+import { ReactNode } from "react";
+import type { AdminFilterOption } from "@/hooks/useAdminList";
 import {
   IconAction,
   IconClear,
   IconFilter,
   IconPlus,
   IconSearch,
-} from '@/components/admin/AdminIcons';
+} from "@/components/admin/AdminIcons";
 
 type FilterField = {
   key: string;
@@ -24,7 +24,7 @@ export function AdminToolbar({
   onToggleFilters,
   activeFilterCount,
   onAdd,
-  addLabel = 'افزودن',
+  addLabel = "افزودن",
   extraActions,
   children,
 }: {
@@ -53,12 +53,14 @@ export function AdminToolbar({
 
           <IconAction
             label="فیلتر پیشرفته"
-            tone={filtersOpen || activeFilterCount > 0 ? 'primary' : 'ghost'}
+            tone={filtersOpen || activeFilterCount > 0 ? "primary" : "ghost"}
             onClick={onToggleFilters}
           >
             <IconFilter />
             {activeFilterCount > 0 ? (
-              <span className="admin-toolbar__badge">{activeFilterCount.toLocaleString('fa-IR')}</span>
+              <span className="admin-toolbar__badge">
+                {activeFilterCount.toLocaleString("fa-IR")}
+              </span>
             ) : null}
           </IconAction>
         </div>
@@ -106,7 +108,7 @@ export function AdminFilterBar({
               <span className="ops-login__label">{field.label}</span>
               <select
                 className="admin-select admin-select--wide"
-                value={values[field.key] ?? 'all'}
+                value={values[field.key] ?? "all"}
                 onChange={(event) => onChange(field.key, event.target.value)}
               >
                 <option value="all">همه</option>

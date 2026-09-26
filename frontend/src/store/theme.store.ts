@@ -3,10 +3,10 @@
  * Public site light/dark preference (persisted).
  */
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = "light" | "dark" | "system";
 
 interface ThemeStore {
   mode: ThemeMode;
@@ -16,22 +16,22 @@ interface ThemeStore {
 }
 
 function applyDomTheme(mode: ThemeMode): boolean {
-  if (typeof document === 'undefined') return mode !== 'light';
+  if (typeof document === "undefined") return mode !== "light";
   const dark =
-    mode === 'dark' ||
-    (mode === 'system' &&
-      typeof window !== 'undefined' &&
-      window.matchMedia('(prefers-color-scheme: dark)').matches);
+    mode === "dark" ||
+    (mode === "system" &&
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches);
   const html = document.documentElement;
-  html.classList.toggle('dark', dark);
-  html.style.colorScheme = dark ? 'dark' : 'light';
+  html.classList.toggle("dark", dark);
+  html.style.colorScheme = dark ? "dark" : "light";
   return dark;
 }
 
 export const useThemeStore = create<ThemeStore>()(
   persist(
     (set, get) => ({
-      mode: 'dark',
+      mode: "dark",
       isDark: true,
 
       setMode: (mode: ThemeMode) => {
@@ -40,22 +40,22 @@ export const useThemeStore = create<ThemeStore>()(
       },
 
       toggleTheme: () => {
-        const next = get().isDark || get().mode === 'dark' ? 'light' : 'dark';
+        const next = get().isDark || get().mode === "dark" ? "light" : "dark";
         get().setMode(next);
       },
     }),
     {
-      name: 'theme-store',
+      name: "theme-store",
       partialize: (state) => ({ mode: state.mode }),
       onRehydrateStorage: () => (state) => {
         if (!state) return;
         // Skip ops routes — ThemeProvider owns those
-        if (typeof window !== 'undefined') {
+        if (typeof window !== "undefined") {
           const p = window.location.pathname;
-          if (p === '/admin' || p.startsWith('/admin/')) return;
+          if (p === "/admin" || p.startsWith("/admin/")) return;
         }
         state.setMode(state.mode);
       },
-    }
-  )
+    },
+  ),
 );

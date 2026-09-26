@@ -1,8 +1,14 @@
-'use client';
+"use client";
 
-import { ButtonHTMLAttributes, ReactNode } from 'react';
+import { ButtonHTMLAttributes, ReactNode } from "react";
 
-export function AdminIcon({ children, className = '' }: { children: ReactNode; className?: string }) {
+export function AdminIcon({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <svg
       className={`admin-icon ${className}`.trim()}
@@ -191,16 +197,16 @@ export function IconVideo() {
 
 type IconActionProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   label: string;
-  tone?: 'default' | 'danger' | 'primary' | 'ghost';
+  tone?: "default" | "danger" | "primary" | "ghost";
   children: ReactNode;
 };
 
 export function IconAction({
   label,
-  tone = 'default',
+  tone = "default",
   children,
-  className = '',
-  type = 'button',
+  className = "",
+  type = "button",
   ...props
 }: IconActionProps) {
   return (

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ServiceEditorPage } from '@/components/admin/ServiceEditorPage';
+import { ServiceEditorPage } from "@/components/admin/ServiceEditorPage";
 
 export default function AdminNewServicePage() {
   return <ServiceEditorPage />;

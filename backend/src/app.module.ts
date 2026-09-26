@@ -1,37 +1,41 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { environmentValidationSchema } from './config/env.validation';
-import { DatabaseModule } from './database.module';
-import { HealthController } from './health.controller';
-import { ProductsModule } from './products/products.module';
-import { AuthModule } from './auth/auth.module';
-import { CustomersModule } from './customers/customers.module';
-import { QuotationsModule } from './quotations/quotations.module';
-import { OrdersModule } from './orders/orders.module';
-import { InvoicesModule } from './invoices/invoices.module';
-import { PaymentsModule } from './payments/payments.module';
-import { ProjectsModule } from './projects/projects.module';
-import { PortfolioModule } from './portfolio/portfolio.module';
-import { ServicesModule } from './services/services.module';
-import { AttachmentsModule } from './attachments/attachments.module';
-import { MediaModule } from './media/media.module';
-import { UsersModule } from './users/users.module';
-import { BackupModule } from './backup/backup.module';
-import { AuditModule } from './audit/audit.module';
-import { DashboardController } from './dashboard.controller';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UserEntity } from './auth/user.entity';
-import { CustomerEntity } from './customers/customer.entity';
-import { ProductEntity } from './products/product.entity';
-import { CategoryEntity } from './products/category.entity';
-import { QuotationEntity } from './quotations/quotation.entity';
-import { OrderEntity } from './orders/order.entity';
-import { InvoiceEntity } from './invoices/invoice.entity';
-import { PaymentEntity } from './payments/payment.entity';
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { environmentValidationSchema } from "./config/env.validation";
+import { DatabaseModule } from "./database.module";
+import { HealthController } from "./health.controller";
+import { ProductsModule } from "./products/products.module";
+import { AuthModule } from "./auth/auth.module";
+import { CustomersModule } from "./customers/customers.module";
+import { QuotationsModule } from "./quotations/quotations.module";
+import { OrdersModule } from "./orders/orders.module";
+import { InvoicesModule } from "./invoices/invoices.module";
+import { PaymentsModule } from "./payments/payments.module";
+import { ProjectsModule } from "./projects/projects.module";
+import { PortfolioModule } from "./portfolio/portfolio.module";
+import { ServicesModule } from "./services/services.module";
+import { AttachmentsModule } from "./attachments/attachments.module";
+import { MediaModule } from "./media/media.module";
+import { UsersModule } from "./users/users.module";
+import { BackupModule } from "./backup/backup.module";
+import { AuditModule } from "./audit/audit.module";
+import { DashboardController } from "./dashboard.controller";
+import { TypeOrmModule } from "@nestjs/typeorm";
+import { UserEntity } from "./auth/user.entity";
+import { CustomerEntity } from "./customers/customer.entity";
+import { ProductEntity } from "./products/product.entity";
+import { CategoryEntity } from "./products/category.entity";
+import { QuotationEntity } from "./quotations/quotation.entity";
+import { OrderEntity } from "./orders/order.entity";
+import { InvoiceEntity } from "./invoices/invoice.entity";
+import { PaymentEntity } from "./payments/payment.entity";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, cache: true, validationSchema: environmentValidationSchema }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      cache: true,
+      validationSchema: environmentValidationSchema,
+    }),
     DatabaseModule,
     ProductsModule,
     AuthModule,
@@ -48,7 +52,16 @@ import { PaymentEntity } from './payments/payment.entity';
     UsersModule,
     BackupModule,
     AuditModule,
-    TypeOrmModule.forFeature([UserEntity, CustomerEntity, ProductEntity, CategoryEntity, QuotationEntity, OrderEntity, InvoiceEntity, PaymentEntity]),
+    TypeOrmModule.forFeature([
+      UserEntity,
+      CustomerEntity,
+      ProductEntity,
+      CategoryEntity,
+      QuotationEntity,
+      OrderEntity,
+      InvoiceEntity,
+      PaymentEntity,
+    ]),
   ],
   controllers: [HealthController, DashboardController],
 })

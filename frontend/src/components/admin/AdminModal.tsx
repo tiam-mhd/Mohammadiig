@@ -1,9 +1,12 @@
-'use client';
+"use client";
 
-import { FormEvent, ReactNode, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { IconAction, IconClear } from '@/components/admin/AdminIcons';
-import { isNestedAdminOverlayOpen, useAdminModalLock } from '@/hooks/useAdminModalLock';
+import { FormEvent, ReactNode, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { IconAction, IconClear } from "@/components/admin/AdminIcons";
+import {
+  isNestedAdminOverlayOpen,
+  useAdminModalLock,
+} from "@/hooks/useAdminModalLock";
 
 export function AdminModal({
   open,
@@ -11,7 +14,7 @@ export function AdminModal({
   description,
   onClose,
   onSubmit,
-  submitLabel = 'ذخیره',
+  submitLabel = "ذخیره",
   children,
   busy = false,
 }: {
@@ -29,22 +32,26 @@ export function AdminModal({
   useEffect(() => {
     if (!open) return;
     function onKey(event: KeyboardEvent) {
-      if (event.key !== 'Escape' || busy) return;
+      if (event.key !== "Escape" || busy) return;
       if (isNestedAdminOverlayOpen()) return;
       onClose();
     }
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose, busy]);
 
-  if (!open || typeof document === 'undefined') return null;
+  if (!open || typeof document === "undefined") return null;
 
   const body = (
     <>
       <div className="admin-modal__head text-start">
         <div>
           <h2 className="display-sm">{title}</h2>
-          {description ? <p className="mt-2 text-sm text-[var(--ops-muted)]">{description}</p> : null}
+          {description ? (
+            <p className="mt-2 text-sm text-[var(--ops-muted)]">
+              {description}
+            </p>
+          ) : null}
         </div>
         <IconAction label="بستن" tone="ghost" onClick={onClose} disabled={busy}>
           <IconClear />
@@ -52,12 +59,17 @@ export function AdminModal({
       </div>
       <div className="admin-modal__body">{children}</div>
       <div className="admin-modal__foot">
-        <button type="button" className="ops-btn ops-btn--ghost" onClick={onClose} disabled={busy}>
+        <button
+          type="button"
+          className="ops-btn ops-btn--ghost"
+          onClick={onClose}
+          disabled={busy}
+        >
           انصراف
         </button>
         {onSubmit ? (
           <button type="submit" className="ops-btn" disabled={busy}>
-            {busy ? 'در حال ذخیره…' : submitLabel}
+            {busy ? "در حال ذخیره…" : submitLabel}
           </button>
         ) : null}
       </div>
@@ -65,8 +77,18 @@ export function AdminModal({
   );
 
   return createPortal(
-    <div className="admin-modal" role="dialog" aria-modal="true" aria-label={title}>
-      <button type="button" className="admin-modal__backdrop" aria-label="بستن" onClick={onClose} />
+    <div
+      className="admin-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <button
+        type="button"
+        className="admin-modal__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
       {onSubmit ? (
         <form className="admin-modal__panel" onSubmit={onSubmit}>
           {body}

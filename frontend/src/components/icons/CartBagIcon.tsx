@@ -1,5 +1,9 @@
 /** Same bag/shop glyph used in the site header cart orb. */
-export function CartBagIcon({ className = 'site-header__icon' }: { className?: string }) {
+export function CartBagIcon({
+  className = "site-header__icon",
+}: {
+  className?: string;
+}) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
@@ -18,7 +22,11 @@ export function CartBagIcon({ className = 'site-header__icon' }: { className?: s
   );
 }
 
-export function IconPreview({ className = 'sp-action-icon' }: { className?: string }) {
+export function IconPreview({
+  className = "sp-action-icon",
+}: {
+  className?: string;
+}) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path
@@ -32,7 +40,11 @@ export function IconPreview({ className = 'sp-action-icon' }: { className?: stri
   );
 }
 
-export function IconDetails({ className = 'sp-action-icon' }: { className?: string }) {
+export function IconDetails({
+  className = "sp-action-icon",
+}: {
+  className?: string;
+}) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden>
       <path

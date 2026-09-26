@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useCallback,
@@ -7,8 +7,8 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react';
-import { createPortal } from 'react-dom';
+} from "react";
+import { createPortal } from "react-dom";
 import {
   buildYearRange,
   formatJalali,
@@ -19,7 +19,7 @@ import {
   todayJalali,
   toFaDigits,
   type JalaliParts,
-} from '@/lib/jalali';
+} from "@/lib/jalali";
 
 const ITEM_H = 40;
 const VISIBLE = 5;
@@ -53,19 +53,25 @@ function WheelColumn({ ariaLabel, items, value, onChange }: WheelColumnProps) {
     items.findIndex((item) => item.value === value),
   );
 
-  const scrollToIndex = useCallback((index: number, behavior: ScrollBehavior = 'smooth') => {
-    const el = scrollerRef.current;
-    if (!el) return;
-    ignoreScrollRef.current = true;
-    el.scrollTo({ top: index * ITEM_H, behavior });
-    window.clearTimeout(settleTimerRef.current);
-    settleTimerRef.current = window.setTimeout(() => {
-      ignoreScrollRef.current = false;
-    }, behavior === 'smooth' ? 320 : 50);
-  }, []);
+  const scrollToIndex = useCallback(
+    (index: number, behavior: ScrollBehavior = "smooth") => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      ignoreScrollRef.current = true;
+      el.scrollTo({ top: index * ITEM_H, behavior });
+      window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(
+        () => {
+          ignoreScrollRef.current = false;
+        },
+        behavior === "smooth" ? 320 : 50,
+      );
+    },
+    [],
+  );
 
   useLayoutEffect(() => {
-    scrollToIndex(valueIndex, 'auto');
+    scrollToIndex(valueIndex, "auto");
   }, [valueIndex, items.length, scrollToIndex]);
 
   const commitNearest = useCallback(() => {
@@ -73,11 +79,14 @@ function WheelColumn({ ariaLabel, items, value, onChange }: WheelColumnProps) {
     if (!el || ignoreScrollRef.current) return;
     const list = itemsRef.current;
     if (!list.length) return;
-    const index = Math.max(0, Math.min(list.length - 1, Math.round(el.scrollTop / ITEM_H)));
+    const index = Math.max(
+      0,
+      Math.min(list.length - 1, Math.round(el.scrollTop / ITEM_H)),
+    );
     const targetTop = index * ITEM_H;
     if (Math.abs(el.scrollTop - targetTop) > 0.5) {
       ignoreScrollRef.current = true;
-      el.scrollTo({ top: targetTop, behavior: 'smooth' });
+      el.scrollTo({ top: targetTop, behavior: "smooth" });
       window.clearTimeout(settleTimerRef.current);
       settleTimerRef.current = window.setTimeout(() => {
         ignoreScrollRef.current = false;
@@ -100,23 +109,36 @@ function WheelColumn({ ariaLabel, items, value, onChange }: WheelColumnProps) {
       debounce = window.setTimeout(commitNearest, 80);
     }
 
-    el.addEventListener('scroll', onScroll, { passive: true });
-    el.addEventListener('scrollend', commitNearest);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    el.addEventListener("scrollend", commitNearest);
     return () => {
       window.clearTimeout(debounce);
       window.clearTimeout(settleTimerRef.current);
-      el.removeEventListener('scroll', onScroll);
-      el.removeEventListener('scrollend', commitNearest);
+      el.removeEventListener("scroll", onScroll);
+      el.removeEventListener("scrollend", commitNearest);
     };
   }, [commitNearest]);
 
   return (
     <div className="persian-date-wheel">
       <div className="persian-date-wheel__label">{ariaLabel}</div>
-      <div className="persian-date-wheel__viewport" style={{ height: ITEM_H * VISIBLE }}>
-        <div className="persian-date-wheel__fade persian-date-wheel__fade--top" aria-hidden />
-        <div className="persian-date-wheel__fade persian-date-wheel__fade--bottom" aria-hidden />
-        <div className="persian-date-wheel__highlight" aria-hidden style={{ height: ITEM_H, top: ITEM_H * PAD }} />
+      <div
+        className="persian-date-wheel__viewport"
+        style={{ height: ITEM_H * VISIBLE }}
+      >
+        <div
+          className="persian-date-wheel__fade persian-date-wheel__fade--top"
+          aria-hidden
+        />
+        <div
+          className="persian-date-wheel__fade persian-date-wheel__fade--bottom"
+          aria-hidden
+        />
+        <div
+          className="persian-date-wheel__highlight"
+          aria-hidden
+          style={{ height: ITEM_H, top: ITEM_H * PAD }}
+        />
         <div
           ref={scrollerRef}
           className="persian-date-wheel__scroller"
@@ -124,14 +146,17 @@ function WheelColumn({ ariaLabel, items, value, onChange }: WheelColumnProps) {
           aria-label={ariaLabel}
           tabIndex={0}
           onKeyDown={(event) => {
-            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
             event.preventDefault();
-            const delta = event.key === 'ArrowDown' ? 1 : -1;
-            const nextIndex = Math.max(0, Math.min(items.length - 1, valueIndex + delta));
+            const delta = event.key === "ArrowDown" ? 1 : -1;
+            const nextIndex = Math.max(
+              0,
+              Math.min(items.length - 1, valueIndex + delta),
+            );
             const next = items[nextIndex];
             if (!next) return;
             onChange(next.value);
-            scrollToIndex(nextIndex, 'smooth');
+            scrollToIndex(nextIndex, "smooth");
           }}
         >
           <div style={{ height: ITEM_H * PAD }} aria-hidden />
@@ -143,12 +168,14 @@ function WheelColumn({ ariaLabel, items, value, onChange }: WheelColumnProps) {
                 type="button"
                 role="option"
                 aria-selected={selected}
-                className={`persian-date-wheel__item${selected ? ' is-selected' : ''}`}
+                className={`persian-date-wheel__item${selected ? " is-selected" : ""}`}
                 style={{ height: ITEM_H }}
                 onClick={() => {
                   onChange(item.value);
-                  const index = items.findIndex((entry) => entry.value === item.value);
-                  if (index >= 0) scrollToIndex(index, 'smooth');
+                  const index = items.findIndex(
+                    (entry) => entry.value === item.value,
+                  );
+                  if (index >= 0) scrollToIndex(index, "smooth");
                 }}
               >
                 {item.label}
@@ -166,25 +193,28 @@ type PanelPlacement = {
   top: number;
   left: number;
   width: number;
-  placement: 'above' | 'below';
+  placement: "above" | "below";
 };
 
-function computePlacement(trigger: HTMLElement, panelHeight = PANEL_EST_HEIGHT): PanelPlacement {
+function computePlacement(
+  trigger: HTMLElement,
+  panelHeight = PANEL_EST_HEIGHT,
+): PanelPlacement {
   const rect = trigger.getBoundingClientRect();
   const width = Math.max(rect.width, 280);
   const viewportH = window.innerHeight;
   const viewportW = window.innerWidth;
   const spaceBelow = viewportH - rect.bottom - PANEL_GAP;
   const spaceAbove = rect.top - PANEL_GAP;
-  const placement: 'above' | 'below' =
-    spaceBelow < panelHeight && spaceAbove > spaceBelow ? 'above' : 'below';
+  const placement: "above" | "below" =
+    spaceBelow < panelHeight && spaceAbove > spaceBelow ? "above" : "below";
 
   let left = rect.left;
   if (left + width > viewportW - 8) left = Math.max(8, viewportW - width - 8);
   if (left < 8) left = 8;
 
   const top =
-    placement === 'below'
+    placement === "below"
       ? rect.bottom + PANEL_GAP
       : Math.max(8, rect.top - PANEL_GAP - panelHeight);
 
@@ -195,7 +225,7 @@ export function PersianDatePicker({
   value,
   onChange,
   label,
-  placeholder = 'انتخاب تاریخ شمسی',
+  placeholder = "انتخاب تاریخ شمسی",
   minYear = 1300,
   maxYear,
   allowClear = true,
@@ -213,9 +243,14 @@ export function PersianDatePicker({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const years = useMemo(() => buildYearRange(minYear, maxYear), [minYear, maxYear]);
+  const years = useMemo(
+    () => buildYearRange(minYear, maxYear),
+    [minYear, maxYear],
+  );
 
-  const [draft, setDraft] = useState<JalaliParts>(() => isoToJalali(value) ?? todayJalali());
+  const [draft, setDraft] = useState<JalaliParts>(
+    () => isoToJalali(value) ?? todayJalali(),
+  );
 
   const updatePlacement = useCallback(() => {
     if (!triggerRef.current) return;
@@ -243,25 +278,29 @@ export function PersianDatePicker({
 
     function onPointer(event: MouseEvent) {
       const target = event.target as Node;
-      if (rootRef.current?.contains(target) || panelRef.current?.contains(target)) return;
+      if (
+        rootRef.current?.contains(target) ||
+        panelRef.current?.contains(target)
+      )
+        return;
       setOpen(false);
     }
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false);
+      if (event.key === "Escape") setOpen(false);
     }
     function onReposition() {
       updatePlacement();
     }
 
-    document.addEventListener('mousedown', onPointer);
-    document.addEventListener('keydown', onKey);
-    window.addEventListener('resize', onReposition);
-    window.addEventListener('scroll', onReposition, true);
+    document.addEventListener("mousedown", onPointer);
+    document.addEventListener("keydown", onKey);
+    window.addEventListener("resize", onReposition);
+    window.addEventListener("scroll", onReposition, true);
     return () => {
-      document.removeEventListener('mousedown', onPointer);
-      document.removeEventListener('keydown', onKey);
-      window.removeEventListener('resize', onReposition);
-      window.removeEventListener('scroll', onReposition, true);
+      document.removeEventListener("mousedown", onPointer);
+      document.removeEventListener("keydown", onKey);
+      window.removeEventListener("resize", onReposition);
+      window.removeEventListener("scroll", onReposition, true);
     };
   }, [open, updatePlacement]);
 
@@ -309,11 +348,13 @@ export function PersianDatePicker({
     emit(next);
   }
 
-  const display = value ? formatJalali(value, true) : '';
+  const display = value ? formatJalali(value, true) : "";
 
   const portalHost =
-    typeof document !== 'undefined'
-      ? document.querySelector('.admin-modal') ?? document.querySelector('.mig-ops') ?? document.body
+    typeof document !== "undefined"
+      ? (document.querySelector(".admin-modal") ??
+        document.querySelector(".mig-ops") ??
+        document.body)
       : null;
 
   const panel =
@@ -323,7 +364,7 @@ export function PersianDatePicker({
             ref={panelRef}
             className={`persian-date__panel persian-date__panel--float persian-date__panel--${placement.placement}`}
             role="dialog"
-            aria-label={label || 'انتخاب تاریخ شمسی'}
+            aria-label={label || "انتخاب تاریخ شمسی"}
             dir="rtl"
             style={{
               top: placement.top,
@@ -357,7 +398,7 @@ export function PersianDatePicker({
                   type="button"
                   className="ops-btn ops-btn--ghost persian-date__action"
                   onClick={() => {
-                    onChange('');
+                    onChange("");
                     setOpen(false);
                   }}
                 >
@@ -366,7 +407,11 @@ export function PersianDatePicker({
               ) : (
                 <span />
               )}
-              <button type="button" className="ops-btn persian-date__action" onClick={() => setOpen(false)}>
+              <button
+                type="button"
+                className="ops-btn persian-date__action"
+                onClick={() => setOpen(false)}
+              >
                 تأیید
               </button>
             </div>
@@ -381,14 +426,14 @@ export function PersianDatePicker({
       <button
         ref={triggerRef}
         type="button"
-        className={`ops-field persian-date__trigger${open ? ' is-open' : ''}${value ? '' : ' is-empty'}`}
+        className={`ops-field persian-date__trigger${open ? " is-open" : ""}${value ? "" : " is-empty"}`}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={() => setOpen((current) => !current)}
       >
         <span>{display || placeholder}</span>
         <span className="persian-date__chevron" aria-hidden>
-          {open ? '▴' : '▾'}
+          {open ? "▴" : "▾"}
         </span>
       </button>
       {panel}

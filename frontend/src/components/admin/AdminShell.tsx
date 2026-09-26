@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { ReactNode, useEffect, useState } from 'react';
-import { useAuthStore } from '@/store/auth.store';
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { ReactNode, useEffect, useState } from "react";
+import { useAuthStore } from "@/store/auth.store";
 
 type NavItem = {
   href: string;
@@ -36,12 +36,12 @@ function Icon({ children }: { children: ReactNode }) {
 
 const navigation: NavSection[] = [
   {
-    id: 'overview',
-    label: 'اصلی',
+    id: "overview",
+    label: "اصلی",
     items: [
       {
-        href: '/admin',
-        label: 'نمای کلی',
+        href: "/admin",
+        label: "نمای کلی",
         icon: (
           <Icon>
             <rect x="3" y="3" width="7" height="7" rx="1" />
@@ -54,12 +54,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'catalog',
-    label: 'کاتالوگ',
+    id: "catalog",
+    label: "کاتالوگ",
     items: [
       {
-        href: '/admin/products',
-        label: 'محصولات',
+        href: "/admin/products",
+        label: "محصولات",
         icon: (
           <Icon>
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -69,8 +69,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/categories',
-        label: 'دسته‌بندی محصولات',
+        href: "/admin/categories",
+        label: "دسته‌بندی محصولات",
         icon: (
           <Icon>
             <path d="M4 6h6v6H4z" />
@@ -84,12 +84,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'after-sales',
-    label: 'پس از فروش',
+    id: "after-sales",
+    label: "پس از فروش",
     items: [
       {
-        href: '/admin/spare-parts',
-        label: 'قطعات یدکی',
+        href: "/admin/spare-parts",
+        label: "قطعات یدکی",
         icon: (
           <Icon>
             <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -100,8 +100,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/spare-part-categories',
-        label: 'دسته‌بندی قطعات',
+        href: "/admin/spare-part-categories",
+        label: "دسته‌بندی قطعات",
         icon: (
           <Icon>
             <path d="M4 6h6v6H4z" />
@@ -112,8 +112,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/services',
-        label: 'خدمات',
+        href: "/admin/services",
+        label: "خدمات",
         icon: (
           <Icon>
             <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z" />
@@ -123,12 +123,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'sales',
-    label: 'فروش',
+    id: "sales",
+    label: "فروش",
     items: [
       {
-        href: '/admin/customers',
-        label: 'مشتریان',
+        href: "/admin/customers",
+        label: "مشتریان",
         icon: (
           <Icon>
             <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
@@ -139,8 +139,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/quotations',
-        label: 'پیش‌فاکتورها',
+        href: "/admin/quotations",
+        label: "پیش‌فاکتورها",
         icon: (
           <Icon>
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -151,8 +151,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/orders',
-        label: 'سفارش‌ها',
+        href: "/admin/orders",
+        label: "سفارش‌ها",
         icon: (
           <Icon>
             <circle cx="9" cy="20" r="1" />
@@ -164,12 +164,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'showcase',
-    label: 'نمایش عمومی',
+    id: "showcase",
+    label: "نمایش عمومی",
     items: [
       {
-        href: '/admin/portfolio',
-        label: 'نمونه‌کارها',
+        href: "/admin/portfolio",
+        label: "نمونه‌کارها",
         icon: (
           <Icon>
             <rect x="3" y="3" width="18" height="14" rx="1" />
@@ -179,8 +179,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/projects',
-        label: 'بهره‌برداری‌ها',
+        href: "/admin/projects",
+        label: "بهره‌برداری‌ها",
         icon: (
           <Icon>
             <path d="M3 7h7l2 3h9v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
@@ -190,12 +190,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'finance',
-    label: 'مالی',
+    id: "finance",
+    label: "مالی",
     items: [
       {
-        href: '/admin/invoices',
-        label: 'فاکتورها',
+        href: "/admin/invoices",
+        label: "فاکتورها",
         icon: (
           <Icon>
             <path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 3 2V2l-3 2-3-2-3 2-3-2-3 2z" />
@@ -205,8 +205,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/payments',
-        label: 'پرداخت‌ها',
+        href: "/admin/payments",
+        label: "پرداخت‌ها",
         icon: (
           <Icon>
             <rect x="2" y="5" width="20" height="14" rx="2" />
@@ -217,12 +217,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'system',
-    label: 'سامانه',
+    id: "system",
+    label: "سامانه",
     items: [
       {
-        href: '/admin/media',
-        label: 'کتابخانه رسانه',
+        href: "/admin/media",
+        label: "کتابخانه رسانه",
         icon: (
           <Icon>
             <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -232,8 +232,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/attachments',
-        label: 'فایل‌ها',
+        href: "/admin/attachments",
+        label: "فایل‌ها",
         icon: (
           <Icon>
             <path d="M21.4 14.4 14 21.9a4 4 0 0 1-5.7 0L2.1 15.6a4 4 0 0 1 0-5.7l7.5-7.5a4 4 0 0 1 5.7 0l6.1 6.1a3 3 0 0 1 0 4.2z" />
@@ -242,8 +242,8 @@ const navigation: NavSection[] = [
         ),
       },
       {
-        href: '/admin/users',
-        label: 'کاربران',
+        href: "/admin/users",
+        label: "کاربران",
         icon: (
           <Icon>
             <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4z" />
@@ -254,12 +254,12 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'backup',
-    label: 'پشتیبان‌گیری',
+    id: "backup",
+    label: "پشتیبان‌گیری",
     items: [
       {
-        href: '/admin/backup',
-        label: 'پشتیبان و بازیابی',
+        href: "/admin/backup",
+        label: "پشتیبان و بازیابی",
         icon: (
           <Icon>
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -271,11 +271,24 @@ const navigation: NavSection[] = [
     ],
   },
   {
-    id: 'security', label: 'امنیت', items: [{ href: '/admin/audit', label: 'گزارش ممیزی', icon: <Icon><path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z" /><path d="M9 12l2 2 4-4" /></Icon> }],
+    id: "security",
+    label: "امنیت",
+    items: [
+      {
+        href: "/admin/audit",
+        label: "گزارش ممیزی",
+        icon: (
+          <Icon>
+            <path d="M12 3l7 4v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V7l7-4z" />
+            <path d="M9 12l2 2 4-4" />
+          </Icon>
+        ),
+      },
+    ],
   },
 ];
 
-const COLLAPSE_KEY = 'mig-admin-sidebar-collapsed';
+const COLLAPSE_KEY = "mig-admin-sidebar-collapsed";
 
 export function AdminShell({
   children,
@@ -296,7 +309,7 @@ export function AdminShell({
   useEffect(() => {
     setMounted(true);
     try {
-      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === '1');
+      setCollapsed(window.localStorage.getItem(COLLAPSE_KEY) === "1");
     } catch {
       setCollapsed(false);
     }
@@ -304,8 +317,8 @@ export function AdminShell({
 
   useEffect(() => {
     if (!mounted || !hasHydrated) return;
-    if (!accessToken || user?.role !== 'admin') {
-      router.replace('/admin/login');
+    if (!accessToken || user?.role !== "admin") {
+      router.replace("/admin/login");
     }
   }, [mounted, hasHydrated, accessToken, user, router]);
 
@@ -316,9 +329,11 @@ export function AdminShell({
   useEffect(() => {
     if (!mounted) return;
     const frame = window.requestAnimationFrame(() => {
-      const activeLink = document.querySelector<HTMLAnchorElement>('.admin-sidebar__nav .admin-nav-link.is-active');
+      const activeLink = document.querySelector<HTMLAnchorElement>(
+        ".admin-sidebar__nav .admin-nav-link.is-active",
+      );
       if (!activeLink) return;
-      activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+      activeLink.scrollIntoView({ block: "nearest", inline: "nearest" });
       activeLink.focus({ preventScroll: true });
     });
     return () => window.cancelAnimationFrame(frame);
@@ -327,14 +342,14 @@ export function AdminShell({
   useEffect(() => {
     if (!mobileNavOpen) return;
     const previous = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') setMobileNavOpen(false);
+      if (event.key === "Escape") setMobileNavOpen(false);
     }
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = previous;
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("keydown", onKey);
     };
   }, [mobileNavOpen]);
 
@@ -342,7 +357,7 @@ export function AdminShell({
     setCollapsed((current) => {
       const next = !current;
       try {
-        window.localStorage.setItem(COLLAPSE_KEY, next ? '1' : '0');
+        window.localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0");
       } catch {
         /* ignore */
       }
@@ -351,11 +366,11 @@ export function AdminShell({
   }
 
   function isActive(href: string) {
-    if (href === '/admin') return pathname === '/admin';
+    if (href === "/admin") return pathname === "/admin";
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  if (!mounted || !hasHydrated || !accessToken || user?.role !== 'admin') {
+  if (!mounted || !hasHydrated || !accessToken || user?.role !== "admin") {
     return (
       <div className="ops-gate">
         <div className="ops-gate__card">
@@ -368,12 +383,12 @@ export function AdminShell({
 
   function logout() {
     clearSession();
-    router.push('/admin/login');
+    router.push("/admin/login");
   }
 
   return (
     <div
-      className={`admin-shell min-h-svh lg:flex ${collapsed ? 'is-sidebar-collapsed' : ''} ${mobileNavOpen ? 'is-mobile-nav-open' : ''}`}
+      className={`admin-shell min-h-svh lg:flex ${collapsed ? "is-sidebar-collapsed" : ""} ${mobileNavOpen ? "is-mobile-nav-open" : ""}`}
       dir="rtl"
     >
       <button
@@ -384,10 +399,18 @@ export function AdminShell({
         onClick={() => setMobileNavOpen(false)}
       />
 
-      <aside className="admin-sidebar" aria-label="منوی کناری" id="admin-sidebar-nav">
+      <aside
+        className="admin-sidebar"
+        aria-label="منوی کناری"
+        id="admin-sidebar-nav"
+      >
         <div className="admin-sidebar__brand">
           <div className="admin-sidebar__brand-row">
-            <Link href="/admin" className="admin-sidebar__brand-link" title="پنل مدیریت">
+            <Link
+              href="/admin"
+              className="admin-sidebar__brand-link"
+              title="پنل مدیریت"
+            >
               <span className="admin-sidebar__mark">MIG</span>
               <span className="admin-sidebar__brand-text">
                 <span className="admin-sidebar__title">پنل مدیریت</span>
@@ -399,11 +422,23 @@ export function AdminShell({
               className="admin-sidebar__toggle admin-sidebar__toggle--desktop"
               onClick={toggleCollapsed}
               aria-expanded={!collapsed}
-              aria-label={collapsed ? 'باز کردن منو' : 'جمع کردن منو'}
-              title={collapsed ? 'باز کردن منو' : 'جمع کردن منو'}
+              aria-label={collapsed ? "باز کردن منو" : "جمع کردن منو"}
+              title={collapsed ? "باز کردن منو" : "جمع کردن منو"}
             >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                {collapsed ? <path d="M15 6l-6 6 6 6" /> : <path d="M9 6l6 6-6 6" />}
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+              >
+                {collapsed ? (
+                  <path d="M15 6l-6 6 6 6" />
+                ) : (
+                  <path d="M9 6l6 6-6 6" />
+                )}
               </svg>
             </button>
             <button
@@ -412,7 +447,15 @@ export function AdminShell({
               onClick={() => setMobileNavOpen(false)}
               aria-label="بستن منو"
             >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+              >
                 <path d="M18 6L6 18M6 6l12 12" />
               </svg>
             </button>
@@ -428,7 +471,7 @@ export function AdminShell({
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`admin-nav-link ${isActive(item.href) ? 'is-active' : ''}`}
+                    className={`admin-nav-link ${isActive(item.href) ? "is-active" : ""}`}
                     title={item.label}
                     onClick={() => setMobileNavOpen(false)}
                   >
@@ -443,7 +486,9 @@ export function AdminShell({
 
         <div className="admin-sidebar__foot">
           <div className="admin-sidebar__user-block">
-            <p className="admin-sidebar__user">{user?.companyName ?? user?.email}</p>
+            <p className="admin-sidebar__user">
+              {user?.companyName ?? user?.email}
+            </p>
             <p className="admin-sidebar__role">مدیر سیستم</p>
           </div>
           <button
@@ -452,7 +497,14 @@ export function AdminShell({
             className="ops-btn ops-btn--rail admin-sidebar__logout"
             title="خروج از پنل"
           >
-            <svg className="admin-nav-link__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden>
+            <svg
+              className="admin-nav-link__icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.75"
+              aria-hidden
+            >
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
               <path d="M16 17l5-5-5-5" />
               <path d="M21 12H9" />
@@ -473,7 +525,15 @@ export function AdminShell({
               aria-controls="admin-sidebar-nav"
               aria-label="باز کردن منو"
             >
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <svg
+                viewBox="0 0 24 24"
+                width="16"
+                height="16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                aria-hidden
+              >
                 <path d="M4 7h16M4 12h16M4 17h16" />
               </svg>
             </button>

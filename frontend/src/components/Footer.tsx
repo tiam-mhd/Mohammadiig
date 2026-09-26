@@ -2,29 +2,29 @@
  * Footer — luxury close for MIG promotional site
  */
 
-'use client';
+"use client";
 
-import React from 'react';
-import Link from 'next/link';
-import { GlassButton } from '@/components/GlassButton';
+import React from "react";
+import Link from "next/link";
+import { GlassButton } from "@/components/GlassButton";
 
 const explore = [
-  { href: '/products', label: 'محصولات' },
-  { href: '/portfolio', label: 'نمونه‌کارها' },
-  { href: '/projects', label: 'بهره‌برداری' },
-  { href: '/services', label: 'خدمات' },
-  { href: '/spare-parts', label: 'قطعات یدکی' },
+  { href: "/products", label: "محصولات" },
+  { href: "/portfolio", label: "نمونه‌کارها" },
+  { href: "/projects", label: "بهره‌برداری" },
+  { href: "/services", label: "خدمات" },
+  { href: "/spare-parts", label: "قطعات یدکی" },
 ];
 
 const company = [
-  { href: '/quote-request', label: 'درخواست قیمت' },
-  { href: '/auth', label: 'پنل مشتریان' },
-  { href: '/quote-request', label: 'مشاوره همکاری' },
+  { href: "/quote-request", label: "درخواست قیمت" },
+  { href: "/auth", label: "پنل مشتریان" },
+  { href: "/quote-request", label: "مشاوره همکاری" },
 ];
 
 const legal = [
-  { href: '/privacy', label: 'حریم خصوصی' },
-  { href: '/terms', label: 'شرایط استفاده' },
+  { href: "/privacy", label: "حریم خصوصی" },
+  { href: "/terms", label: "شرایط استفاده" },
 ];
 
 export const Footer: React.FC = () => {
@@ -66,7 +66,8 @@ export const Footer: React.FC = () => {
               </p>
             </div>
             <p className="site-footer__brand-text">
-              تولید و تأمین دستگاه‌های تفریحی برای صاحبان شهربازی و مجموعه‌های سرگرمی.
+              تولید و تأمین دستگاه‌های تفریحی برای صاحبان شهربازی و مجموعه‌های
+              سرگرمی.
             </p>
           </div>
 

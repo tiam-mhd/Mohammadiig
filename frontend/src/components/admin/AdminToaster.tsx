@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Toaster } from 'sonner';
+import { Toaster } from "sonner";
 
 export function AdminToaster() {
   return (
@@ -13,9 +13,9 @@ export function AdminToaster() {
       offset={16}
       toastOptions={{
         classNames: {
-          toast: 'admin-toast',
-          title: 'admin-toast__title',
-          closeButton: 'admin-toast__close',
+          toast: "admin-toast",
+          title: "admin-toast__title",
+          closeButton: "admin-toast__close",
         },
       }}
     />

@@ -1,25 +1,29 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
-import { CartBagIcon } from '@/components/icons/CartBagIcon';
-import { SparePartGallery } from '@/components/spare-parts/SparePartGallery';
-import { formatPartPrice } from '@/components/spare-parts/formatSparePartPrice';
-import { fetchSparePart, fetchSpareParts, type SparePart } from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
-import { useCartStore } from '@/store/cart.store';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { CartBagIcon } from "@/components/icons/CartBagIcon";
+import { SparePartGallery } from "@/components/spare-parts/SparePartGallery";
+import { formatPartPrice } from "@/components/spare-parts/formatSparePartPrice";
+import {
+  fetchSparePart,
+  fetchSpareParts,
+  type SparePart,
+} from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
+import { useCartStore } from "@/store/cart.store";
 
 export default function SparePartDetailPage() {
   const params = useParams<{ slug: string }>();
-  const slug = decodeURIComponent(params.slug ?? '');
+  const slug = decodeURIComponent(params.slug ?? "");
 
   const [part, setPart] = useState<SparePart | null>(null);
   const [related, setRelated] = useState<SparePart[]>([]);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [qty, setQty] = useState(1);
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState("");
 
   useEffect(() => {
     if (!slug) return;
@@ -30,7 +34,7 @@ export default function SparePartDetailPage() {
         if (cancelled) return;
         setPart(item);
         setQty(1);
-        setError('');
+        setError("");
         if (item.category) {
           fetchSpareParts({ category: item.category })
             .then((list) => {
@@ -44,7 +48,7 @@ export default function SparePartDetailPage() {
       .catch(() => {
         if (!cancelled) {
           setPart(null);
-          setError('قطعه یافت نشد.');
+          setError("قطعه یافت نشد.");
         }
       })
       .finally(() => {
@@ -57,12 +61,18 @@ export default function SparePartDetailPage() {
 
   useEffect(() => {
     if (!toast) return;
-    const t = window.setTimeout(() => setToast(''), 2200);
+    const t = window.setTimeout(() => setToast(""), 2200);
     return () => window.clearTimeout(t);
   }, [toast]);
 
   const canAdd = useMemo(
-    () => Boolean(part && !part.priceNegotiable && part.stockQuantity > 0 && part.price > 0),
+    () =>
+      Boolean(
+        part &&
+          !part.priceNegotiable &&
+          part.stockQuantity > 0 &&
+          part.price > 0,
+      ),
     [part],
   );
 
@@ -77,11 +87,11 @@ export default function SparePartDetailPage() {
       nameFa: part.nameFa,
       imageUrl: part.imageUrl,
       unitPrice: part.price,
-      currency: part.currency || 'IRR',
+      currency: part.currency || "IRR",
       maxStock: part.stockQuantity,
       quantity: qty,
     });
-    setToast('به سبد اضافه شد');
+    setToast("به سبد اضافه شد");
   }
 
   if (!loaded) {
@@ -99,7 +109,9 @@ export default function SparePartDetailPage() {
       <div className="sp-detail sp-detail--soft bg-canvas">
         <div className="content-shell section-copy pt-28 text-center">
           <p className="caption-up">قطعات یدکی</p>
-          <h1 className="display-feature mt-4 text-ink">{error || 'یافت نشد'}</h1>
+          <h1 className="display-feature mt-4 text-ink">
+            {error || "یافت نشد"}
+          </h1>
           <Link href="/spare-parts" className="btn-pill mt-10 inline-flex">
             بازگشت به فروشگاه
           </Link>
@@ -114,7 +126,10 @@ export default function SparePartDetailPage() {
     <div className="sp-detail sp-detail--soft bg-canvas">
       <div className="sp-shop__glow" aria-hidden />
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/spare-parts" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/spare-parts"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← بازگشت به قطعات
         </Link>
 
@@ -127,16 +142,18 @@ export default function SparePartDetailPage() {
 
           <div className="sp-detail__info text-start">
             <p className="caption-up">{part.partNumber}</p>
-            <h1 className="display-feature mt-3 text-ink md:mt-4">{part.nameFa}</h1>
+            <h1 className="display-feature mt-3 text-ink md:mt-4">
+              {part.nameFa}
+            </h1>
             {part.nameEn ? (
               <p className="mt-2 font-ui text-sm text-muted">{part.nameEn}</p>
             ) : null}
             <p className="sp-detail__price mt-5">{formatPartPrice(part)}</p>
             <p className="caption-up mt-3 text-ink/45">
-              موجودی: {part.stockQuantity.toLocaleString('fa-IR')}
+              موجودی: {part.stockQuantity.toLocaleString("fa-IR")}
               {part.warrantyMonths
-                ? ` · گارانتی ${part.warrantyMonths.toLocaleString('fa-IR')} ماه`
-                : ''}
+                ? ` · گارانتی ${part.warrantyMonths.toLocaleString("fa-IR")} ماه`
+                : ""}
             </p>
 
             {(part.shortDescription || part.description) && (
@@ -147,7 +164,7 @@ export default function SparePartDetailPage() {
 
             {part.compatibleProducts?.length ? (
               <p className="mt-5 font-ui text-sm text-muted">
-                سازگار با: {part.compatibleProducts.join(' · ')}
+                سازگار با: {part.compatibleProducts.join(" · ")}
               </p>
             ) : null}
 
@@ -161,7 +178,7 @@ export default function SparePartDetailPage() {
                 >
                   −
                 </button>
-                <span>{qty.toLocaleString('fa-IR')}</span>
+                <span>{qty.toLocaleString("fa-IR")}</span>
                 <button
                   type="button"
                   disabled={qty >= maxQty}
@@ -180,10 +197,10 @@ export default function SparePartDetailPage() {
                 <CartBagIcon className="sp-action-icon" />
                 <span>
                   {part.priceNegotiable
-                    ? 'قیمت توافقی'
+                    ? "قیمت توافقی"
                     : part.stockQuantity <= 0
-                      ? 'ناموجود'
-                      : 'افزودن به سبد'}
+                      ? "ناموجود"
+                      : "افزودن به سبد"}
                 </span>
               </button>
             </div>
@@ -213,7 +230,7 @@ export default function SparePartDetailPage() {
             {part.weightGrams != null ? (
               <div>
                 <dt>وزن</dt>
-                <dd>{part.weightGrams.toLocaleString('fa-IR')} گرم</dd>
+                <dd>{part.weightGrams.toLocaleString("fa-IR")} گرم</dd>
               </div>
             ) : null}
             {part.dimensions ? (
@@ -225,7 +242,7 @@ export default function SparePartDetailPage() {
             {part.warrantyMonths ? (
               <div>
                 <dt>گارانتی</dt>
-                <dd>{part.warrantyMonths.toLocaleString('fa-IR')} ماه</dd>
+                <dd>{part.warrantyMonths.toLocaleString("fa-IR")} ماه</dd>
               </div>
             ) : null}
             {specs.map((row) => (
@@ -233,7 +250,7 @@ export default function SparePartDetailPage() {
                 <dt>{row.key}</dt>
                 <dd>
                   {row.value}
-                  {row.unit ? ` ${row.unit}` : ''}
+                  {row.unit ? ` ${row.unit}` : ""}
                 </dd>
               </div>
             ))}
@@ -244,11 +261,15 @@ export default function SparePartDetailPage() {
           !part.dimensions &&
           !part.warrantyMonths &&
           specs.length === 0 ? (
-            <p className="mt-4 font-ui text-sm text-muted">مشخصات تکمیلی ثبت نشده است.</p>
+            <p className="mt-4 font-ui text-sm text-muted">
+              مشخصات تکمیلی ثبت نشده است.
+            </p>
           ) : null}
 
           {part.description && part.shortDescription ? (
-            <p className="body-lead mt-8 max-w-2xl text-sm">{part.description}</p>
+            <p className="body-lead mt-8 max-w-2xl text-sm">
+              {part.description}
+            </p>
           ) : null}
         </section>
 
@@ -260,7 +281,11 @@ export default function SparePartDetailPage() {
                 const src = resolveMediaUrl(item.imageUrl);
                 const href = `/spare-parts/${encodeURIComponent(item.slug || item.id)}`;
                 return (
-                  <Link key={item.id} href={href} className="sp-card sp-card--link">
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className="sp-card sp-card--link"
+                  >
                     <div className="sp-card__media-wrap">
                       <div className="sp-card__media">
                         {src ? (

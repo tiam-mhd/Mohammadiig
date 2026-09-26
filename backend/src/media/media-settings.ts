@@ -20,16 +20,42 @@ export const DEFAULT_MEDIA_SETTINGS: MediaCompressionSettings = {
   compressOnUpload: false,
 };
 
-export function clampSettings(input: Partial<MediaCompressionSettings>): MediaCompressionSettings {
-  const quality = Math.min(100, Math.max(1, Math.round(Number(input.quality ?? DEFAULT_MEDIA_SETTINGS.quality))));
-  const maxWidth = Math.min(8000, Math.max(100, Math.round(Number(input.maxWidth ?? DEFAULT_MEDIA_SETTINGS.maxWidth))));
-  const maxHeight = Math.min(8000, Math.max(100, Math.round(Number(input.maxHeight ?? DEFAULT_MEDIA_SETTINGS.maxHeight))));
+export function clampSettings(
+  input: Partial<MediaCompressionSettings>,
+): MediaCompressionSettings {
+  const quality = Math.min(
+    100,
+    Math.max(
+      1,
+      Math.round(Number(input.quality ?? DEFAULT_MEDIA_SETTINGS.quality)),
+    ),
+  );
+  const maxWidth = Math.min(
+    8000,
+    Math.max(
+      100,
+      Math.round(Number(input.maxWidth ?? DEFAULT_MEDIA_SETTINGS.maxWidth)),
+    ),
+  );
+  const maxHeight = Math.min(
+    8000,
+    Math.max(
+      100,
+      Math.round(Number(input.maxHeight ?? DEFAULT_MEDIA_SETTINGS.maxHeight)),
+    ),
+  );
   return {
     quality,
     maxWidth,
     maxHeight,
-    convertToWebp: Boolean(input.convertToWebp ?? DEFAULT_MEDIA_SETTINGS.convertToWebp),
-    stripMetadata: Boolean(input.stripMetadata ?? DEFAULT_MEDIA_SETTINGS.stripMetadata),
-    compressOnUpload: Boolean(input.compressOnUpload ?? DEFAULT_MEDIA_SETTINGS.compressOnUpload),
+    convertToWebp: Boolean(
+      input.convertToWebp ?? DEFAULT_MEDIA_SETTINGS.convertToWebp,
+    ),
+    stripMetadata: Boolean(
+      input.stripMetadata ?? DEFAULT_MEDIA_SETTINGS.stripMetadata,
+    ),
+    compressOnUpload: Boolean(
+      input.compressOnUpload ?? DEFAULT_MEDIA_SETTINGS.compressOnUpload,
+    ),
   };
 }

@@ -1,17 +1,25 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useCallback } from 'react';
-import { AdminStatusResourcePage } from '@/components/admin/AdminStatusResourcePage';
-import { formatDate, formatMoney, INVOICE_STATUS } from '@/lib/admin-labels';
-import { fetchAdminInvoices, fetchAdminInvoicesPage, InvoiceAdminSummary, updateInvoiceStatus } from '@/lib/api-client';
+import Link from "next/link";
+import { useCallback } from "react";
+import { AdminStatusResourcePage } from "@/components/admin/AdminStatusResourcePage";
+import { formatDate, formatMoney, INVOICE_STATUS } from "@/lib/admin-labels";
+import {
+  fetchAdminInvoices,
+  fetchAdminInvoicesPage,
+  InvoiceAdminSummary,
+  updateInvoiceStatus,
+} from "@/lib/api-client";
 
-const statusOptions = Object.entries(INVOICE_STATUS).map(([value, label]) => ({ value, label }));
+const statusOptions = Object.entries(INVOICE_STATUS).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export default function AdminInvoicesPage() {
   const searchText = useCallback(
     (item: InvoiceAdminSummary) =>
-      `${item.invoiceNumber} ${item.customerId} ${item.paymentStatus} ${INVOICE_STATUS[item.paymentStatus] ?? ''}`,
+      `${item.invoiceNumber} ${item.customerId} ${item.paymentStatus} ${INVOICE_STATUS[item.paymentStatus] ?? ""}`,
     [],
   );
 
@@ -20,10 +28,10 @@ export default function AdminInvoicesPage() {
       eyebrow="مالی"
       title="فاکتورها"
       resourceLabel="فاکتور"
-      headers={['شماره فاکتور', 'شناسه مشتری', 'مبلغ', 'سررسید']}
+      headers={["شماره فاکتور", "شناسه مشتری", "مبلغ", "سررسید"]}
       columns={[
         {
-          header: 'شماره',
+          header: "شماره",
           cell: (item) => (
             <Link
               href={`/admin/invoices/${item.id}`}
@@ -34,15 +42,15 @@ export default function AdminInvoicesPage() {
           ),
         },
         {
-          header: 'مشتری',
+          header: "مشتری",
           cell: (item) => (
             <span className="text-xs text-[var(--ops-muted)]" dir="ltr">
               {item.customerId.slice(0, 10)}…
             </span>
           ),
         },
-        { header: 'مبلغ', cell: (item) => formatMoney(item.totalAfterTax) },
-        { header: 'سررسید', cell: (item) => formatDate(item.dueDate) },
+        { header: "مبلغ", cell: (item) => formatMoney(item.totalAfterTax) },
+        { header: "سررسید", cell: (item) => formatDate(item.dueDate) },
       ]}
       statusMap={INVOICE_STATUS}
       statusOptions={statusOptions}

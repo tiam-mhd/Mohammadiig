@@ -1,24 +1,33 @@
-import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Length, Min, ValidateIf } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from "class-transformer";
+import {
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  IsString,
+  Length,
+  Min,
+  ValidateIf,
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ManagePortfolioWorkDto {
-  @ApiProperty({ example: 'سالن-ماشین-برخوردی-تهران' })
+  @ApiProperty({ example: "سالن-ماشین-برخوردی-تهران" })
   @IsString()
   @Length(2, 120)
   slug!: string;
 
-  @ApiProperty({ example: 'سالن ماشین برخوردی تهران' })
+  @ApiProperty({ example: "سالن ماشین برخوردی تهران" })
   @IsString()
   @Length(2, 200)
   titleFa!: string;
 
-  @ApiProperty({ example: 'Tehran Bumper Cars Hall' })
+  @ApiProperty({ example: "Tehran Bumper Cars Hall" })
   @IsString()
   @Length(2, 200)
   titleEn!: string;
 
-  @ApiProperty({ example: 'راه‌اندازی کامل سالن برای یک مجموعه خانوادگی.' })
+  @ApiProperty({ example: "راه‌اندازی کامل سالن برای یک مجموعه خانوادگی." })
   @IsString()
   @Length(2, 500)
   summaryFa!: string;
@@ -34,31 +43,31 @@ export class ManagePortfolioWorkDto {
   @Length(0, 200)
   clientName?: string;
 
-  @ApiPropertyOptional({ example: 'entertainment' })
+  @ApiPropertyOptional({ example: "entertainment" })
   @IsOptional()
   @IsString()
   @Length(2, 80)
   workCategory?: string;
 
-  @ApiPropertyOptional({ example: 'ایران' })
+  @ApiPropertyOptional({ example: "ایران" })
   @IsOptional()
   @IsString()
   @Length(0, 80)
   country?: string;
 
-  @ApiPropertyOptional({ example: 'تهران' })
+  @ApiPropertyOptional({ example: "تهران" })
   @IsOptional()
   @IsString()
   @Length(0, 100)
   province?: string;
 
-  @ApiPropertyOptional({ example: 'تهران' })
+  @ApiPropertyOptional({ example: "تهران" })
   @IsOptional()
   @IsString()
   @Length(0, 100)
   city?: string;
 
-  @ApiPropertyOptional({ example: 'منطقه ۲، مجموعه تفریحی …' })
+  @ApiPropertyOptional({ example: "منطقه ۲، مجموعه تفریحی …" })
   @IsOptional()
   @IsString()
   @Length(0, 500)
@@ -98,7 +107,7 @@ export class ManagePortfolioWorkDto {
   @Length(0, 200)
   areaOrCapacity?: string;
 
-  @ApiPropertyOptional({ description: 'قیمت پایه (ریال) — اختیاری' })
+  @ApiPropertyOptional({ description: "قیمت پایه (ریال) — اختیاری" })
   @IsOptional()
   @ValidateIf((_, value) => value !== null && value !== undefined)
   @Type(() => Number)
@@ -106,7 +115,7 @@ export class ManagePortfolioWorkDto {
   @Min(0)
   priceBase?: number | null;
 
-  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @ApiPropertyOptional({ description: "قیمت توافقی — بدون نمایش مبلغ ریالی" })
   @IsOptional()
   @IsBoolean()
   priceNegotiable?: boolean;

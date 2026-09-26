@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   useCallback,
@@ -7,7 +7,7 @@ import {
   useState,
   type ClipboardEvent,
   type KeyboardEvent,
-} from 'react';
+} from "react";
 
 type OtpInputProps = {
   length?: number;
@@ -20,9 +20,9 @@ type OtpInputProps = {
 
 function toAsciiDigits(raw: string): string {
   return raw
-    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
-    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
-    .replace(/\D/g, '');
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/\D/g, "");
 }
 
 export function OtpInput({
@@ -34,7 +34,7 @@ export function OtpInput({
   autoFocus,
 }: OtpInputProps) {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
-  const digits = Array.from({ length }, (_, i) => value[i] ?? '');
+  const digits = Array.from({ length }, (_, i) => value[i] ?? "");
 
   useEffect(() => {
     if (autoFocus) inputsRef.current[0]?.focus();
@@ -43,7 +43,7 @@ export function OtpInput({
   const setAt = useCallback(
     (index: number, char: string) => {
       const next = digits.map((d, i) => (i === index ? char : d));
-      const joined = next.join('').slice(0, length);
+      const joined = next.join("").slice(0, length);
       onChange(joined);
       if (joined.length === length) onComplete?.(joined);
     },
@@ -53,7 +53,7 @@ export function OtpInput({
   function handleChange(index: number, raw: string) {
     const cleaned = toAsciiDigits(raw);
     if (!cleaned) {
-      setAt(index, '');
+      setAt(index, "");
       return;
     }
     if (cleaned.length > 1) {
@@ -68,17 +68,20 @@ export function OtpInput({
     if (index < length - 1) inputsRef.current[index + 1]?.focus();
   }
 
-  function handleKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === 'Backspace' && !digits[index] && index > 0) {
+  function handleKeyDown(
+    index: number,
+    event: KeyboardEvent<HTMLInputElement>,
+  ) {
+    if (event.key === "Backspace" && !digits[index] && index > 0) {
       inputsRef.current[index - 1]?.focus();
-      setAt(index - 1, '');
+      setAt(index - 1, "");
       event.preventDefault();
     }
-    if (event.key === 'ArrowLeft' && index > 0) {
+    if (event.key === "ArrowLeft" && index > 0) {
       inputsRef.current[index - 1]?.focus();
       event.preventDefault();
     }
-    if (event.key === 'ArrowRight' && index < length - 1) {
+    if (event.key === "ArrowRight" && index < length - 1) {
       inputsRef.current[index + 1]?.focus();
       event.preventDefault();
     }
@@ -86,7 +89,10 @@ export function OtpInput({
 
   function handlePaste(event: ClipboardEvent<HTMLInputElement>) {
     event.preventDefault();
-    const pasted = toAsciiDigits(event.clipboardData.getData('text')).slice(0, length);
+    const pasted = toAsciiDigits(event.clipboardData.getData("text")).slice(
+      0,
+      length,
+    );
     if (!pasted) return;
     onChange(pasted);
     inputsRef.current[Math.min(pasted.length, length) - 1]?.focus();
@@ -103,7 +109,7 @@ export function OtpInput({
           }}
           type="text"
           inputMode="numeric"
-          autoComplete={index === 0 ? 'one-time-code' : 'off'}
+          autoComplete={index === 0 ? "one-time-code" : "off"}
           maxLength={length}
           value={digit}
           disabled={disabled}
@@ -123,7 +129,7 @@ export function formatCountdown(totalSeconds: number): string {
   const safe = Math.max(0, totalSeconds);
   const m = Math.floor(safe / 60);
   const s = safe % 60;
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 /** Restarts whenever `resetKey` changes. */

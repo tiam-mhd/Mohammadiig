@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useEffect, useId } from 'react';
-import { CartBagIcon } from '@/components/icons/CartBagIcon';
-import type { SparePart } from '@/lib/api-client';
-import { resolveMediaUrl } from '@/lib/media';
-import { useCartStore } from '@/store/cart.store';
-import { formatPartPrice } from './formatSparePartPrice';
+import Link from "next/link";
+import { useEffect, useId } from "react";
+import { CartBagIcon } from "@/components/icons/CartBagIcon";
+import type { SparePart } from "@/lib/api-client";
+import { resolveMediaUrl } from "@/lib/media";
+import { useCartStore } from "@/store/cart.store";
+import { formatPartPrice } from "./formatSparePartPrice";
 
 type SparePartPreviewModalProps = {
   part: SparePart | null;
@@ -26,13 +26,13 @@ export function SparePartPreviewModal({
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener('keydown', onKey);
+      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
   }, [open, onClose]);
@@ -41,7 +41,8 @@ export function SparePartPreviewModal({
 
   const imageSrc = resolveMediaUrl(part.imageUrl);
   const detailHref = `/spare-parts/${encodeURIComponent(part.slug || part.id)}`;
-  const canAdd = !part.priceNegotiable && part.stockQuantity > 0 && part.price > 0;
+  const canAdd =
+    !part.priceNegotiable && part.stockQuantity > 0 && part.price > 0;
 
   function addToCart() {
     if (!canAdd) return;
@@ -52,7 +53,7 @@ export function SparePartPreviewModal({
       nameFa: part!.nameFa,
       imageUrl: part!.imageUrl,
       unitPrice: part!.price,
-      currency: part!.currency || 'IRR',
+      currency: part!.currency || "IRR",
       maxStock: part!.stockQuantity,
     });
     onAdded?.();
@@ -60,7 +61,12 @@ export function SparePartPreviewModal({
 
   return (
     <div className="sp-modal" role="presentation">
-      <button type="button" className="sp-modal__backdrop" aria-label="بستن" onClick={onClose} />
+      <button
+        type="button"
+        className="sp-modal__backdrop"
+        aria-label="بستن"
+        onClick={onClose}
+      />
       <div
         className="sp-modal__panel sp-modal__panel--soft sp-preview"
         role="dialog"
@@ -69,7 +75,11 @@ export function SparePartPreviewModal({
       >
         <div className="flex items-start justify-between gap-4">
           <p className="caption-up">{part.partNumber}</p>
-          <button type="button" className="caption-up text-muted hover:text-ink" onClick={onClose}>
+          <button
+            type="button"
+            className="caption-up text-muted hover:text-ink"
+            onClick={onClose}
+          >
             بستن
           </button>
         </div>
@@ -77,7 +87,11 @@ export function SparePartPreviewModal({
         <div className="sp-preview__body mt-6">
           {imageSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageSrc} alt={part.nameFa} className="sp-preview__image" />
+            <img
+              src={imageSrc}
+              alt={part.nameFa}
+              className="sp-preview__image"
+            />
           ) : (
             <div className="sp-preview__image sp-preview__image--empty">
               <span className="font-ui text-xs text-muted">بدون تصویر</span>
@@ -88,12 +102,14 @@ export function SparePartPreviewModal({
             <h2 id={titleId} className="display-sm text-ink">
               {part.nameFa}
             </h2>
-            <p className="mt-3 font-ui text-sm text-ink">{formatPartPrice(part)}</p>
+            <p className="mt-3 font-ui text-sm text-ink">
+              {formatPartPrice(part)}
+            </p>
             <p className="caption-up mt-3 text-ink/45">
-              موجودی: {part.stockQuantity.toLocaleString('fa-IR')}
+              موجودی: {part.stockQuantity.toLocaleString("fa-IR")}
               {part.warrantyMonths
-                ? ` · گارانتی: ${part.warrantyMonths.toLocaleString('fa-IR')} ماه`
-                : ''}
+                ? ` · گارانتی: ${part.warrantyMonths.toLocaleString("fa-IR")} ماه`
+                : ""}
             </p>
             {(part.shortDescription || part.description) && (
               <p className="body-lead mt-4 text-sm">
@@ -111,13 +127,17 @@ export function SparePartPreviewModal({
                 <CartBagIcon className="sp-action-icon" />
                 <span>
                   {part.priceNegotiable
-                    ? 'قیمت توافقی'
+                    ? "قیمت توافقی"
                     : part.stockQuantity <= 0
-                      ? 'ناموجود'
-                      : 'افزودن به سبد'}
+                      ? "ناموجود"
+                      : "افزودن به سبد"}
                 </span>
               </button>
-              <Link href={detailHref} className="btn-pill btn-pill--ghost" onClick={onClose}>
+              <Link
+                href={detailHref}
+                className="btn-pill btn-pill--ghost"
+                onClick={onClose}
+              >
                 مشاهده جزئیات
               </Link>
             </div>

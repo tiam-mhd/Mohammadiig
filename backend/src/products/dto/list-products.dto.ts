@@ -1,6 +1,6 @@
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from "class-transformer";
+import { IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ListProductsDto {
   @ApiPropertyOptional({ minimum: 1, default: 1 })

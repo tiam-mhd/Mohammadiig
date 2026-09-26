@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ReactNode, useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { DataRow, DataTable } from '@/components/admin/DataTable';
+import Link from "next/link";
+import { ReactNode, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { DataRow, DataTable } from "@/components/admin/DataTable";
 import {
   formatDate,
   formatDateTime,
@@ -12,11 +12,11 @@ import {
   INVOICE_STATUS,
   labelOf,
   PAYMENT_METHOD,
-} from '@/lib/admin-labels';
-import { fetchAdminInvoice, InvoiceSummary } from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { resolveMediaUrl } from '@/lib/media';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/admin-labels";
+import { fetchAdminInvoice, InvoiceSummary } from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { resolveMediaUrl } from "@/lib/media";
+import { useAuthStore } from "@/store/auth.store";
 
 function Metabox({ title, children }: { title: string; children: ReactNode }) {
   return (
@@ -29,7 +29,13 @@ function Metabox({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function SnapshotBlock({ title, data }: { title: string; data?: Record<string, string> | null }) {
+function SnapshotBlock({
+  title,
+  data,
+}: {
+  title: string;
+  data?: Record<string, string> | null;
+}) {
   if (!data || Object.keys(data).length === 0) {
     return (
       <Metabox title={title}>
@@ -43,7 +49,7 @@ function SnapshotBlock({ title, data }: { title: string; data?: Record<string, s
         {Object.entries(data).map(([key, value]) => (
           <div key={key}>
             <dt className="text-[var(--ops-muted)]">{key}</dt>
-            <dd className="mt-0.5 text-[var(--ops-ink)]">{value || '—'}</dd>
+            <dd className="mt-0.5 text-[var(--ops-ink)]">{value || "—"}</dd>
           </div>
         ))}
       </dl>
@@ -66,7 +72,7 @@ export default function AdminInvoiceDetailPage() {
         if (!cancelled) setInvoice(result);
       })
       .catch(() => {
-        if (!cancelled) adminToast.error('بارگذاری فاکتور انجام نشد.');
+        if (!cancelled) adminToast.error("بارگذاری فاکتور انجام نشد.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -79,7 +85,9 @@ export default function AdminInvoiceDetailPage() {
   if (!token) {
     return (
       <AdminShell eyebrow="مالی" title="جزئیات فاکتور">
-        <p className="text-sm text-[var(--ops-muted)]">برای مشاهده وارد شوید.</p>
+        <p className="text-sm text-[var(--ops-muted)]">
+          برای مشاهده وارد شوید.
+        </p>
       </AdminShell>
     );
   }
@@ -114,32 +122,34 @@ export default function AdminInvoiceDetailPage() {
           ← بازگشت به فهرست
         </Link>
         <div className="admin-editor__topbar-meta">
-          <span className="admin-badge">{labelOf(INVOICE_STATUS, invoice.paymentStatus)}</span>
+          <span className="admin-badge">
+            {labelOf(INVOICE_STATUS, invoice.paymentStatus)}
+          </span>
         </div>
       </div>
 
       <div className="admin-stat-grid mb-6">
         <div className="admin-stat text-start">
           <p className="caption-up">مبلغ نهایی</p>
-          <p className="admin-stat__value" style={{ fontSize: '1.15rem' }}>
+          <p className="admin-stat__value" style={{ fontSize: "1.15rem" }}>
             {formatMoney(invoice.totalAfterTax)}
           </p>
         </div>
         <div className="admin-stat text-start">
           <p className="caption-up">قبل از مالیات</p>
-          <p className="admin-stat__value" style={{ fontSize: '1.15rem' }}>
+          <p className="admin-stat__value" style={{ fontSize: "1.15rem" }}>
             {formatMoney(invoice.totalBeforeTax)}
           </p>
         </div>
         <div className="admin-stat text-start">
           <p className="caption-up">مالیات</p>
-          <p className="admin-stat__value" style={{ fontSize: '1.15rem' }}>
+          <p className="admin-stat__value" style={{ fontSize: "1.15rem" }}>
             {formatMoney(invoice.taxAmount)}
           </p>
         </div>
         <div className="admin-stat text-start">
           <p className="caption-up">سررسید</p>
-          <p className="admin-stat__value" style={{ fontSize: '1.15rem' }}>
+          <p className="admin-stat__value" style={{ fontSize: "1.15rem" }}>
             {formatDate(invoice.dueDate)}
           </p>
         </div>
@@ -164,13 +174,15 @@ export default function AdminInvoiceDetailPage() {
                     {invoice.orderId}
                   </Link>
                 ) : (
-                  '—'
+                  "—"
                 )}
               </dd>
             </div>
             <div>
               <dt className="text-[var(--ops-muted)]">روش پرداخت</dt>
-              <dd className="mt-1">{labelOf(PAYMENT_METHOD, invoice.paymentMethod)}</dd>
+              <dd className="mt-1">
+                {labelOf(PAYMENT_METHOD, invoice.paymentMethod)}
+              </dd>
             </div>
             <div>
               <dt className="text-[var(--ops-muted)]">زمان پرداخت</dt>
@@ -203,45 +215,55 @@ export default function AdminInvoiceDetailPage() {
                       {customer.companyName ?? customer.customerId}
                     </Link>
                   ) : (
-                    (customer.companyName ?? '—')
+                    (customer.companyName ?? "—")
                   )}
                 </dd>
               </div>
               <div>
                 <dt className="text-[var(--ops-muted)]">مخاطب</dt>
-                <dd className="mt-1">{customer.contactPerson ?? '—'}</dd>
+                <dd className="mt-1">{customer.contactPerson ?? "—"}</dd>
               </div>
               <div>
                 <dt className="text-[var(--ops-muted)]">تلفن</dt>
                 <dd className="mt-1" dir="ltr">
-                  {customer.phone ?? '—'}
+                  {customer.phone ?? "—"}
                 </dd>
               </div>
               <div>
                 <dt className="text-[var(--ops-muted)]">ایمیل</dt>
                 <dd className="mt-1" dir="ltr">
-                  {customer.email ?? '—'}
+                  {customer.email ?? "—"}
                 </dd>
               </div>
               <div>
                 <dt className="text-[var(--ops-muted)]">آدرس</dt>
                 <dd className="mt-1">
-                  {[customer.address, customer.city, customer.country].filter(Boolean).join(' · ') || '—'}
+                  {[customer.address, customer.city, customer.country]
+                    .filter(Boolean)
+                    .join(" · ") || "—"}
                 </dd>
               </div>
             </dl>
           ) : (
-            <p className="text-sm text-[var(--ops-muted)]">اسنپ‌شات مشتری موجود نیست.</p>
+            <p className="text-sm text-[var(--ops-muted)]">
+              اسنپ‌شات مشتری موجود نیست.
+            </p>
           )}
         </Metabox>
 
-        <SnapshotBlock title="ارسال (اسنپ‌شات)" data={invoice.shippingSnapshotJson} />
-        <SnapshotBlock title="صورتحساب (اسنپ‌شات)" data={invoice.billingSnapshotJson} />
+        <SnapshotBlock
+          title="ارسال (اسنپ‌شات)"
+          data={invoice.shippingSnapshotJson}
+        />
+        <SnapshotBlock
+          title="صورتحساب (اسنپ‌شات)"
+          data={invoice.billingSnapshotJson}
+        />
       </div>
 
       <Metabox title="اقلام فاکتور">
         <DataTable
-          headers={['تصویر', 'عنوان', 'SKU', 'تعداد', 'قیمت واحد', 'جمع']}
+          headers={["تصویر", "عنوان", "SKU", "تعداد", "قیمت واحد", "جمع"]}
           isEmpty={!invoice.lineItemsJson?.length}
           emptyText="اقلامی ثبت نشده."
         >
@@ -250,14 +272,20 @@ export default function AdminInvoiceDetailPage() {
               <td>
                 {item.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={resolveMediaUrl(item.imageUrl)} alt="" className="h-10 w-10 rounded object-cover" />
+                  <img
+                    src={resolveMediaUrl(item.imageUrl)}
+                    alt=""
+                    className="h-10 w-10 rounded object-cover"
+                  />
                 ) : (
-                  '—'
+                  "—"
                 )}
               </td>
-              <td className="text-start font-medium text-[var(--ops-ink)]">{item.title}</td>
-              <td dir="ltr">{item.sku || '—'}</td>
-              <td>{item.quantity.toLocaleString('fa-IR')}</td>
+              <td className="text-start font-medium text-[var(--ops-ink)]">
+                {item.title}
+              </td>
+              <td dir="ltr">{item.sku || "—"}</td>
+              <td>{item.quantity.toLocaleString("fa-IR")}</td>
               <td>{formatMoney(item.unitPrice)}</td>
               <td>{formatMoney(item.lineTotal)}</td>
             </DataRow>

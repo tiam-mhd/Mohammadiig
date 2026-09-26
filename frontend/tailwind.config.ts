@@ -1,11 +1,11 @@
-import type { Config } from 'tailwindcss';
-import { themeConfig } from './src/config/theme.config';
+import type { Config } from "tailwindcss";
+import { themeConfig } from "./src/config/theme.config";
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
@@ -29,14 +29,14 @@ const config: Config = {
       borderWidth: themeConfig.borderWidth,
       boxShadow: themeConfig.boxShadow,
       transitionDuration: {
-        75: '75ms',
-        100: '100ms',
-        150: '150ms',
-        200: '200ms',
-        300: '300ms',
-        500: '500ms',
-        700: '700ms',
-        1000: '1000ms',
+        75: "75ms",
+        100: "100ms",
+        150: "150ms",
+        200: "200ms",
+        300: "300ms",
+        500: "500ms",
+        700: "700ms",
+        1000: "1000ms",
       },
       screens: {
         xs: themeConfig.breakpoints.xs,
@@ -44,7 +44,7 @@ const config: Config = {
         md: themeConfig.breakpoints.md,
         lg: themeConfig.breakpoints.lg,
         xl: themeConfig.breakpoints.xl,
-        '2xl': themeConfig.breakpoints['2xl'],
+        "2xl": themeConfig.breakpoints["2xl"],
       },
     },
   },

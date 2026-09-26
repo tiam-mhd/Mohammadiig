@@ -1,5 +1,5 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
 import {
   IsBoolean,
   IsIn,
@@ -9,7 +9,7 @@ import {
   Max,
   MaxLength,
   Min,
-} from 'class-validator';
+} from "class-validator";
 
 export class UpdateMediaDto {
   @ApiPropertyOptional()
@@ -50,10 +50,12 @@ export class UpdateMediaDto {
 }
 
 export class CompressMediaDto {
-  @ApiPropertyOptional({ description: 'replace original file, or save as a new library copy' })
+  @ApiPropertyOptional({
+    description: "replace original file, or save as a new library copy",
+  })
   @IsOptional()
-  @IsIn(['replace', 'copy'])
-  mode?: 'replace' | 'copy';
+  @IsIn(["replace", "copy"])
+  mode?: "replace" | "copy";
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -142,15 +144,15 @@ export class ListMediaQueryDto {
   @IsString()
   folder?: string;
 
-  @ApiPropertyOptional({ description: 'include soft-deleted items' })
+  @ApiPropertyOptional({ description: "include soft-deleted items" })
   @IsOptional()
-  @IsIn(['active', 'trash', 'all'])
-  status?: 'active' | 'trash' | 'all';
+  @IsIn(["active", "trash", "all"])
+  status?: "active" | "trash" | "all";
 
-  @ApiPropertyOptional({ description: 'filter by media kind' })
+  @ApiPropertyOptional({ description: "filter by media kind" })
   @IsOptional()
-  @IsIn(['image', 'video', 'all'])
-  kind?: 'image' | 'video' | 'all';
+  @IsIn(["image", "video", "all"])
+  kind?: "image" | "video" | "all";
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -1,79 +1,90 @@
-import { ConflictException, Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { randomUUID } from 'node:crypto';
-import { In, Repository } from 'typeorm';
-import { ProductEntity } from './product.entity';
-import { AuditActor, AuditService } from '../audit/audit.service';
-import { ProductVariantEntity } from './product-variant.entity';
-import { ProductSpecificationEntity } from './product-specification.entity';
-import { SparePartEntity } from './spare-part.entity';
-import { normalizeMediaList, toRelativeMediaPath } from '../media/media-paths';
-import { ManageSparePartDto, PatchSparePartDto } from './dto/manage-spare-part.dto';
-import { SparePartSpec } from './spare-part.entity';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+  OnModuleInit,
+} from "@nestjs/common";
+import { InjectRepository } from "@nestjs/typeorm";
+import { randomUUID } from "node:crypto";
+import { In, Repository } from "typeorm";
+import { ProductEntity } from "./product.entity";
+import { AuditActor, AuditService } from "../audit/audit.service";
+import { ProductVariantEntity } from "./product-variant.entity";
+import { ProductSpecificationEntity } from "./product-specification.entity";
+import { SparePartEntity } from "./spare-part.entity";
+import { normalizeMediaList, toRelativeMediaPath } from "../media/media-paths";
+import {
+  ManageSparePartDto,
+  PatchSparePartDto,
+} from "./dto/manage-spare-part.dto";
+import { SparePartSpec } from "./spare-part.entity";
 import {
   CopyProductSpecsDto,
   ManageProductSpecificationDto,
   ManageProductVariantDto,
   ProductSpecCategory,
   ReorderProductSpecificationsDto,
-} from './dto/manage-product-extensions.dto';
+} from "./dto/manage-product-extensions.dto";
 
 @Injectable()
 export class ProductExtensionsService implements OnModuleInit {
   constructor(
-    @InjectRepository(ProductVariantEntity) private readonly variants: Repository<ProductVariantEntity>,
+    @InjectRepository(ProductVariantEntity)
+    private readonly variants: Repository<ProductVariantEntity>,
     @InjectRepository(ProductSpecificationEntity)
     private readonly specifications: Repository<ProductSpecificationEntity>,
-    @InjectRepository(SparePartEntity) private readonly spareParts: Repository<SparePartEntity>,
-    @InjectRepository(ProductEntity) private readonly products: Repository<ProductEntity>,
+    @InjectRepository(SparePartEntity)
+    private readonly spareParts: Repository<SparePartEntity>,
+    @InjectRepository(ProductEntity)
+    private readonly products: Repository<ProductEntity>,
   ) {}
 
   async onModuleInit(): Promise<void> {
     const [signature, junior] = await Promise.all([
-      this.products.findOne({ where: { id: '1' } }),
-      this.products.findOne({ where: { id: '2' } }),
+      this.products.findOne({ where: { id: "1" } }),
+      this.products.findOne({ where: { id: "2" } }),
     ]);
     if ((await this.variants.count()) === 0 && signature && junior) {
       await this.variants.save([
         {
           id: randomUUID(),
           productId: signature.id,
-          skuVariant: 'MIG-BC-SIG-STD',
-          variantNameEn: 'Signature Standard',
-          variantNameFa: 'Signature استاندارد',
-          variantCode: 'STD',
+          skuVariant: "MIG-BC-SIG-STD",
+          variantNameEn: "Signature Standard",
+          variantNameFa: "Signature استاندارد",
+          variantCode: "STD",
           specifications: { seats: 1 },
           priceBase: signature.priceBase,
           priceAdjustment: 0,
-          currency: 'IRR',
+          currency: "IRR",
           stockQuantity: 8,
           isActive: true,
         },
         {
           id: randomUUID(),
           productId: signature.id,
-          skuVariant: 'MIG-BC-SIG-PRO',
-          variantNameEn: 'Signature Pro',
-          variantNameFa: 'Signature حرفه‌ای',
-          variantCode: 'PRO',
+          skuVariant: "MIG-BC-SIG-PRO",
+          variantNameEn: "Signature Pro",
+          variantNameFa: "Signature حرفه‌ای",
+          variantCode: "PRO",
           specifications: { seats: 2 },
           priceBase: signature.priceBase,
           priceAdjustment: 7500000,
-          currency: 'IRR',
+          currency: "IRR",
           stockQuantity: 3,
           isActive: true,
         },
         {
           id: randomUUID(),
           productId: junior.id,
-          skuVariant: 'MIG-JUNIOR-RED',
-          variantNameEn: 'Junior Red',
-          variantNameFa: 'Junior قرمز',
-          variantCode: 'RED',
-          specifications: { color: 'red' },
+          skuVariant: "MIG-JUNIOR-RED",
+          variantNameEn: "Junior Red",
+          variantNameFa: "Junior قرمز",
+          variantCode: "RED",
+          specifications: { color: "red" },
           priceBase: junior.priceBase,
           priceAdjustment: 0,
-          currency: 'IRR',
+          currency: "IRR",
           stockQuantity: 12,
           isActive: true,
         },
@@ -84,28 +95,28 @@ export class ProductExtensionsService implements OnModuleInit {
         {
           id: randomUUID(),
           productId: signature.id,
-          specificationKey: 'توان',
-          specificationValue: 'برقی',
+          specificationKey: "توان",
+          specificationValue: "برقی",
           unit: null,
-          specCategory: 'technical',
+          specCategory: "technical",
           displayOrder: 1,
         },
         {
           id: randomUUID(),
           productId: signature.id,
-          specificationKey: 'مخاطب',
-          specificationValue: 'بزرگسال',
+          specificationKey: "مخاطب",
+          specificationValue: "بزرگسال",
           unit: null,
-          specCategory: 'technical',
+          specCategory: "technical",
           displayOrder: 2,
         },
         {
           id: randomUUID(),
           productId: junior.id,
-          specificationKey: 'مخاطب',
-          specificationValue: 'خانوادگی',
+          specificationKey: "مخاطب",
+          specificationValue: "خانوادگی",
           unit: null,
-          specCategory: 'technical',
+          specCategory: "technical",
           displayOrder: 1,
         },
       ]);
@@ -114,56 +125,58 @@ export class ProductExtensionsService implements OnModuleInit {
       await this.spareParts.save([
         {
           id: randomUUID(),
-          partNumber: 'MIG-SP-MOTOR-A',
-          slug: 'mig-sp-motor-a',
-          nameEn: 'Drive Motor A',
-          nameFa: 'موتور محرک سری A',
-          shortDescription: 'موتور محرک اصلی برای خطوط تولید MIG',
-          description: 'موتور یدکی سازگار با تجهیزات MIG با گارانتی اصالت و تست کارخانه.',
-          category: 'motors',
-          compatibleProducts: ['1', '2'],
+          partNumber: "MIG-SP-MOTOR-A",
+          slug: "mig-sp-motor-a",
+          nameEn: "Drive Motor A",
+          nameFa: "موتور محرک سری A",
+          shortDescription: "موتور محرک اصلی برای خطوط تولید MIG",
+          description:
+            "موتور یدکی سازگار با تجهیزات MIG با گارانتی اصالت و تست کارخانه.",
+          category: "motors",
+          compatibleProducts: ["1", "2"],
           price: 3500000,
           priceNegotiable: false,
-          currency: 'IRR',
+          currency: "IRR",
           stockQuantity: 24,
           reorderLevel: 5,
           imageUrl: null,
           gallery: [],
-          brand: 'MIG',
-          oemCode: 'DRV-A-01',
+          brand: "MIG",
+          oemCode: "DRV-A-01",
           weightGrams: 4200,
-          dimensions: '18×12×10 cm',
+          dimensions: "18×12×10 cm",
           specs: [
-            { key: 'ولتاژ', value: '220', unit: 'V' },
-            { key: 'توان', value: '1.5', unit: 'kW' },
+            { key: "ولتاژ", value: "220", unit: "V" },
+            { key: "توان", value: "1.5", unit: "kW" },
           ],
           warrantyMonths: 12,
           isActive: true,
         },
         {
           id: randomUUID(),
-          partNumber: 'MIG-SP-BATTERY-L',
-          slug: 'mig-sp-battery-l',
-          nameEn: 'Lithium Battery Pack',
-          nameFa: 'پک باتری لیتیومی',
-          shortDescription: 'پک باتری قابل شارژ برای استفاده مداوم',
-          description: 'پک باتری لیتیومی با ظرفیت بالا برای نگهداری بدون وقفه تجهیزات.',
-          category: 'electrical',
-          compatibleProducts: ['1', '2'],
+          partNumber: "MIG-SP-BATTERY-L",
+          slug: "mig-sp-battery-l",
+          nameEn: "Lithium Battery Pack",
+          nameFa: "پک باتری لیتیومی",
+          shortDescription: "پک باتری قابل شارژ برای استفاده مداوم",
+          description:
+            "پک باتری لیتیومی با ظرفیت بالا برای نگهداری بدون وقفه تجهیزات.",
+          category: "electrical",
+          compatibleProducts: ["1", "2"],
           price: 2500000,
           priceNegotiable: false,
-          currency: 'IRR',
+          currency: "IRR",
           stockQuantity: 15,
           reorderLevel: 5,
           imageUrl: null,
           gallery: [],
-          brand: 'MIG',
-          oemCode: 'BAT-L-02',
+          brand: "MIG",
+          oemCode: "BAT-L-02",
           weightGrams: 1800,
-          dimensions: '25×12×8 cm',
+          dimensions: "25×12×8 cm",
           specs: [
-            { key: 'ظرفیت', value: '48', unit: 'Ah' },
-            { key: 'ولتاژ', value: '24', unit: 'V' },
+            { key: "ظرفیت", value: "48", unit: "Ah" },
+            { key: "ولتاژ", value: "24", unit: "V" },
           ],
           warrantyMonths: 12,
           isActive: true,
@@ -173,7 +186,10 @@ export class ProductExtensionsService implements OnModuleInit {
       const allParts = await this.spareParts.find();
       for (const part of allParts) {
         if (!part.slug?.trim()) {
-          part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(part.partNumber), part.id);
+          part.slug = await this.ensureUniqueSlug(
+            this.slugifyPartNumber(part.partNumber),
+            part.id,
+          );
           if (!Array.isArray(part.gallery)) part.gallery = [];
           if (!Array.isArray(part.specs)) part.specs = [];
           await this.spareParts.save(part);
@@ -184,22 +200,28 @@ export class ProductExtensionsService implements OnModuleInit {
 
   private async assertProductExists(productId: string): Promise<ProductEntity> {
     const product = await this.products.findOne({ where: { id: productId } });
-    if (!product) throw new NotFoundException('محصول پیدا نشد.');
+    if (!product) throw new NotFoundException("محصول پیدا نشد.");
     return product;
   }
 
   findVariants(productId: string): Promise<ProductVariantEntity[]> {
-    return this.variants.find({ where: { productId, isActive: true }, order: { createdAt: 'ASC' } });
+    return this.variants.find({
+      where: { productId, isActive: true },
+      order: { createdAt: "ASC" },
+    });
   }
 
   findVariantsForAdmin(productId: string): Promise<ProductVariantEntity[]> {
-    return this.variants.find({ where: { productId }, order: { createdAt: 'ASC' } });
+    return this.variants.find({
+      where: { productId },
+      order: { createdAt: "ASC" },
+    });
   }
 
   findSpecifications(productId: string): Promise<ProductSpecificationEntity[]> {
     return this.specifications.find({
       where: { productId },
-      order: { displayOrder: 'ASC', createdAt: 'ASC' },
+      order: { displayOrder: "ASC", createdAt: "ASC" },
     });
   }
 
@@ -209,10 +231,10 @@ export class ProductExtensionsService implements OnModuleInit {
   ): Promise<ProductSpecificationEntity> {
     await this.assertProductExists(productId);
     const maxOrder = await this.specifications
-      .createQueryBuilder('s')
-      .select('MAX(s.display_order)', 'max')
-      .where('s.product_id = :productId', { productId })
-      .andWhere('s.spec_category = :category', { category: dto.specCategory })
+      .createQueryBuilder("s")
+      .select("MAX(s.display_order)", "max")
+      .where("s.product_id = :productId", { productId })
+      .andWhere("s.spec_category = :category", { category: dto.specCategory })
       .getRawOne<{ max: number | null }>();
 
     return this.specifications.save(
@@ -233,8 +255,10 @@ export class ProductExtensionsService implements OnModuleInit {
     specId: string,
     dto: ManageProductSpecificationDto,
   ): Promise<ProductSpecificationEntity> {
-    const spec = await this.specifications.findOne({ where: { id: specId, productId } });
-    if (!spec) throw new NotFoundException('مشخصات پیدا نشد.');
+    const spec = await this.specifications.findOne({
+      where: { id: specId, productId },
+    });
+    if (!spec) throw new NotFoundException("مشخصات پیدا نشد.");
     spec.specificationKey = dto.specificationKey.trim();
     spec.specificationValue = dto.specificationValue.trim();
     spec.unit = dto.unit?.trim() || null;
@@ -244,8 +268,10 @@ export class ProductExtensionsService implements OnModuleInit {
   }
 
   async removeSpecification(productId: string, specId: string): Promise<void> {
-    const spec = await this.specifications.findOne({ where: { id: specId, productId } });
-    if (!spec) throw new NotFoundException('مشخصات پیدا نشد.');
+    const spec = await this.specifications.findOne({
+      where: { id: specId, productId },
+    });
+    if (!spec) throw new NotFoundException("مشخصات پیدا نشد.");
     await this.specifications.remove(spec);
   }
 
@@ -254,9 +280,11 @@ export class ProductExtensionsService implements OnModuleInit {
     dto: ReorderProductSpecificationsDto,
   ): Promise<ProductSpecificationEntity[]> {
     await this.assertProductExists(productId);
-    const specs = await this.specifications.find({ where: { productId, id: In(dto.orderedIds) } });
+    const specs = await this.specifications.find({
+      where: { productId, id: In(dto.orderedIds) },
+    });
     if (specs.length !== dto.orderedIds.length) {
-      throw new NotFoundException('برخی مشخصات پیدا نشد.');
+      throw new NotFoundException("برخی مشخصات پیدا نشد.");
     }
     const byId = new Map(specs.map((item) => [item.id, item]));
     for (let index = 0; index < dto.orderedIds.length; index += 1) {
@@ -272,15 +300,17 @@ export class ProductExtensionsService implements OnModuleInit {
     dto: CopyProductSpecsDto,
   ): Promise<ProductSpecificationEntity[]> {
     if (dto.sourceProductId === targetProductId) {
-      throw new ConflictException('محصول مبدأ و مقصد نمی‌توانند یکسان باشند.');
+      throw new ConflictException("محصول مبدأ و مقصد نمی‌توانند یکسان باشند.");
     }
     await this.assertProductExists(targetProductId);
     await this.assertProductExists(dto.sourceProductId);
 
-    const categories = Array.from(new Set(dto.categories)) as ProductSpecCategory[];
+    const categories = Array.from(
+      new Set(dto.categories),
+    ) as ProductSpecCategory[];
     const sourceSpecs = await this.specifications.find({
       where: { productId: dto.sourceProductId, specCategory: In(categories) },
-      order: { displayOrder: 'ASC' },
+      order: { displayOrder: "ASC" },
     });
 
     const existing = await this.specifications.find({
@@ -307,11 +337,18 @@ export class ProductExtensionsService implements OnModuleInit {
     return this.findSpecifications(targetProductId);
   }
 
-  async createVariant(productId: string, dto: ManageProductVariantDto, actor?: AuditActor): Promise<ProductVariantEntity> {
+  async createVariant(
+    productId: string,
+    dto: ManageProductVariantDto,
+    actor?: AuditActor,
+  ): Promise<ProductVariantEntity> {
     const product = await this.assertProductExists(productId);
     const skuVariant = dto.skuVariant.trim().toUpperCase();
-    const existing = await this.variants.findOne({ where: { skuVariant }, withDeleted: true });
-    if (existing) throw new ConflictException('کد مدل از قبل وجود دارد.');
+    const existing = await this.variants.findOne({
+      where: { skuVariant },
+      withDeleted: true,
+    });
+    if (existing) throw new ConflictException("کد مدل از قبل وجود دارد.");
 
     const saved = await this.variants.save(
       this.variants.create({
@@ -324,26 +361,42 @@ export class ProductExtensionsService implements OnModuleInit {
         specifications: {},
         priceBase: dto.priceBase ?? product.priceBase,
         priceAdjustment: dto.priceAdjustment ?? 0,
-        currency: 'IRR',
+        currency: "IRR",
         stockQuantity: dto.stockQuantity ?? 0,
         isActive: dto.isActive ?? true,
       }),
     );
-    if (actor) await AuditService.record(this.variants.manager, actor, 'product.variant_created', 'product_variant', saved.id, null, { priceBase: saved.priceBase, priceAdjustment: saved.priceAdjustment });
+    if (actor)
+      await AuditService.record(
+        this.variants.manager,
+        actor,
+        "product.variant_created",
+        "product_variant",
+        saved.id,
+        null,
+        { priceBase: saved.priceBase, priceAdjustment: saved.priceAdjustment },
+      );
     return saved;
   }
 
   async updateVariant(
     productId: string,
     variantId: string,
-    dto: ManageProductVariantDto, actor?: AuditActor,
+    dto: ManageProductVariantDto,
+    actor?: AuditActor,
   ): Promise<ProductVariantEntity> {
-    const variant = await this.variants.findOne({ where: { id: variantId, productId } });
-    if (!variant) throw new NotFoundException('مدل پیدا نشد.');
+    const variant = await this.variants.findOne({
+      where: { id: variantId, productId },
+    });
+    if (!variant) throw new NotFoundException("مدل پیدا نشد.");
 
     const skuVariant = dto.skuVariant.trim().toUpperCase();
-    const duplicate = await this.variants.findOne({ where: { skuVariant }, withDeleted: true });
-    if (duplicate && duplicate.id !== variantId) throw new ConflictException('کد مدل از قبل وجود دارد.');
+    const duplicate = await this.variants.findOne({
+      where: { skuVariant },
+      withDeleted: true,
+    });
+    if (duplicate && duplicate.id !== variantId)
+      throw new ConflictException("کد مدل از قبل وجود دارد.");
 
     variant.skuVariant = skuVariant;
     variant.variantNameFa = dto.variantNameFa.trim();
@@ -351,18 +404,31 @@ export class ProductExtensionsService implements OnModuleInit {
     variant.variantCode = dto.variantCode?.trim() || null;
     const previousPrice = variant.priceBase;
     if (dto.priceBase !== undefined) variant.priceBase = dto.priceBase;
-    if (dto.priceAdjustment !== undefined) variant.priceAdjustment = dto.priceAdjustment;
-    if (dto.stockQuantity !== undefined) variant.stockQuantity = dto.stockQuantity;
+    if (dto.priceAdjustment !== undefined)
+      variant.priceAdjustment = dto.priceAdjustment;
+    if (dto.stockQuantity !== undefined)
+      variant.stockQuantity = dto.stockQuantity;
     if (dto.isActive !== undefined) variant.isActive = dto.isActive;
 
     const saved = await this.variants.save(variant);
-    if (actor && (previousPrice !== saved.priceBase)) await AuditService.record(this.variants.manager, actor, 'product.variant_price_changed', 'product_variant', variantId, { priceBase: previousPrice }, { priceBase: saved.priceBase });
+    if (actor && previousPrice !== saved.priceBase)
+      await AuditService.record(
+        this.variants.manager,
+        actor,
+        "product.variant_price_changed",
+        "product_variant",
+        variantId,
+        { priceBase: previousPrice },
+        { priceBase: saved.priceBase },
+      );
     return saved;
   }
 
   async removeVariant(productId: string, variantId: string): Promise<void> {
-    const variant = await this.variants.findOne({ where: { id: variantId, productId } });
-    if (!variant) throw new NotFoundException('مدل پیدا نشد.');
+    const variant = await this.variants.findOne({
+      where: { id: variantId, productId },
+    });
+    if (!variant) throw new NotFoundException("مدل پیدا نشد.");
     await this.variants.softRemove(variant);
   }
 
@@ -370,12 +436,12 @@ export class ProductExtensionsService implements OnModuleInit {
     return partNumber
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9\u0600-\u06FF]+/gi, '-')
-      .replace(/^-+|-+$/g, '')
+      .replace(/[^a-z0-9\u0600-\u06FF]+/gi, "-")
+      .replace(/^-+|-+$/g, "")
       .slice(0, 160);
   }
 
-  private normalizeSpecs(specs: ManageSparePartDto['specs']): SparePartSpec[] {
+  private normalizeSpecs(specs: ManageSparePartDto["specs"]): SparePartSpec[] {
     if (!specs?.length) return [];
     return specs
       .map((item) => ({
@@ -386,12 +452,17 @@ export class ProductExtensionsService implements OnModuleInit {
       .filter((item) => item.key && item.value);
   }
 
-  private async ensureUniqueSlug(base: string, excludeId?: string): Promise<string> {
+  private async ensureUniqueSlug(
+    base: string,
+    excludeId?: string,
+  ): Promise<string> {
     let slug = base || `part-${Date.now().toString(36)}`;
     let attempt = 0;
     while (true) {
       const candidate = attempt === 0 ? slug : `${slug}-${attempt}`;
-      const existing = await this.spareParts.findOne({ where: { slug: candidate } });
+      const existing = await this.spareParts.findOne({
+        where: { slug: candidate },
+      });
       if (!existing || existing.id === excludeId) return candidate;
       attempt += 1;
     }
@@ -405,47 +476,91 @@ export class ProductExtensionsService implements OnModuleInit {
     maxPrice?: number;
     page?: number;
     limit?: number;
-  }): Promise<{ data: SparePartEntity[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+  }): Promise<{
+    data: SparePartEntity[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const qb = this.spareParts
-      .createQueryBuilder('part')
-      .where('part.is_active = :active', { active: true })
-      .orderBy('part.created_at', 'ASC');
+      .createQueryBuilder("part")
+      .where("part.is_active = :active", { active: true })
+      .orderBy("part.created_at", "ASC");
 
     if (filters?.category?.trim()) {
-      qb.andWhere('part.category = :category', { category: filters.category.trim() });
+      qb.andWhere("part.category = :category", {
+        category: filters.category.trim(),
+      });
     }
     if (filters?.inStock) {
-      qb.andWhere('part.stock_quantity > 0');
+      qb.andWhere("part.stock_quantity > 0");
     }
     if (filters?.minPrice != null && !Number.isNaN(filters.minPrice)) {
-      qb.andWhere('part.price >= :minPrice', { minPrice: filters.minPrice });
-      qb.andWhere('part.price_negotiable = :negFalse', { negFalse: false });
+      qb.andWhere("part.price >= :minPrice", { minPrice: filters.minPrice });
+      qb.andWhere("part.price_negotiable = :negFalse", { negFalse: false });
     }
     if (filters?.maxPrice != null && !Number.isNaN(filters.maxPrice)) {
-      qb.andWhere('part.price <= :maxPrice', { maxPrice: filters.maxPrice });
-      qb.andWhere('part.price_negotiable = :negFalse2', { negFalse2: false });
+      qb.andWhere("part.price <= :maxPrice", { maxPrice: filters.maxPrice });
+      qb.andWhere("part.price_negotiable = :negFalse2", { negFalse2: false });
     }
     if (filters?.q?.trim()) {
       const q = `%${filters.q.trim()}%`;
       qb.andWhere(
-        '(part.name_fa LIKE :q OR part.name_en LIKE :q OR part.part_number LIKE :q OR part.oem_code LIKE :q OR part.description LIKE :q)',
+        "(part.name_fa LIKE :q OR part.name_en LIKE :q OR part.part_number LIKE :q OR part.oem_code LIKE :q OR part.description LIKE :q)",
         { q },
       );
     }
 
-    const page = Number.isInteger(filters?.page) && (filters?.page ?? 0) > 0 ? filters!.page! : 1;
-    const limit = Number.isInteger(filters?.limit) && (filters?.limit ?? 0) > 0 && (filters?.limit ?? 0) <= 100 ? filters!.limit! : 20;
-    const [data, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
-    return { data, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    const page =
+      Number.isInteger(filters?.page) && (filters?.page ?? 0) > 0
+        ? filters!.page!
+        : 1;
+    const limit =
+      Number.isInteger(filters?.limit) &&
+      (filters?.limit ?? 0) > 0 &&
+      (filters?.limit ?? 0) <= 100
+        ? filters!.limit!
+        : 20;
+    const [data, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+    return {
+      data,
+      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    };
   }
 
-  async findSparePartsForAdmin(page = 1, limit = 20, search = ''): Promise<{ data: SparePartEntity[]; meta: { page: number; limit: number; total: number; totalPages: number } }> {
+  async findSparePartsForAdmin(
+    page = 1,
+    limit = 20,
+    search = "",
+  ): Promise<{
+    data: SparePartEntity[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  }> {
     const safePage = Number.isInteger(page) && page > 0 ? page : 1;
-    const safeLimit = Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 20;
-    const qb = this.spareParts.createQueryBuilder('part').orderBy('part.created_at', 'DESC');
-    if (search.trim()) qb.where('(part.name_fa LIKE :search OR part.name_en LIKE :search OR part.part_number LIKE :search)', { search: `%${search.trim()}%` });
-    const [data, total] = await qb.skip((safePage - 1) * safeLimit).take(safeLimit).getManyAndCount();
-    return { data, meta: { page: safePage, limit: safeLimit, total, totalPages: Math.ceil(total / safeLimit) } };
+    const safeLimit =
+      Number.isInteger(limit) && limit > 0 && limit <= 100 ? limit : 20;
+    const qb = this.spareParts
+      .createQueryBuilder("part")
+      .orderBy("part.created_at", "DESC");
+    if (search.trim())
+      qb.where(
+        "(part.name_fa LIKE :search OR part.name_en LIKE :search OR part.part_number LIKE :search)",
+        { search: `%${search.trim()}%` },
+      );
+    const [data, total] = await qb
+      .skip((safePage - 1) * safeLimit)
+      .take(safeLimit)
+      .getManyAndCount();
+    return {
+      data,
+      meta: {
+        page: safePage,
+        limit: safeLimit,
+        total,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 
   async findSparePartPublic(slugOrId: string): Promise<SparePartEntity> {
@@ -456,20 +571,20 @@ export class ProductExtensionsService implements OnModuleInit {
         { partNumber: slugOrId.toUpperCase(), isActive: true },
       ],
     });
-    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    if (!part) throw new NotFoundException("قطعه پیدا نشد.");
     return part;
   }
 
   async findSparePartForAdmin(id: string): Promise<SparePartEntity> {
     const part = await this.spareParts.findOne({ where: { id } });
-    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    if (!part) throw new NotFoundException("قطعه پیدا نشد.");
     return part;
   }
 
   async createSparePart(dto: ManageSparePartDto): Promise<SparePartEntity> {
     const partNumber = dto.partNumber.trim().toUpperCase();
     const existing = await this.spareParts.findOne({ where: { partNumber } });
-    if (existing) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
+    if (existing) throw new ConflictException("شماره قطعه از قبل وجود دارد.");
 
     const gallery = normalizeMediaList(dto.gallery);
     const imageUrl = toRelativeMediaPath(dto.imageUrl) || gallery[0] || null;
@@ -487,10 +602,12 @@ export class ProductExtensionsService implements OnModuleInit {
         description: dto.description.trim(),
         shortDescription: dto.shortDescription?.trim() || null,
         category: dto.category.trim(),
-        compatibleProducts: (dto.compatibleProducts ?? []).map((id) => id.trim()).filter(Boolean),
+        compatibleProducts: (dto.compatibleProducts ?? [])
+          .map((id) => id.trim())
+          .filter(Boolean),
         price: dto.price,
         priceNegotiable: dto.priceNegotiable ?? false,
-        currency: 'IRR',
+        currency: "IRR",
         stockQuantity: dto.stockQuantity ?? 0,
         reorderLevel: dto.reorderLevel ?? 5,
         imageUrl,
@@ -506,35 +623,54 @@ export class ProductExtensionsService implements OnModuleInit {
     );
   }
 
-  async updateSparePart(id: string, dto: PatchSparePartDto): Promise<SparePartEntity> {
+  async updateSparePart(
+    id: string,
+    dto: PatchSparePartDto,
+  ): Promise<SparePartEntity> {
     const part = await this.spareParts.findOne({ where: { id } });
-    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    if (!part) throw new NotFoundException("قطعه پیدا نشد.");
 
     if (dto.partNumber !== undefined) {
       const partNumber = dto.partNumber.trim().toUpperCase();
-      const duplicate = await this.spareParts.findOne({ where: { partNumber } });
-      if (duplicate && duplicate.id !== id) throw new ConflictException('شماره قطعه از قبل وجود دارد.');
+      const duplicate = await this.spareParts.findOne({
+        where: { partNumber },
+      });
+      if (duplicate && duplicate.id !== id)
+        throw new ConflictException("شماره قطعه از قبل وجود دارد.");
       part.partNumber = partNumber;
       if (dto.slug === undefined && !part.slug) {
-        part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(partNumber), id);
+        part.slug = await this.ensureUniqueSlug(
+          this.slugifyPartNumber(partNumber),
+          id,
+        );
       }
     }
     if (dto.slug !== undefined) {
-      part.slug = await this.ensureUniqueSlug(dto.slug.trim().toLowerCase() || this.slugifyPartNumber(part.partNumber), id);
+      part.slug = await this.ensureUniqueSlug(
+        dto.slug.trim().toLowerCase() ||
+          this.slugifyPartNumber(part.partNumber),
+        id,
+      );
     }
     if (dto.nameFa !== undefined) part.nameFa = dto.nameFa.trim();
     if (dto.nameEn !== undefined) part.nameEn = dto.nameEn.trim();
-    if (dto.description !== undefined) part.description = dto.description.trim();
-    if (dto.shortDescription !== undefined) part.shortDescription = dto.shortDescription.trim() || null;
+    if (dto.description !== undefined)
+      part.description = dto.description.trim();
+    if (dto.shortDescription !== undefined)
+      part.shortDescription = dto.shortDescription.trim() || null;
     if (dto.category !== undefined) part.category = dto.category.trim();
     if (dto.compatibleProducts !== undefined) {
-      part.compatibleProducts = dto.compatibleProducts.map((value) => value.trim()).filter(Boolean);
+      part.compatibleProducts = dto.compatibleProducts
+        .map((value) => value.trim())
+        .filter(Boolean);
     }
     if (dto.price !== undefined) part.price = dto.price;
-    if (dto.priceNegotiable !== undefined) part.priceNegotiable = dto.priceNegotiable;
+    if (dto.priceNegotiable !== undefined)
+      part.priceNegotiable = dto.priceNegotiable;
     if (dto.stockQuantity !== undefined) part.stockQuantity = dto.stockQuantity;
     if (dto.reorderLevel !== undefined) part.reorderLevel = dto.reorderLevel;
-    if (dto.imageUrl !== undefined) part.imageUrl = toRelativeMediaPath(dto.imageUrl) || null;
+    if (dto.imageUrl !== undefined)
+      part.imageUrl = toRelativeMediaPath(dto.imageUrl) || null;
     if (dto.gallery !== undefined) {
       part.gallery = normalizeMediaList(dto.gallery);
       if (!part.imageUrl && part.gallery[0]) part.imageUrl = part.gallery[0];
@@ -542,12 +678,17 @@ export class ProductExtensionsService implements OnModuleInit {
     if (dto.brand !== undefined) part.brand = dto.brand.trim() || null;
     if (dto.oemCode !== undefined) part.oemCode = dto.oemCode.trim() || null;
     if (dto.weightGrams !== undefined) part.weightGrams = dto.weightGrams;
-    if (dto.dimensions !== undefined) part.dimensions = dto.dimensions.trim() || null;
+    if (dto.dimensions !== undefined)
+      part.dimensions = dto.dimensions.trim() || null;
     if (dto.specs !== undefined) part.specs = this.normalizeSpecs(dto.specs);
-    if (dto.warrantyMonths !== undefined) part.warrantyMonths = dto.warrantyMonths;
+    if (dto.warrantyMonths !== undefined)
+      part.warrantyMonths = dto.warrantyMonths;
     if (dto.isActive !== undefined) part.isActive = dto.isActive;
     if (!part.slug) {
-      part.slug = await this.ensureUniqueSlug(this.slugifyPartNumber(part.partNumber), id);
+      part.slug = await this.ensureUniqueSlug(
+        this.slugifyPartNumber(part.partNumber),
+        id,
+      );
     }
 
     return this.spareParts.save(part);
@@ -555,7 +696,7 @@ export class ProductExtensionsService implements OnModuleInit {
 
   async removeSparePart(id: string): Promise<void> {
     const part = await this.spareParts.findOne({ where: { id } });
-    if (!part) throw new NotFoundException('قطعه پیدا نشد.');
+    if (!part) throw new NotFoundException("قطعه پیدا نشد.");
     await this.spareParts.softRemove(part);
   }
 }

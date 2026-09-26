@@ -1,4 +1,4 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
   ArrayMaxSize,
   IsArray,
@@ -8,8 +8,8 @@ import {
   IsString,
   Length,
   Min,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+} from "class-validator";
+import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 
 export class ManageProductDto {
   /** Required: product title */
@@ -48,8 +48,10 @@ export class ManageProductDto {
   @Length(0, 40)
   category?: string;
 
-  @ApiPropertyOptional({ description: 'شناسه معتبر دسته‌بندی' })
-  @IsOptional() @IsString() @Length(1, 100)
+  @ApiPropertyOptional({ description: "شناسه معتبر دسته‌بندی" })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
   categoryId?: string;
 
   @ApiPropertyOptional()
@@ -59,7 +61,7 @@ export class ManageProductDto {
   @Min(0)
   priceBase?: number;
 
-  @ApiPropertyOptional({ description: 'قیمت توافقی — بدون نمایش مبلغ ریالی' })
+  @ApiPropertyOptional({ description: "قیمت توافقی — بدون نمایش مبلغ ریالی" })
   @IsOptional()
   @IsBoolean()
   priceNegotiable?: boolean;

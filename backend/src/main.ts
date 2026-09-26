@@ -1,25 +1,25 @@
-import 'reflect-metadata';
-import 'dotenv/config';
-import { existsSync } from 'node:fs';
-import { extname, join } from 'node:path';
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
-import { NestExpressApplication } from '@nestjs/platform-express';
-import type { NextFunction, Request, Response } from 'express';
-import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from './app.module';
-import { resolveMediaRoot } from './media/media-paths';
-import { HttpExceptionFilter } from './common/http-exception.filter';
+import "reflect-metadata";
+import "dotenv/config";
+import { existsSync } from "node:fs";
+import { extname, join } from "node:path";
+import { ValidationPipe } from "@nestjs/common";
+import { NestFactory } from "@nestjs/core";
+import { NestExpressApplication } from "@nestjs/platform-express";
+import type { NextFunction, Request, Response } from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import { DocumentBuilder, SwaggerModule } from "@nestjs/swagger";
+import { AppModule } from "./app.module";
+import { resolveMediaRoot } from "./media/media-paths";
+import { HttpExceptionFilter } from "./common/http-exception.filter";
 
-const MEDIA_ALT_EXTS = ['.webp', '.jpg', '.jpeg', '.png', '.gif', '.avif'];
+const MEDIA_ALT_EXTS = [".webp", ".jpg", ".jpeg", ".png", ".gif", ".avif"];
 
 /** If /media/uuid.png is gone after compress→webp, serve uuid.webp (and vice versa). */
 function mediaExtensionFallback(mediaRoot: string) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const rawPath = decodeURIComponent((req.path || '').replace(/^\/+/, ''));
-    if (!rawPath || rawPath.includes('..')) {
+    const rawPath = decodeURIComponent((req.path || "").replace(/^\/+/, ""));
+    if (!rawPath || rawPath.includes("..")) {
       next();
       return;
     }
@@ -34,7 +34,7 @@ function mediaExtensionFallback(mediaRoot: string) {
       if (ext === currentExt) continue;
       const candidate = `${stem}${ext}`;
       if (existsSync(candidate)) {
-        res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+        res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
         res.sendFile(candidate);
         return;
       }
@@ -46,18 +46,18 @@ function mediaExtensionFallback(mediaRoot: string) {
 /** Expand one FRONTEND_URL into http/https + www/non-www variants. */
 function expandFrontendOrigins(raw: string): string[] {
   const seeds = raw
-    .split(',')
+    .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean);
-  if (process.env.NODE_ENV === 'production') return [...new Set(seeds)];
+  if (process.env.NODE_ENV === "production") return [...new Set(seeds)];
   const origins = new Set<string>();
 
   for (const seed of seeds) {
     origins.add(seed);
     try {
       const url = new URL(seed);
-      const host = url.hostname.replace(/^www\./i, '');
-      for (const protocol of ['https:', 'http:'] as const) {
+      const host = url.hostname.replace(/^www\./i, "");
+      for (const protocol of ["https:", "http:"] as const) {
         origins.add(`${protocol}//${host}`);
         origins.add(`${protocol}//www.${host}`);
       }
@@ -71,12 +71,18 @@ function expandFrontendOrigins(raw: string): string[] {
 
 /** Allow localhost / 127.0.0.1 / LAN IPs during local development so backup uploads don't 500. */
 function isLocalDevOrigin(origin: string): boolean {
-  if ((process.env.NODE_ENV ?? 'development') === 'production') return false;
+  if ((process.env.NODE_ENV ?? "development") === "production") return false;
   try {
     const url = new URL(origin);
-    if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
+    if (url.protocol !== "http:" && url.protocol !== "https:") return false;
     const host = url.hostname.toLowerCase();
-    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1') return true;
+    if (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "[::1]" ||
+      host === "::1"
+    )
+      return true;
     // Private LAN ranges (e.g. Next.js "Network" URL like http://192.168.x.x:3000)
     if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
     if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
@@ -90,44 +96,74 @@ function isLocalDevOrigin(origin: string): boolean {
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const port = Number(process.env.PORT ?? 3001);
-  const host = process.env.HOST ?? '0.0.0.0';
-  const frontendOrigins = expandFrontendOrigins(process.env.FRONTEND_URL ?? 'http://localhost:3000');
+  const host = process.env.HOST ?? "0.0.0.0";
+  const frontendOrigins = expandFrontendOrigins(
+    process.env.FRONTEND_URL ?? "http://localhost:3000",
+  );
   const mediaRoot = resolveMediaRoot();
 
   // Serve uploaded media outside /api: /media/YYYY/MM/file.ext
   // No `immutable` — replace/compress overwrites bytes at the same URL.
   app.useStaticAssets(mediaRoot, {
-    prefix: '/media/',
+    prefix: "/media/",
     fallthrough: true,
     setHeaders: (res) => {
-      res.setHeader('Cache-Control', 'public, max-age=3600, must-revalidate');
+      res.setHeader("Cache-Control", "public, max-age=3600, must-revalidate");
     },
   });
   // Stale product refs after old compress-replace (.png → .webp) still resolve.
-  app.use('/media', mediaExtensionFallback(mediaRoot));
+  app.use("/media", mediaExtensionFallback(mediaRoot));
 
-  app.setGlobalPrefix('api');
-  app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  app.setGlobalPrefix("api");
+  app.getHttpAdapter().getInstance().set("trust proxy", 1);
   app.use(
     helmet({
-      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      crossOriginResourcePolicy: { policy: "cross-origin" },
     }),
   );
-  app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false,
-    message: { statusCode: 429, message: 'تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد تلاش کنید.' } }));
-  app.use('/api/auth', rateLimit({ windowMs: 15 * 60 * 1000, limit: 30, standardHeaders: 'draft-7', legacyHeaders: false,
-    skip: request => request.method === 'GET',
-    message: { statusCode: 429, message: 'تعداد درخواست‌های ورود بیش از حد مجاز است. کمی بعد تلاش کنید.' } }));
+  app.use(
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 300,
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: {
+        statusCode: 429,
+        message: "تعداد درخواست‌ها بیش از حد مجاز است. کمی بعد تلاش کنید.",
+      },
+    }),
+  );
+  app.use(
+    "/api/auth",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 30,
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      skip: (request) => request.method === "GET",
+      message: {
+        statusCode: 429,
+        message:
+          "تعداد درخواست‌های ورود بیش از حد مجاز است. کمی بعد تلاش کنید.",
+      },
+    }),
+  );
   app.enableCors({
     // Always reflect the request origin when allowed.
     // Never pass a single hard-coded string — that forces one ACAO value and breaks http/www mismatches.
     // Never pass Error to the callback — cors turns that into HTTP 500 instead of a normal CORS reject.
-    origin: (requestOrigin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      requestOrigin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (!requestOrigin) {
         callback(null, true);
         return;
       }
-      if (frontendOrigins.includes(requestOrigin) || isLocalDevOrigin(requestOrigin)) {
+      if (
+        frontendOrigins.includes(requestOrigin) ||
+        isLocalDevOrigin(requestOrigin)
+      ) {
         callback(null, true);
         return;
       }
@@ -135,26 +171,38 @@ async function bootstrap(): Promise<void> {
       callback(null, false);
     },
     credentials: true,
-    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Mig-Csrf'],
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Mig-Csrf"],
   });
-  console.log(`[CORS] allowed origins: ${frontendOrigins.join(', ')} (+ local dev hosts)`);
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true, forbidNonWhitelisted: true }));
+  console.log(
+    `[CORS] allowed origins: ${frontendOrigins.join(", ")} (+ local dev hosts)`,
+  );
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.useGlobalFilters(new HttpExceptionFilter());
 
   const swaggerConfig = new DocumentBuilder()
-    .setTitle('رابط برنامه‌نویسی گروه صنعتی محمدی')
-    .setDescription('کاتالوگ محصولات و سامانه تجارت سازمانی؛ نشست مرورگر با Cookie امن و سربرگ X-Mig-Csrf: 1 برای عملیات تغییردهنده')
-    .addCookieAuth('mig_session')
-    .setVersion('0.1.0')
-    .addTag('products')
+    .setTitle("رابط برنامه‌نویسی گروه صنعتی محمدی")
+    .setDescription(
+      "کاتالوگ محصولات و سامانه تجارت سازمانی؛ نشست مرورگر با Cookie امن و سربرگ X-Mig-Csrf: 1 برای عملیات تغییردهنده",
+    )
+    .addCookieAuth("mig_session")
+    .setVersion("0.1.0")
+    .addTag("products")
     .build();
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, document);
+  SwaggerModule.setup("docs", app, document);
 
   await app.listen(port, host);
   console.log(`MIG API running on http://${host}:${port}/api`);
-  console.log(`[Media] static files at http://${host}:${port}/media  root=${mediaRoot}`);
+  console.log(
+    `[Media] static files at http://${host}:${port}/media  root=${mediaRoot}`,
+  );
 }
 
 void bootstrap();

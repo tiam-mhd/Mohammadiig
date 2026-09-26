@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { GlassButton } from '@/components/GlassButton';
-import { GlassPanel } from '@/components/home/GlassPanel';
+import { GlassButton } from "@/components/GlassButton";
+import { GlassPanel } from "@/components/home/GlassPanel";
 
 type ProductRailCardProps = {
   index: string;
@@ -36,7 +36,7 @@ export function ProductRailCard({
       <div className="home-rail__rim" aria-hidden />
 
       <GlassPanel
-        mode={image ? 'frost' : 'backdrop'}
+        mode={image ? "frost" : "backdrop"}
         frostSrc={image}
         className="home-rail__copy"
         bodyClassName="home-rail__copy-inner"

@@ -1,13 +1,15 @@
-﻿'use client';
+﻿"use client";
 
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { fetchPublishedProjects, OpsProject } from '@/lib/api-client';
-import { labelOf, PROJECT_TYPE } from '@/lib/admin-labels';
-import { resolveMediaUrl } from '@/lib/media';
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchPublishedProjects, OpsProject } from "@/lib/api-client";
+import { labelOf, PROJECT_TYPE } from "@/lib/admin-labels";
+import { resolveMediaUrl } from "@/lib/media";
 
 function locationLine(project: OpsProject) {
-  return [project.province, project.city, project.locationDetail].filter(Boolean).join(' · ');
+  return [project.province, project.city, project.locationDetail]
+    .filter(Boolean)
+    .join(" · ");
 }
 
 export default function ProjectsPage() {
@@ -24,15 +26,21 @@ export default function ProjectsPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← بازگشت به صفحه اول
         </Link>
 
         <div className="mt-10 max-w-2xl text-start md:mt-12">
           <p className="caption-up">بهره‌برداری · مشارکت · سرمایه‌گذاری</p>
-          <h1 className="display-feature mt-4 text-ink">پروژه‌های بهره‌برداری</h1>
+          <h1 className="display-feature mt-4 text-ink">
+            پروژه‌های بهره‌برداری
+          </h1>
           <p className="body-lead mt-5 max-w-md">
-            پروژه‌هایی که MIG در بهره‌برداری، مشارکت یا سرمایه‌گذاری آن‌ها نقش داشته است — با جزئیات مکان و نوع همکاری.
+            پروژه‌هایی که MIG در بهره‌برداری، مشارکت یا سرمایه‌گذاری آن‌ها نقش
+            داشته است — با جزئیات مکان و نوع همکاری.
           </p>
         </div>
 
@@ -40,38 +48,49 @@ export default function ProjectsPage() {
           {projects.map((project) => {
             const coverSrc = resolveMediaUrl(project.coverImageUrl);
             return (
-            <article
-              key={project.id}
-              className="flex flex-col justify-between gap-6 border-b border-hairline py-8 sm:flex-row sm:items-end"
-            >
-              <div className="flex max-w-xl gap-5 text-start">
-                {coverSrc ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={coverSrc}
-                    alt=""
-                    className="h-24 w-32 shrink-0 object-cover"
-                    loading="lazy"
-                  />
-                ) : null}
-                <div>
-                <p className="caption-up">
-                  {labelOf(PROJECT_TYPE, project.projectType)}
-                  {locationLine(project) ? ` · ${locationLine(project)}` : ''}
-                </p>
-                <h2 className="display-sm mt-3 text-ink">{project.projectName}</h2>
-                <p className="body-lead mt-3 text-sm">{project.summaryFa || project.description}</p>
-                {project.clientDisplayName ? (
-                  <p className="caption-up mt-4 text-ink/45">طرف مقابل: {project.clientDisplayName}</p>
-                ) : null}
+              <article
+                key={project.id}
+                className="flex flex-col justify-between gap-6 border-b border-hairline py-8 sm:flex-row sm:items-end"
+              >
+                <div className="flex max-w-xl gap-5 text-start">
+                  {coverSrc ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={coverSrc}
+                      alt=""
+                      className="h-24 w-32 shrink-0 object-cover"
+                      loading="lazy"
+                    />
+                  ) : null}
+                  <div>
+                    <p className="caption-up">
+                      {labelOf(PROJECT_TYPE, project.projectType)}
+                      {locationLine(project)
+                        ? ` · ${locationLine(project)}`
+                        : ""}
+                    </p>
+                    <h2 className="display-sm mt-3 text-ink">
+                      {project.projectName}
+                    </h2>
+                    <p className="body-lead mt-3 text-sm">
+                      {project.summaryFa || project.description}
+                    </p>
+                    {project.clientDisplayName ? (
+                      <p className="caption-up mt-4 text-ink/45">
+                        طرف مقابل: {project.clientDisplayName}
+                      </p>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
-              {project.slug ? (
-                <Link href={`/projects/${project.slug}`} className="btn-pill shrink-0">
-                  جزئیات پروژه
-                </Link>
-              ) : null}
-            </article>
+                {project.slug ? (
+                  <Link
+                    href={`/projects/${project.slug}`}
+                    className="btn-pill shrink-0"
+                  >
+                    جزئیات پروژه
+                  </Link>
+                ) : null}
+              </article>
             );
           })}
 

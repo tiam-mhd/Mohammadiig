@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { fetchMyOrder, type OrderDetail } from '@/lib/api-client';
-import { formatMoney, labelOf, ORDER_STATUS, PAYMENT_STATUS } from '@/lib/admin-labels';
-import { resolveMediaUrl } from '@/lib/media';
-import { useAuthStore } from '@/store/auth.store';
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { fetchMyOrder, type OrderDetail } from "@/lib/api-client";
+import {
+  formatMoney,
+  labelOf,
+  ORDER_STATUS,
+  PAYMENT_STATUS,
+} from "@/lib/admin-labels";
+import { resolveMediaUrl } from "@/lib/media";
+import { useAuthStore } from "@/store/auth.store";
 
 function addressRows(addr?: Record<string, string>) {
   if (!addr) return [];
@@ -15,12 +20,12 @@ function addressRows(addr?: Record<string, string>) {
 
 export default function AccountOrderPage() {
   const params = useParams<{ id: string }>();
-  const id = decodeURIComponent(params.id ?? '');
+  const id = decodeURIComponent(params.id ?? "");
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   useEffect(() => {
     if (!accessToken || !id) {
@@ -33,13 +38,13 @@ export default function AccountOrderPage() {
       .then((data) => {
         if (!cancelled) {
           setOrder(data);
-          setError('');
+          setError("");
         }
       })
       .catch(() => {
         if (!cancelled) {
           setOrder(null);
-          setError('سفارش یافت نشد.');
+          setError("سفارش یافت نشد.");
         }
       })
       .finally(() => {
@@ -80,7 +85,7 @@ export default function AccountOrderPage() {
     return (
       <div className="bg-canvas">
         <div className="content-shell section-copy pt-28 text-center">
-          <h1 className="display-feature text-ink">{error || 'یافت نشد'}</h1>
+          <h1 className="display-feature text-ink">{error || "یافت نشد"}</h1>
           <Link href="/account" className="btn-pill mt-10 inline-flex">
             بازگشت به حساب
           </Link>
@@ -95,7 +100,10 @@ export default function AccountOrderPage() {
   return (
     <div className="bg-canvas">
       <div className="content-shell section-copy pt-24 md:pt-28">
-        <Link href="/account" className="caption-up text-ink/70 transition-opacity hover:opacity-100">
+        <Link
+          href="/account"
+          className="caption-up text-ink/70 transition-opacity hover:opacity-100"
+        >
           ← بازگشت به حساب
         </Link>
 
@@ -106,11 +114,11 @@ export default function AccountOrderPage() {
             {formatMoney(order.totalAmount)}
             {order.paymentStatus
               ? ` · ${labelOf(PAYMENT_STATUS, order.paymentStatus)}`
-              : ''}
+              : ""}
           </p>
           {order.createdAt ? (
             <p className="mt-2 font-ui text-xs text-muted">
-              {new Date(order.createdAt).toLocaleString('fa-IR')}
+              {new Date(order.createdAt).toLocaleString("fa-IR")}
             </p>
           ) : null}
         </div>
@@ -131,21 +139,27 @@ export default function AccountOrderPage() {
                     <div className="flex min-w-0 flex-1 gap-4 text-start">
                       {src ? (
                         // eslint-disable-next-line @next/next/no-img-element
-                        <img src={src} alt="" className="h-14 w-14 object-cover" />
+                        <img
+                          src={src}
+                          alt=""
+                          className="h-14 w-14 object-cover"
+                        />
                       ) : null}
                       <div>
-                        <p className="caption-up">{item.skuSnapshot || item.itemType}</p>
+                        <p className="caption-up">
+                          {item.skuSnapshot || item.itemType}
+                        </p>
                         <h3 className="mt-1 font-ui text-sm text-ink">
-                          {item.titleSnapshot || 'قلم سفارش'}
+                          {item.titleSnapshot || "قلم سفارش"}
                         </h3>
                         <p className="mt-1 font-ui text-xs text-muted">
-                          {item.quantity.toLocaleString('fa-IR')} ×{' '}
-                          {item.unitPrice.toLocaleString('fa-IR')}
+                          {item.quantity.toLocaleString("fa-IR")} ×{" "}
+                          {item.unitPrice.toLocaleString("fa-IR")}
                         </p>
                       </div>
                     </div>
                     <p className="font-ui text-sm text-ink">
-                      {item.lineTotal.toLocaleString('fa-IR')} {item.currency}
+                      {item.lineTotal.toLocaleString("fa-IR")} {item.currency}
                     </p>
                   </div>
                 );

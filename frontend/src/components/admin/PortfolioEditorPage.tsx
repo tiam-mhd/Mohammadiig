@@ -1,23 +1,25 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { ReactNode, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { AdminShell } from '@/components/admin/AdminShell';
-import { MediaField } from '@/components/admin/MediaField';
-import { PersianDatePicker } from '@/components/admin/PersianDatePicker';
-import { PriceField } from '@/components/admin/PriceField';
-import { PORTFOLIO_CATEGORY } from '@/lib/admin-labels';
+import Link from "next/link";
+import { ReactNode, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { MediaField } from "@/components/admin/MediaField";
+import { PersianDatePicker } from "@/components/admin/PersianDatePicker";
+import { PriceField } from "@/components/admin/PriceField";
+import { PORTFOLIO_CATEGORY } from "@/lib/admin-labels";
 import {
   createAdminPortfolio,
   fetchAdminPortfolioWork,
   PortfolioWork,
   updateAdminPortfolio,
-} from '@/lib/api-client';
-import { adminToast } from '@/lib/admin-toast';
-import { useAuthStore } from '@/store/auth.store';
+} from "@/lib/api-client";
+import { adminToast } from "@/lib/admin-toast";
+import { useAuthStore } from "@/store/auth.store";
 
-const categoryOptions = Object.entries(PORTFOLIO_CATEGORY).map(([value, label]) => ({ value, label }));
+const categoryOptions = Object.entries(PORTFOLIO_CATEGORY).map(
+  ([value, label]) => ({ value, label }),
+);
 
 type EditorForm = {
   slug: string;
@@ -45,24 +47,24 @@ type EditorForm = {
 };
 
 const emptyForm: EditorForm = {
-  slug: '',
-  titleFa: '',
-  titleEn: '',
-  summaryFa: '',
-  descriptionFa: '',
-  clientName: '',
-  workCategory: 'entertainment',
-  country: 'ایران',
-  province: '',
-  city: '',
-  locationDetail: '',
-  startDate: '',
-  endDate: '',
-  coverImageUrl: '',
+  slug: "",
+  titleFa: "",
+  titleEn: "",
+  summaryFa: "",
+  descriptionFa: "",
+  clientName: "",
+  workCategory: "entertainment",
+  country: "ایران",
+  province: "",
+  city: "",
+  locationDetail: "",
+  startDate: "",
+  endDate: "",
+  coverImageUrl: "",
   gallery: [],
-  highlightsText: '',
-  areaOrCapacity: '',
-  priceBase: '',
+  highlightsText: "",
+  areaOrCapacity: "",
+  priceBase: "",
   priceNegotiable: false,
   isPublished: false,
   isFeatured: false,
@@ -73,10 +75,10 @@ function suggestSlug(title: string): string {
   return title
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^\u0600-\u06FFa-z0-9-]/gi, '')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
+    .replace(/\s+/g, "-")
+    .replace(/[^\u0600-\u06FFa-z0-9-]/gi, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
     .slice(0, 120);
 }
 
@@ -94,19 +96,19 @@ function workToForm(item: PortfolioWork): EditorForm {
     titleEn: item.titleEn,
     summaryFa: item.summaryFa,
     descriptionFa: item.descriptionFa,
-    clientName: item.clientName ?? '',
+    clientName: item.clientName ?? "",
     workCategory: item.workCategory,
-    country: item.country ?? 'ایران',
-    province: item.province ?? '',
-    city: item.city ?? '',
-    locationDetail: item.locationDetail ?? '',
-    startDate: item.startDate ?? '',
-    endDate: item.endDate ?? '',
-    coverImageUrl: item.coverImageUrl ?? '',
+    country: item.country ?? "ایران",
+    province: item.province ?? "",
+    city: item.city ?? "",
+    locationDetail: item.locationDetail ?? "",
+    startDate: item.startDate ?? "",
+    endDate: item.endDate ?? "",
+    coverImageUrl: item.coverImageUrl ?? "",
     gallery: item.gallery ?? [],
-    highlightsText: (item.highlights ?? []).join('\n'),
-    areaOrCapacity: item.areaOrCapacity ?? '',
-    priceBase: item.priceBase == null ? '' : String(item.priceBase),
+    highlightsText: (item.highlights ?? []).join("\n"),
+    areaOrCapacity: item.areaOrCapacity ?? "",
+    priceBase: item.priceBase == null ? "" : String(item.priceBase),
     priceNegotiable: Boolean(item.priceNegotiable),
     isPublished: item.isPublished,
     isFeatured: item.isFeatured,
@@ -117,7 +119,7 @@ function workToForm(item: PortfolioWork): EditorForm {
 function Metabox({
   title,
   children,
-  className = '',
+  className = "",
 }: {
   title: string;
   children: ReactNode;
@@ -143,7 +145,7 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
 
-  const statusLabel = form.isPublished ? 'منتشرشده' : 'پیش‌نویس';
+  const statusLabel = form.isPublished ? "منتشرشده" : "پیش‌نویس";
 
   useEffect(() => {
     if (!accessToken || !workId) return;
@@ -157,7 +159,7 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
         }
       })
       .catch(() => {
-        if (!cancelled) adminToast.error('بارگذاری نمونه‌کار انجام نشد.');
+        if (!cancelled) adminToast.error("بارگذاری نمونه‌کار انجام نشد.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -194,7 +196,10 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
       gallery: form.gallery,
       highlights: linesToList(form.highlightsText),
       areaOrCapacity: form.areaOrCapacity || undefined,
-      priceBase: form.priceNegotiable || form.priceBase === '' ? null : Number(form.priceBase),
+      priceBase:
+        form.priceNegotiable || form.priceBase === ""
+          ? null
+          : Number(form.priceBase),
       priceNegotiable: form.priceNegotiable,
       isPublished,
       isFeatured: form.isFeatured,
@@ -207,37 +212,48 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
     const titleFa = form.titleFa.trim();
     const slug = form.slug.trim();
     if (titleFa.length < 2) {
-      adminToast.error('عنوان نمونه‌کار الزامی است.');
+      adminToast.error("عنوان نمونه‌کار الزامی است.");
       return;
     }
     if (slug.length < 2) {
-      adminToast.error('آدرس نمونه‌کار (slug) الزامی است.');
+      adminToast.error("آدرس نمونه‌کار (slug) الزامی است.");
       return;
     }
     if (form.summaryFa.trim().length < 2) {
-      adminToast.error('خلاصه الزامی است.');
+      adminToast.error("خلاصه الزامی است.");
       return;
     }
     if (form.descriptionFa.trim().length < 10) {
-      adminToast.error('توضیح کامل باید حداقل ۱۰ کاراکتر باشد.');
+      adminToast.error("توضیح کامل باید حداقل ۱۰ کاراکتر باشد.");
       return;
     }
 
-    const isPublished = publishIntent === undefined ? form.isPublished : publishIntent;
+    const isPublished =
+      publishIntent === undefined ? form.isPublished : publishIntent;
     setSaving(true);
     try {
       const payload = payloadFromForm(isPublished);
       if (isNew) {
         const created = await createAdminPortfolio(accessToken, payload);
-        adminToast.success(isPublished ? 'نمونه‌کار منتشر شد.' : 'پیش‌نویس ذخیره شد.');
+        adminToast.success(
+          isPublished ? "نمونه‌کار منتشر شد." : "پیش‌نویس ذخیره شد.",
+        );
         router.replace(`/admin/portfolio/${created.id}`);
       } else {
-        const updated = await updateAdminPortfolio(accessToken, workId!, payload);
+        const updated = await updateAdminPortfolio(
+          accessToken,
+          workId!,
+          payload,
+        );
         setForm(workToForm(updated));
-        adminToast.success(isPublished ? 'نمونه‌کار منتشر و ذخیره شد.' : 'پیش‌نویس به‌روز شد.');
+        adminToast.success(
+          isPublished ? "نمونه‌کار منتشر و ذخیره شد." : "پیش‌نویس به‌روز شد.",
+        );
       }
     } catch (error) {
-      adminToast.error(error instanceof Error ? error.message : 'ذخیره نمونه‌کار انجام نشد.');
+      adminToast.error(
+        error instanceof Error ? error.message : "ذخیره نمونه‌کار انجام نشد.",
+      );
     } finally {
       setSaving(false);
     }
@@ -246,7 +262,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
   if (!accessToken) {
     return (
       <AdminShell eyebrow="نمایش عمومی" title="نمونه‌کار">
-        <p className="text-sm text-[var(--ops-muted)]">برای مدیریت نمونه‌کار وارد شوید.</p>
+        <p className="text-sm text-[var(--ops-muted)]">
+          برای مدیریت نمونه‌کار وارد شوید.
+        </p>
       </AdminShell>
     );
   }
@@ -260,17 +278,26 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
   }
 
   return (
-    <AdminShell eyebrow="نمایش عمومی" title={isNew ? 'افزودن نمونه‌کار' : 'ویرایش نمونه‌کار'}>
+    <AdminShell
+      eyebrow="نمایش عمومی"
+      title={isNew ? "افزودن نمونه‌کار" : "ویرایش نمونه‌کار"}
+    >
       <div className="admin-editor__topbar">
         <Link href="/admin/portfolio" className="ops-btn ops-btn--ghost">
           ← بازگشت به فهرست
         </Link>
         <div className="admin-editor__topbar-meta">
-          <span className={`admin-badge ${form.isPublished ? 'admin-badge--ok' : 'admin-badge--warn'}`}>
+          <span
+            className={`admin-badge ${form.isPublished ? "admin-badge--ok" : "admin-badge--warn"}`}
+          >
             {statusLabel}
           </span>
           {!isNew && form.isPublished ? (
-            <Link href={`/portfolio/${form.slug}`} className="ops-btn ops-btn--ghost" target="_blank">
+            <Link
+              href={`/portfolio/${form.slug}`}
+              className="ops-btn ops-btn--ghost"
+              target="_blank"
+            >
               مشاهده در سایت
             </Link>
           ) : null}
@@ -328,7 +355,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 className="ops-field"
                 dir="ltr"
                 value={form.titleEn}
-                onChange={(event) => setForm({ ...form, titleEn: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, titleEn: event.target.value })
+                }
                 placeholder="اختیاری — در صورت خالی بودن از عنوان فارسی استفاده می‌شود"
               />
             </label>
@@ -337,7 +366,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               <input
                 className="ops-field"
                 value={form.summaryFa}
-                onChange={(event) => setForm({ ...form, summaryFa: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, summaryFa: event.target.value })
+                }
                 placeholder="یک جمله برای فهرست نمونه‌کارها"
               />
             </label>
@@ -346,7 +377,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               <textarea
                 className="ops-field admin-editor__body"
                 value={form.descriptionFa}
-                onChange={(event) => setForm({ ...form, descriptionFa: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, descriptionFa: event.target.value })
+                }
                 placeholder="جزئیات اجرا، نتیجه و نکات برجسته…"
               />
             </label>
@@ -375,7 +408,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.clientName}
-                  onChange={(event) => setForm({ ...form, clientName: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, clientName: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -383,7 +418,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.areaOrCapacity}
-                  onChange={(event) => setForm({ ...form, areaOrCapacity: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, areaOrCapacity: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -391,7 +428,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.country}
-                  onChange={(event) => setForm({ ...form, country: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, country: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -399,7 +438,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.province}
-                  onChange={(event) => setForm({ ...form, province: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, province: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -407,7 +448,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.city}
-                  onChange={(event) => setForm({ ...form, city: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, city: event.target.value })
+                  }
                 />
               </label>
               <label className="block text-start">
@@ -415,7 +458,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <input
                   className="ops-field"
                   value={form.locationDetail}
-                  onChange={(event) => setForm({ ...form, locationDetail: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, locationDetail: event.target.value })
+                  }
                 />
               </label>
               <div className="block text-start">
@@ -433,11 +478,15 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 />
               </div>
               <label className="block text-start sm:col-span-2">
-                <span className="ops-login__label">نکات برجسته (هر خط یک مورد)</span>
+                <span className="ops-login__label">
+                  نکات برجسته (هر خط یک مورد)
+                </span>
                 <textarea
                   className="ops-field min-h-20"
                   value={form.highlightsText}
-                  onChange={(event) => setForm({ ...form, highlightsText: event.target.value })}
+                  onChange={(event) =>
+                    setForm({ ...form, highlightsText: event.target.value })
+                  }
                 />
               </label>
             </div>
@@ -448,8 +497,14 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
           <Metabox title="انتشار" className="admin-metabox--sticky">
             <div className="admin-editor__publish-meta">
               <p>
-                وضعیت:{' '}
-                <strong className={form.isPublished ? 'text-[var(--ops-ok)]' : 'text-[var(--ops-warn)]'}>
+                وضعیت:{" "}
+                <strong
+                  className={
+                    form.isPublished
+                      ? "text-[var(--ops-ok)]"
+                      : "text-[var(--ops-warn)]"
+                  }
+                >
                   {statusLabel}
                 </strong>
               </p>
@@ -457,8 +512,13 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 <span className="ops-login__label">تغییر وضعیت</span>
                 <select
                   className="admin-select admin-select--wide"
-                  value={form.isPublished ? 'published' : 'draft'}
-                  onChange={(event) => setForm({ ...form, isPublished: event.target.value === 'published' })}
+                  value={form.isPublished ? "published" : "draft"}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      isPublished: event.target.value === "published",
+                    })
+                  }
                 >
                   <option value="draft">پیش‌نویس</option>
                   <option value="published">منتشرشده</option>
@@ -466,11 +526,25 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               </label>
             </div>
             <div className="admin-editor__publish-actions">
-              <button type="button" className="ops-btn ops-btn--ghost" disabled={saving} onClick={() => void persist(false)}>
-                {saving ? '…' : 'ذخیره پیش‌نویس'}
+              <button
+                type="button"
+                className="ops-btn ops-btn--ghost"
+                disabled={saving}
+                onClick={() => void persist(false)}
+              >
+                {saving ? "…" : "ذخیره پیش‌نویس"}
               </button>
-              <button type="button" className="ops-btn" disabled={saving} onClick={() => void persist(true)}>
-                {saving ? 'در حال ذخیره…' : form.isPublished || !isNew ? 'انتشار / به‌روزرسانی' : 'انتشار'}
+              <button
+                type="button"
+                className="ops-btn"
+                disabled={saving}
+                onClick={() => void persist(true)}
+              >
+                {saving
+                  ? "در حال ذخیره…"
+                  : form.isPublished || !isNew
+                    ? "انتشار / به‌روزرسانی"
+                    : "انتشار"}
               </button>
             </div>
           </Metabox>
@@ -481,7 +555,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               <select
                 className="admin-select admin-select--wide"
                 value={form.workCategory}
-                onChange={(event) => setForm({ ...form, workCategory: event.target.value })}
+                onChange={(event) =>
+                  setForm({ ...form, workCategory: event.target.value })
+                }
               >
                 {categoryOptions.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -498,7 +574,12 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
                 className="ops-field"
                 dir="ltr"
                 value={form.displayOrder}
-                onChange={(event) => setForm({ ...form, displayOrder: Number(event.target.value) || 0 })}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    displayOrder: Number(event.target.value) || 0,
+                  })
+                }
               />
             </label>
           </Metabox>
@@ -509,7 +590,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               value={form.priceBase}
               negotiable={form.priceNegotiable}
               onValueChange={(priceBase) => setForm({ ...form, priceBase })}
-              onNegotiableChange={(priceNegotiable) => setForm({ ...form, priceNegotiable })}
+              onNegotiableChange={(priceNegotiable) =>
+                setForm({ ...form, priceNegotiable })
+              }
               optional
             />
           </Metabox>
@@ -519,7 +602,9 @@ export function PortfolioEditorPage({ workId }: { workId?: string }) {
               <input
                 type="checkbox"
                 checked={form.isFeatured}
-                onChange={(event) => setForm({ ...form, isFeatured: event.target.checked })}
+                onChange={(event) =>
+                  setForm({ ...form, isFeatured: event.target.checked })
+                }
               />
               ویژه در صفحه اول
             </label>
