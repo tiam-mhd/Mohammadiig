@@ -1,0 +1,37 @@
+{
+  "id": "MIG-SP-004",
+  "part_number": "MIG-SP-004",
+  "name_fa": "فرمان",
+  "name_en": "Steering Wheel",
+  "category": "controls-steering",
+  "short_description_fa": "فرمان مشکی سه‌شاخه با روکش سوراخ‌دار و دوخت قرمز.",
+  "description_fa": "بخش میانی و محل اتصال در مرکز فرمان در تصاویر دیده می‌شوند.",
+  "source_photos": [
+    "فرمان (1).jpg",
+    "فرمان (2).jpg",
+    "فرمان (3).jpg"
+  ],
+  "source_urls": [
+    "https://www.anchiamusement.com/how-to-drive-bumper-cars-tips-safety-anchi.html",
+    "https://www.anchiamusement.com/bumper-car-replacement-parts-anchi.html"
+  ],
+  "research_file": "steering-wheel/research.fa.md",
+  "generated_assets": {
+    "light": [
+      "steering-wheel/steering-wheel-01-front-light.webp",
+      "steering-wheel/steering-wheel-02-hub-light.webp",
+      "steering-wheel/steering-wheel-03-profile-light.webp"
+    ],
+    "dark": [
+      "steering-wheel/steering-wheel-01-front.webp",
+      "steering-wheel/steering-wheel-02-hub.webp",
+      "steering-wheel/steering-wheel-03-profile.webp"
+    ]
+  },
+  "image_standard": {
+    "width": 1254,
+    "height": 1254,
+    "aspect_ratio": "1:1",
+    "brand_footer": "Mohammadi Industrial Group"
+  }
+}

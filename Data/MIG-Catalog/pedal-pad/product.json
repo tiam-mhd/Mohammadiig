@@ -1,0 +1,36 @@
+{
+  "id": "MIG-SP-002",
+  "part_number": "MIG-SP-002",
+  "name_fa": "پایه پدال",
+  "name_en": "Pedal Base",
+  "category": "controls-steering",
+  "short_description_fa": "رویه‌ی مشکی و آج‌دارِ پایه پدال.",
+  "description_fa": "در نمای پشت، محل اتصال قطعه دیده می‌شود.",
+  "source_photos": [
+    "پایه پدال (1).jpg",
+    "پایه پدال (2).jpg",
+    "پایه پدال (3).jpg"
+  ],
+  "source_urls": [
+    "https://www.anchiamusement.com/how-to-drive-bumper-cars-tips-safety-anchi.html"
+  ],
+  "research_file": "pedal-pad/research.fa.md",
+  "generated_assets": {
+    "light": [
+      "pedal-pad/pedal-pad-01-tread-light.webp",
+      "pedal-pad/pedal-pad-02-angle-light.webp",
+      "pedal-pad/pedal-pad-03-mounting-studs-light.webp"
+    ],
+    "dark": [
+      "pedal-pad/pedal-pad-01-tread.webp",
+      "pedal-pad/pedal-pad-02-angle.webp",
+      "pedal-pad/pedal-pad-03-mounting-studs.webp"
+    ]
+  },
+  "image_standard": {
+    "width": 1254,
+    "height": 1254,
+    "aspect_ratio": "1:1",
+    "brand_footer": "Mohammadi Industrial Group"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "id": "MIG-SP-003",
+  "part_number": "MIG-SP-003",
+  "name_fa": "پایه فرچه",
+  "name_en": "Brush Base",
+  "category": "electric",
+  "short_description_fa": "قطعه‌ای مشکی با بدنه‌ی مستطیلی.",
+  "description_fa": "در یک سمت بدنه، محل اتصال و دهانه‌ی قطعه دیده می‌شود.",
+  "source_photos": [
+    "پایه فرچه (1).jpg",
+    "پایه فرچه (2).jpg",
+    "پایه فرچه (3).jpg",
+    "پایه فرچه (4).jpg",
+    "پایه فرچه (5).jpg"
+  ],
+  "source_urls": [
+    "https://www.carneetrains.com/ground-grid-bumper-cars-for-sale/",
+    "https://www.bumpercar.com/electric-floor"
+  ],
+  "research_file": "brush-base/research.fa.md",
+  "generated_assets": {
+    "light": [
+      "brush-base/brush-base-01-end-light.webp",
+      "brush-base/brush-base-02-side-light.webp",
+      "brush-base/brush-base-03-socket-light.webp"
+    ],
+    "dark": [
+      "brush-base/brush-base-01-end.webp",
+      "brush-base/brush-base-02-side.webp",
+      "brush-base/brush-base-03-socket.webp"
+    ]
+  },
+  "image_standard": {
+    "width": 1254,
+    "height": 1254,
+    "aspect_ratio": "1:1",
+    "brand_footer": "Mohammadi Industrial Group"
+  }
+}

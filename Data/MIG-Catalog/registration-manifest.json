@@ -1,0 +1,596 @@
+{
+  "generatedAtUtc": "2026-10-07T08:01:05.691Z",
+  "apiBase": "https://api.mohammadiig.ir/api",
+  "category": [
+    {
+      "id": "controls-steering",
+      "nameFa": "کنترل و فرمان",
+      "nameEn": "Controls & Steering",
+      "slug": "controls-steering",
+      "isActive": true
+    }
+  ],
+  "products": [
+    {
+      "partNumber": "MIG-SP-005",
+      "id": "e767fc4a-18fe-478a-8b9e-d093cff66294",
+      "nameFa": "ایربگ فرمان",
+      "slug": "mig-sp-005-steering-component",
+      "category": "controls-steering",
+      "active": true,
+      "priceNegotiable": true,
+      "stockQuantity": 0,
+      "warrantyMonths": 0,
+      "imageCount": 6,
+      "imageUrl": "/media/2026/10/69ad7a0e-aa48-4671-bcf1-df9028c2a812.webp",
+      "galleryCount": 2,
+      "themeImages": {
+        "light": [
+          "/media/2026/10/15f9dd8e-e447-4251-a72f-56b12876b5c5.webp",
+          "/media/2026/10/69d7eb24-4dd2-435d-bed8-22c872b85725.webp",
+          "/media/2026/10/fbefda7e-f9c5-400d-bf59-49890b41827c.webp"
+        ],
+        "dark": [
+          "/media/2026/10/69ad7a0e-aa48-4671-bcf1-df9028c2a812.webp",
+          "/media/2026/10/c45d1192-3862-463c-8623-2c84f5ac9d50.webp",
+          "/media/2026/10/99c40656-12a9-4aae-a926-856f4f991769.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "id": "0c90bf3b-39c4-4a7e-a824-00348f4cad77",
+      "nameFa": "فرمان",
+      "slug": "mig-sp-004-steering-wheel",
+      "category": "controls-steering",
+      "active": true,
+      "priceNegotiable": true,
+      "stockQuantity": 0,
+      "warrantyMonths": 0,
+      "imageCount": 6,
+      "imageUrl": "/media/2026/10/04f6f44a-5dd1-4c10-aa85-ef0156c77917.webp",
+      "galleryCount": 2,
+      "themeImages": {
+        "light": [
+          "/media/2026/10/469e7aac-b599-4dca-ae71-ed6c6c86d83a.webp",
+          "/media/2026/10/73e0a448-9c46-4d4d-8b4d-ebe463695b82.webp",
+          "/media/2026/10/dddd652b-7899-428e-a712-981aeb7bb899.webp"
+        ],
+        "dark": [
+          "/media/2026/10/04f6f44a-5dd1-4c10-aa85-ef0156c77917.webp",
+          "/media/2026/10/9287b75a-bfd7-4ab6-9ff0-fd24b025427a.webp",
+          "/media/2026/10/4a90e1d2-3c63-42a5-97bb-62993260ef98.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "id": "05861ee2-7245-4858-a8f0-bf53bdf289ee",
+      "nameFa": "پایه فرچه",
+      "slug": "mig-sp-003-brush-base",
+      "category": "electric",
+      "active": true,
+      "priceNegotiable": true,
+      "stockQuantity": 0,
+      "warrantyMonths": 0,
+      "imageCount": 6,
+      "imageUrl": "/media/2026/10/087e052f-169c-4fd5-b7f7-9f5ecd953a52.webp",
+      "galleryCount": 2,
+      "themeImages": {
+        "light": [
+          "/media/2026/10/5a19611a-afa7-4da3-aae8-9bd7f3c059bc.webp",
+          "/media/2026/10/d3d07ecd-2f76-45ba-b0c5-780de22f820f.webp",
+          "/media/2026/10/f6099c2d-8e68-44bc-91ac-e798e56f46d0.webp"
+        ],
+        "dark": [
+          "/media/2026/10/087e052f-169c-4fd5-b7f7-9f5ecd953a52.webp",
+          "/media/2026/10/5117fcf6-626e-4393-a3ed-4370e10647fa.webp",
+          "/media/2026/10/6906c3ba-9731-4d4b-ba42-dbc867bf3f38.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "id": "ad11fe40-97ad-4e15-b4fe-41ebaf57eb97",
+      "nameFa": "پایه پدال",
+      "slug": "mig-sp-002-pedal-pad",
+      "category": "controls-steering",
+      "active": true,
+      "priceNegotiable": true,
+      "stockQuantity": 0,
+      "warrantyMonths": 0,
+      "imageCount": 6,
+      "imageUrl": "/media/2026/10/7583f8ef-6835-4a52-8475-782a34f05d24.webp",
+      "galleryCount": 2,
+      "themeImages": {
+        "light": [
+          "/media/2026/10/47c48611-7425-4e8a-8b3f-d2babe2e916b.webp",
+          "/media/2026/10/0c90dd76-8e43-4adb-9259-d3b538074a37.webp",
+          "/media/2026/10/0952af59-b04b-4cad-87d9-0bc1b6a18de2.webp"
+        ],
+        "dark": [
+          "/media/2026/10/7583f8ef-6835-4a52-8475-782a34f05d24.webp",
+          "/media/2026/10/83c7ac16-acb4-4fbb-9962-d956d1a37faa.webp",
+          "/media/2026/10/0e37daf6-f781-4ed8-8d03-fcdefadfae01.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "id": "2eb4427e-ca8c-45fb-ac9c-b7cdb19d23f8",
+      "nameFa": "پدال",
+      "slug": "mig-sp-001-pedal-assembly",
+      "category": "controls-steering",
+      "active": true,
+      "priceNegotiable": true,
+      "stockQuantity": 0,
+      "warrantyMonths": 0,
+      "imageCount": 6,
+      "imageUrl": "/media/2026/10/6172ad82-f04e-4be3-83f8-0a6d056bf1d4.webp",
+      "galleryCount": 2,
+      "themeImages": {
+        "light": [
+          "/media/2026/10/ca8b86c1-9c72-4330-a752-4e99fee3d205.webp",
+          "/media/2026/10/27cbacf4-f247-493e-83e4-1559eec1cb43.webp",
+          "/media/2026/10/085c5700-279e-444a-b91d-4a8865a14fac.webp"
+        ],
+        "dark": [
+          "/media/2026/10/6172ad82-f04e-4be3-83f8-0a6d056bf1d4.webp",
+          "/media/2026/10/c847a604-bee0-4c77-b7bf-b804f6af9023.webp",
+          "/media/2026/10/906388b7-974b-43b7-b435-1a1aee473ef1.webp"
+        ]
+      }
+    }
+  ],
+  "uploadedImages": [
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "light",
+      "view": 1,
+      "localPath": "pedal/pedal-01-front-light.webp",
+      "id": "ca8b86c1-9c72-4330-a752-4e99fee3d205",
+      "url": "/media/2026/10/ca8b86c1-9c72-4330-a752-4e99fee3d205.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "light",
+      "view": 2,
+      "localPath": "pedal/pedal-02-side-light.webp",
+      "id": "27cbacf4-f247-493e-83e4-1559eec1cb43",
+      "url": "/media/2026/10/27cbacf4-f247-493e-83e4-1559eec1cb43.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "light",
+      "view": 3,
+      "localPath": "pedal/pedal-03-rear-light.webp",
+      "id": "085c5700-279e-444a-b91d-4a8865a14fac",
+      "url": "/media/2026/10/085c5700-279e-444a-b91d-4a8865a14fac.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "dark",
+      "view": 1,
+      "localPath": "pedal/pedal-01-front.webp",
+      "id": "6172ad82-f04e-4be3-83f8-0a6d056bf1d4",
+      "url": "/media/2026/10/6172ad82-f04e-4be3-83f8-0a6d056bf1d4.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "dark",
+      "view": 2,
+      "localPath": "pedal/pedal-02-side.webp",
+      "id": "c847a604-bee0-4c77-b7bf-b804f6af9023",
+      "url": "/media/2026/10/c847a604-bee0-4c77-b7bf-b804f6af9023.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-001",
+      "theme": "dark",
+      "view": 3,
+      "localPath": "pedal/pedal-03-rear.webp",
+      "id": "906388b7-974b-43b7-b435-1a1aee473ef1",
+      "url": "/media/2026/10/906388b7-974b-43b7-b435-1a1aee473ef1.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "light",
+      "view": 1,
+      "localPath": "pedal-pad/pedal-pad-01-tread-light.webp",
+      "id": "47c48611-7425-4e8a-8b3f-d2babe2e916b",
+      "url": "/media/2026/10/47c48611-7425-4e8a-8b3f-d2babe2e916b.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "light",
+      "view": 2,
+      "localPath": "pedal-pad/pedal-pad-02-angle-light.webp",
+      "id": "0c90dd76-8e43-4adb-9259-d3b538074a37",
+      "url": "/media/2026/10/0c90dd76-8e43-4adb-9259-d3b538074a37.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "light",
+      "view": 3,
+      "localPath": "pedal-pad/pedal-pad-03-mounting-studs-light.webp",
+      "id": "0952af59-b04b-4cad-87d9-0bc1b6a18de2",
+      "url": "/media/2026/10/0952af59-b04b-4cad-87d9-0bc1b6a18de2.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "dark",
+      "view": 1,
+      "localPath": "pedal-pad/pedal-pad-01-tread.webp",
+      "id": "7583f8ef-6835-4a52-8475-782a34f05d24",
+      "url": "/media/2026/10/7583f8ef-6835-4a52-8475-782a34f05d24.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "dark",
+      "view": 2,
+      "localPath": "pedal-pad/pedal-pad-02-angle.webp",
+      "id": "83c7ac16-acb4-4fbb-9962-d956d1a37faa",
+      "url": "/media/2026/10/83c7ac16-acb4-4fbb-9962-d956d1a37faa.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "theme": "dark",
+      "view": 3,
+      "localPath": "pedal-pad/pedal-pad-03-mounting-studs.webp",
+      "id": "0e37daf6-f781-4ed8-8d03-fcdefadfae01",
+      "url": "/media/2026/10/0e37daf6-f781-4ed8-8d03-fcdefadfae01.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "light",
+      "view": 1,
+      "localPath": "brush-base/brush-base-01-end-light.webp",
+      "id": "5a19611a-afa7-4da3-aae8-9bd7f3c059bc",
+      "url": "/media/2026/10/5a19611a-afa7-4da3-aae8-9bd7f3c059bc.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "light",
+      "view": 2,
+      "localPath": "brush-base/brush-base-02-side-light.webp",
+      "id": "d3d07ecd-2f76-45ba-b0c5-780de22f820f",
+      "url": "/media/2026/10/d3d07ecd-2f76-45ba-b0c5-780de22f820f.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "light",
+      "view": 3,
+      "localPath": "brush-base/brush-base-03-socket-light.webp",
+      "id": "f6099c2d-8e68-44bc-91ac-e798e56f46d0",
+      "url": "/media/2026/10/f6099c2d-8e68-44bc-91ac-e798e56f46d0.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "dark",
+      "view": 1,
+      "localPath": "brush-base/brush-base-01-end.webp",
+      "id": "087e052f-169c-4fd5-b7f7-9f5ecd953a52",
+      "url": "/media/2026/10/087e052f-169c-4fd5-b7f7-9f5ecd953a52.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "dark",
+      "view": 2,
+      "localPath": "brush-base/brush-base-02-side.webp",
+      "id": "5117fcf6-626e-4393-a3ed-4370e10647fa",
+      "url": "/media/2026/10/5117fcf6-626e-4393-a3ed-4370e10647fa.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "theme": "dark",
+      "view": 3,
+      "localPath": "brush-base/brush-base-03-socket.webp",
+      "id": "6906c3ba-9731-4d4b-ba42-dbc867bf3f38",
+      "url": "/media/2026/10/6906c3ba-9731-4d4b-ba42-dbc867bf3f38.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "light",
+      "view": 1,
+      "localPath": "steering-wheel/steering-wheel-01-front-light.webp",
+      "id": "469e7aac-b599-4dca-ae71-ed6c6c86d83a",
+      "url": "/media/2026/10/469e7aac-b599-4dca-ae71-ed6c6c86d83a.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "light",
+      "view": 2,
+      "localPath": "steering-wheel/steering-wheel-02-hub-light.webp",
+      "id": "73e0a448-9c46-4d4d-8b4d-ebe463695b82",
+      "url": "/media/2026/10/73e0a448-9c46-4d4d-8b4d-ebe463695b82.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "light",
+      "view": 3,
+      "localPath": "steering-wheel/steering-wheel-03-profile-light.webp",
+      "id": "dddd652b-7899-428e-a712-981aeb7bb899",
+      "url": "/media/2026/10/dddd652b-7899-428e-a712-981aeb7bb899.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "dark",
+      "view": 1,
+      "localPath": "steering-wheel/steering-wheel-01-front.webp",
+      "id": "04f6f44a-5dd1-4c10-aa85-ef0156c77917",
+      "url": "/media/2026/10/04f6f44a-5dd1-4c10-aa85-ef0156c77917.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "dark",
+      "view": 2,
+      "localPath": "steering-wheel/steering-wheel-02-hub.webp",
+      "id": "9287b75a-bfd7-4ab6-9ff0-fd24b025427a",
+      "url": "/media/2026/10/9287b75a-bfd7-4ab6-9ff0-fd24b025427a.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "theme": "dark",
+      "view": 3,
+      "localPath": "steering-wheel/steering-wheel-03-profile.webp",
+      "id": "4a90e1d2-3c63-42a5-97bb-62993260ef98",
+      "url": "/media/2026/10/4a90e1d2-3c63-42a5-97bb-62993260ef98.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "light",
+      "view": 1,
+      "localPath": "steering-airbag/steering-airbag-01-oblique-light.webp",
+      "id": "15f9dd8e-e447-4251-a72f-56b12876b5c5",
+      "url": "/media/2026/10/15f9dd8e-e447-4251-a72f-56b12876b5c5.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "light",
+      "view": 2,
+      "localPath": "steering-airbag/steering-airbag-02-face-light.webp",
+      "id": "69d7eb24-4dd2-435d-bed8-22c872b85725",
+      "url": "/media/2026/10/69d7eb24-4dd2-435d-bed8-22c872b85725.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "light",
+      "view": 3,
+      "localPath": "steering-airbag/steering-airbag-03-mounting-studs-light.webp",
+      "id": "fbefda7e-f9c5-400d-bf59-49890b41827c",
+      "url": "/media/2026/10/fbefda7e-f9c5-400d-bf59-49890b41827c.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "dark",
+      "view": 1,
+      "localPath": "steering-airbag/steering-airbag-01-oblique.webp",
+      "id": "69ad7a0e-aa48-4671-bcf1-df9028c2a812",
+      "url": "/media/2026/10/69ad7a0e-aa48-4671-bcf1-df9028c2a812.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "dark",
+      "view": 2,
+      "localPath": "steering-airbag/steering-airbag-02-face.webp",
+      "id": "c45d1192-3862-463c-8623-2c84f5ac9d50",
+      "url": "/media/2026/10/c45d1192-3862-463c-8623-2c84f5ac9d50.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "theme": "dark",
+      "view": 3,
+      "localPath": "steering-airbag/steering-airbag-03-mounting-studs.webp",
+      "id": "99c40656-12a9-4aae-a926-856f4f991769",
+      "url": "/media/2026/10/99c40656-12a9-4aae-a926-856f4f991769.webp",
+      "width": 1254,
+      "height": 1254,
+      "mimeType": "image/webp"
+    }
+  ],
+  "imageStandard": {
+    "width": 1254,
+    "height": 1254,
+    "aspectRatio": "1:1",
+    "format": "image/webp"
+  },
+  "apiThemeImagesSupported": true,
+  "apiUpdate": [
+    {
+      "partNumber": "MIG-SP-001",
+      "id": "2eb4427e-ca8c-45fb-ac9c-b7cdb19d23f8",
+      "nameFa": "پدال",
+      "category": "controls-steering",
+      "themeImagesSupported": true,
+      "themeImagesSaved": true,
+      "imageUrl": "/media/2026/10/6172ad82-f04e-4be3-83f8-0a6d056bf1d4.webp",
+      "galleryCount": 2,
+      "imageUrls": {
+        "light": [
+          "/media/2026/10/ca8b86c1-9c72-4330-a752-4e99fee3d205.webp",
+          "/media/2026/10/27cbacf4-f247-493e-83e4-1559eec1cb43.webp",
+          "/media/2026/10/085c5700-279e-444a-b91d-4a8865a14fac.webp"
+        ],
+        "dark": [
+          "/media/2026/10/6172ad82-f04e-4be3-83f8-0a6d056bf1d4.webp",
+          "/media/2026/10/c847a604-bee0-4c77-b7bf-b804f6af9023.webp",
+          "/media/2026/10/906388b7-974b-43b7-b435-1a1aee473ef1.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-002",
+      "id": "ad11fe40-97ad-4e15-b4fe-41ebaf57eb97",
+      "nameFa": "پایه پدال",
+      "category": "controls-steering",
+      "themeImagesSupported": true,
+      "themeImagesSaved": true,
+      "imageUrl": "/media/2026/10/7583f8ef-6835-4a52-8475-782a34f05d24.webp",
+      "galleryCount": 2,
+      "imageUrls": {
+        "light": [
+          "/media/2026/10/47c48611-7425-4e8a-8b3f-d2babe2e916b.webp",
+          "/media/2026/10/0c90dd76-8e43-4adb-9259-d3b538074a37.webp",
+          "/media/2026/10/0952af59-b04b-4cad-87d9-0bc1b6a18de2.webp"
+        ],
+        "dark": [
+          "/media/2026/10/7583f8ef-6835-4a52-8475-782a34f05d24.webp",
+          "/media/2026/10/83c7ac16-acb4-4fbb-9962-d956d1a37faa.webp",
+          "/media/2026/10/0e37daf6-f781-4ed8-8d03-fcdefadfae01.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-003",
+      "id": "05861ee2-7245-4858-a8f0-bf53bdf289ee",
+      "nameFa": "پایه فرچه",
+      "category": "electric",
+      "themeImagesSupported": true,
+      "themeImagesSaved": true,
+      "imageUrl": "/media/2026/10/087e052f-169c-4fd5-b7f7-9f5ecd953a52.webp",
+      "galleryCount": 2,
+      "imageUrls": {
+        "light": [
+          "/media/2026/10/5a19611a-afa7-4da3-aae8-9bd7f3c059bc.webp",
+          "/media/2026/10/d3d07ecd-2f76-45ba-b0c5-780de22f820f.webp",
+          "/media/2026/10/f6099c2d-8e68-44bc-91ac-e798e56f46d0.webp"
+        ],
+        "dark": [
+          "/media/2026/10/087e052f-169c-4fd5-b7f7-9f5ecd953a52.webp",
+          "/media/2026/10/5117fcf6-626e-4393-a3ed-4370e10647fa.webp",
+          "/media/2026/10/6906c3ba-9731-4d4b-ba42-dbc867bf3f38.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-004",
+      "id": "0c90bf3b-39c4-4a7e-a824-00348f4cad77",
+      "nameFa": "فرمان",
+      "category": "controls-steering",
+      "themeImagesSupported": true,
+      "themeImagesSaved": true,
+      "imageUrl": "/media/2026/10/04f6f44a-5dd1-4c10-aa85-ef0156c77917.webp",
+      "galleryCount": 2,
+      "imageUrls": {
+        "light": [
+          "/media/2026/10/469e7aac-b599-4dca-ae71-ed6c6c86d83a.webp",
+          "/media/2026/10/73e0a448-9c46-4d4d-8b4d-ebe463695b82.webp",
+          "/media/2026/10/dddd652b-7899-428e-a712-981aeb7bb899.webp"
+        ],
+        "dark": [
+          "/media/2026/10/04f6f44a-5dd1-4c10-aa85-ef0156c77917.webp",
+          "/media/2026/10/9287b75a-bfd7-4ab6-9ff0-fd24b025427a.webp",
+          "/media/2026/10/4a90e1d2-3c63-42a5-97bb-62993260ef98.webp"
+        ]
+      }
+    },
+    {
+      "partNumber": "MIG-SP-005",
+      "id": "e767fc4a-18fe-478a-8b9e-d093cff66294",
+      "nameFa": "ایربگ فرمان",
+      "category": "controls-steering",
+      "themeImagesSupported": true,
+      "themeImagesSaved": true,
+      "imageUrl": "/media/2026/10/69ad7a0e-aa48-4671-bcf1-df9028c2a812.webp",
+      "galleryCount": 2,
+      "imageUrls": {
+        "light": [
+          "/media/2026/10/15f9dd8e-e447-4251-a72f-56b12876b5c5.webp",
+          "/media/2026/10/69d7eb24-4dd2-435d-bed8-22c872b85725.webp",
+          "/media/2026/10/fbefda7e-f9c5-400d-bf59-49890b41827c.webp"
+        ],
+        "dark": [
+          "/media/2026/10/69ad7a0e-aa48-4671-bcf1-df9028c2a812.webp",
+          "/media/2026/10/c45d1192-3862-463c-8623-2c84f5ac9d50.webp",
+          "/media/2026/10/99c40656-12a9-4aae-a926-856f4f991769.webp"
+        ]
+      }
+    }
+  ]
+}

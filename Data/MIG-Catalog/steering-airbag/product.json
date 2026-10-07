@@ -1,0 +1,37 @@
+{
+  "id": "MIG-SP-005",
+  "part_number": "MIG-SP-005",
+  "name_fa": "ایربگ فرمان",
+  "name_en": "Steering Airbag",
+  "category": "controls-steering",
+  "short_description_fa": "قطعه‌ای دایره‌ای با سوراخ مرکزی و نوشته‌ی برجسته.",
+  "description_fa": "در پشت قطعه سه پایه‌ی رزوه‌دار دیده می‌شود.",
+  "source_photos": [
+    "ایربگ فرمان (1).jpg",
+    "ایربگ فرمان (2).jpg",
+    "ایربگ فرمان (3).jpg",
+    "ایربگ فرمان (4).jpg"
+  ],
+  "source_urls": [
+    "https://www.nhtsa.gov/vehicle-safety/air-bags"
+  ],
+  "research_file": "steering-airbag/research.fa.md",
+  "generated_assets": {
+    "light": [
+      "steering-airbag/steering-airbag-01-oblique-light.webp",
+      "steering-airbag/steering-airbag-02-face-light.webp",
+      "steering-airbag/steering-airbag-03-mounting-studs-light.webp"
+    ],
+    "dark": [
+      "steering-airbag/steering-airbag-01-oblique.webp",
+      "steering-airbag/steering-airbag-02-face.webp",
+      "steering-airbag/steering-airbag-03-mounting-studs.webp"
+    ]
+  },
+  "image_standard": {
+    "width": 1254,
+    "height": 1254,
+    "aspect_ratio": "1:1",
+    "brand_footer": "Mohammadi Industrial Group"
+  }
+}

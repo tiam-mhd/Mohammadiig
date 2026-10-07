@@ -1,0 +1,43 @@
+{
+  "id": "MIG-SP-001",
+  "part_number": "MIG-SP-001",
+  "name_fa": "پدال",
+  "name_en": "Pedal",
+  "category": "controls-steering",
+  "short_description_fa": "پدال مشکی با سطح آج‌دار.",
+  "description_fa": "پایه و اتصالات فلزی این پدال در تصاویر دیده می‌شوند.",
+  "source_photos": [
+    "پدال (1).jpg",
+    "پدال (2).jpg",
+    "پدال (3).jpg",
+    "پدال (4).jpg",
+    "پدال (5).jpg",
+    "پدال (6).jpg",
+    "پدال (7).jpg",
+    "پدال (8).jpg"
+  ],
+  "source_urls": [
+    "https://www.anchiamusement.com/how-to-drive-bumper-cars-tips-safety-anchi.html",
+    "https://www.carneetrains.com/ground-grid-bumper-cars-for-sale/",
+    "https://www.majesticrides.com/part245b---dc-solenoid-60v--contact-points.html"
+  ],
+  "research_file": "pedal/research.fa.md",
+  "generated_assets": {
+    "light": [
+      "pedal/pedal-01-front-light.webp",
+      "pedal/pedal-02-side-light.webp",
+      "pedal/pedal-03-rear-light.webp"
+    ],
+    "dark": [
+      "pedal/pedal-01-front.webp",
+      "pedal/pedal-02-side.webp",
+      "pedal/pedal-03-rear.webp"
+    ]
+  },
+  "image_standard": {
+    "width": 1254,
+    "height": 1254,
+    "aspect_ratio": "1:1",
+    "brand_footer": "Mohammadi Industrial Group"
+  }
+}
