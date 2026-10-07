@@ -24,3 +24,6 @@ backend/backend/
 .DS_Store
 Thumbs.db
 *.tsbuildinfo
+
+
+/Data
